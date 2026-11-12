@@ -195,6 +195,13 @@ export class Submarine {
     return this.propeller.getWorldPosition(out);
   }
 
+  /** Réglages du phare selon les améliorations */
+  applyLight(stats) {
+    this.spot.intensity = stats.lightIntensity;
+    this.spot.distance = stats.lightRange;
+    this.spot.angle = stats.lightAngle;
+  }
+
   /** Ajuste l'intensité visuelle du faisceau selon la profondeur */
   setBeamVisibility(v) {
     this.beam.setOpacity(v * 0.08);

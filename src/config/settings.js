@@ -78,7 +78,7 @@ export const CAMERA = {
 
 /* ---------- Pince ---------- */
 export const CLAW = {
-  RANGE: 12, // portée maximale (m), mesurée depuis l'épaule du bras
+  // Portée et vitesse : voir config/upgrades.json (stats.clawRange, stats.clawSpeed)
   // Points dans le repère du sous-marin (avant = +Z)
   ROOT: { x: 0, y: -0.95, z: 2.3 }, // épaule, sous le nez
   REST: { x: 0, y: -1.55, z: 3.5 }, // poignet replié au repos
@@ -103,23 +103,14 @@ export const PICKUPS = {
   NEAR_RADIUS: 60,
 };
 
-/* ---------- Soute ---------- */
-export const HOLD = {
-  CAPACITY: 8, // emplacements (augmentera avec les améliorations en phase 5)
-};
 
 /* ---------- Survie ---------- */
 export const SURVIVAL = {
-  // Caractéristiques de base du Nautiliar (les améliorations de la phase 5 les modifieront)
-  OXYGEN_MAX: 150, // secondes d'air au repos
-  HULL_MAX: 100,
-  CRUSH_DEPTH: 130, // profondeur max supportée par la coque (m)
-
+  // Réserve d'air, coque et profondeur max : voir config/upgrades.json
   OXYGEN_USE: 1, // par seconde
   OXYGEN_USE_THRUST: 0.6, // en plus, à pleine poussée
   OXYGEN_REFILL: 30, // par seconde en surface
   SURFACE_DEPTH: 2.5, // en dessous de cette profondeur, on est « en surface »
-  SURFACE_REPAIR: 2, // réparation de fortune en surface (provisoire, le mécano s'en chargera en phase 5)
 
   CRUSH_DAMAGE_BASE: 0.6, // dégâts/s dès qu'on dépasse la profondeur max…
   CRUSH_DAMAGE_PER_M: 0.06, // …plus tant par mètre de dépassement

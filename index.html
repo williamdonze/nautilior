@@ -15,7 +15,7 @@
     <div id="vignette"></div>
 
     <!-- HUD -->
-    <div id="hud">
+    <div id="hud" class="dive-only">
       <div class="depth">
         <span class="label">PROFONDEUR</span>
         <span class="value"><span id="depth-value">0000</span><span class="unit">m</span></span>
@@ -32,19 +32,19 @@
     </div>
 
     <!-- Jauges de survie -->
-    <div id="gauges">
+    <div id="gauges" class="dive-only">
       <div class="gauge" id="g-oxygen"><span class="label">O2</span><div class="bar"><div class="fill"></div></div><span class="pct">100</span></div>
       <div class="gauge" id="g-hull"><span class="label">COQUE</span><div class="bar"><div class="fill"></div></div><span class="pct">100</span></div>
       <div class="gauge" id="g-rad"><span class="label">RAD</span><div class="bar"><div class="fill"></div></div><span class="pct">0</span></div>
     </div>
-    <div id="warnings"></div>
+    <div id="warnings" class="dive-only"></div>
 
     <!-- Voiles : dégâts (rouge), manque d'air (vision qui se resserre) -->
-    <div id="damage-vignette"></div>
-    <div id="tunnel"></div>
+    <div id="damage-vignette" class="dive-only"></div>
+    <div id="tunnel" class="dive-only"></div>
 
     <!-- Réticule de visée de la pince -->
-    <div id="reticle">
+    <div id="reticle" class="dive-only">
       <span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span>
       <span id="reticle-label"></span>
     </div>
@@ -71,15 +71,38 @@
       </div>
     </div>
 
-    <div id="hint">
+    <div id="hint" class="dive-only">
       ZQSD / WASD : piloter &nbsp;·&nbsp; ESPACE : monter &nbsp;·&nbsp; MAJ : descendre &nbsp;·&nbsp; CLIC : pince &nbsp;·&nbsp; I / TAB : soute
     </div>
+
+    <!-- HUD du port -->
+    <div id="port-hud" class="port-only">
+      <div class="money"><span class="label">BOURSE</span><span id="money-value">0 F</span></div>
+    </div>
+    <div id="port-hint" class="port-only">ZQSD / WASD : marcher &nbsp;·&nbsp; E : interagir</div>
+
+    <!-- Invite d'interaction -->
+    <div id="prompt"><span class="key">E</span><span id="prompt-text"></span></div>
+
+    <!-- Boîte de dialogue -->
+    <div id="dialogue">
+      <div class="dlg-name"></div>
+      <div class="dlg-text"></div>
+      <div class="dlg-choices"></div>
+      <div class="dlg-next">▼</div>
+    </div>
+
+    <!-- Panneaux du port (marchande, mécano, collection) -->
+    <div id="panel"></div>
+
+    <!-- Transition au noir -->
+    <div id="transition"><p></p></div>
 
     <!-- Écran noir du réveil -->
     <div id="blackout"><div id="blackout-text"></div></div>
 
     <!-- Fondu au noir (ouverture) -->
-    <div id="fade"><p>Port-Kerys, 1984.</p></div>
+    <div id="fade"><p></p></div>
 
     <script type="module" src="/src/main.js"></script>
   </body>

@@ -22,6 +22,15 @@ export class Pickups {
     this.spawnAll();
   }
 
+  /** Nouvelle plongée : le fond est repeuplé (tirage différent selon le jour) */
+  reset(seed) {
+    for (const p of [...this.list]) this.dispose(p);
+    this.list = [];
+    this.highlighted = null;
+    this.rand = createRandom(WORLD.SEED + 101 + seed * 7919);
+    this.spawnAll();
+  }
+
   spawnAll() {
     const B = WORLD.BOUNDS;
     const sp = SUBMARINE.SPAWN;

@@ -1,6 +1,7 @@
 import { SURVIVAL, RADIATION } from '../config/settings.js';
 import { clamp } from '../core/utils.js';
 import { getRadiation } from '../world/radiation.js';
+import { stats } from './stats.js';
 
 /**
  * Survie : oxygène, intégrité de la coque, pression et radiation.
@@ -11,17 +12,14 @@ import { getRadiation } from '../world/radiation.js';
  */
 export class Survival {
   constructor() {
-    // Caractéristiques (modifiées par les améliorations en phase 5)
-    this.stats = {
-      oxygenMax: SURVIVAL.OXYGEN_MAX,
-      hullMax: SURVIVAL.HULL_MAX,
-      crushDepth: SURVIVAL.CRUSH_DEPTH,
-    };
+    // Caractéristiques partagées (oxygenMax, hullMax, crushDepth), issues des améliorations
+    this.stats = stats;
     this.onDamage = null; // (quantité, type) → effets
     this.onDeath = null; // (cause : 'oxygen' | 'hull')
     this.reset();
   }
 
+  /** Plein d'air et coque réparée */
   reset() {
     this.oxygen = this.stats.oxygenMax;
     this.hull = this.stats.hullMax;
@@ -48,7 +46,6 @@ export class Survival {
     // --- Oxygène
     if (this.atSurface) {
       this.oxygen += S.OXYGEN_REFILL * dt;
-      this.hull += S.SURFACE_REPAIR * dt;
     } else {
       this.oxygen -= (S.OXYGEN_USE + Math.abs(sub.throttle) * S.OXYGEN_USE_THRUST) * dt;
     }

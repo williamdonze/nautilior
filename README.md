@@ -24,6 +24,9 @@ npm run preview   # sert le build de production
 | Viser / pince | Souris + clic gauche | Souris + clic gauche |
 | Zoom caméra | Molette | Molette |
 | Soute (inventaire) | I ou Tab | I ou Tab |
+| Au port : marcher | ZQSD | WASD |
+| Parler / interagir / rentrer au port (en surface) | E | E |
+| Dialogue : avancer / choisir | E, Espace, clic / 1-4 | E, Espace, clic / 1-4 |
 
 Les flèches du clavier fonctionnent aussi. Les touches sont lues par position physique (`event.code`) : AZERTY et QWERTY marchent sans réglage.
 
@@ -39,6 +42,14 @@ Les flèches du clavier fonctionnent aussi. Les touches sont lues par position p
 - `HOLD.CAPACITY` dans `settings.js` : nombre d'emplacements de la soute.
 - `SURVIVAL` et `RADIATION` dans `settings.js` : réserve d'oxygène, profondeur max de la coque, dégâts, zone de radiation.
 - `src/story/wakeup.json` : textes du réveil à l'hôpital.
+- `src/story/dialogues.json` : dialogues des villageois (conditions selon l'état narratif).
+- `src/config/upgrades.json` : améliorations du mécano (niveaux, coûts, effets), dont la coque abyssale.
+- `src/port/layout.json` : disposition du port (bâtiments, personnages, points d'interaction).
+
+## Sauvegarde
+
+Sauvegarde automatique dans le `localStorage` (retour au port, ventes, achats, dialogues, réveil).
+Pour recommencer une partie : `nautiliar.game.newGame()` dans la console (un menu arrivera en phase 8).
 
 En console : `nautiliar.pixel.setPixelHeight(180)` change la pixelisation à chaud.
 
@@ -46,16 +57,17 @@ En console : `nautiliar.pixel.setPixelHeight(180)` change la pixelisation à cha
 
 ```
 src/
-├── main.js        # assemblage de la scène et boucle principale
+├── main.js        # point d'entrée : renderer, entrées, son, HUD, boucle
 ├── config/        # réglages et données (JSON)
-├── core/          # renderer pixelisé, shader palette/dithering, clavier, souris, sons, boucle
+├── core/          # jeu (modes port/plongée), renderer pixelisé, shader, clavier, souris, sons, boucle
 ├── submarine/     # modèle, pilotage avec inertie, phare, caméra, bulles, survie (oxygène, coque)
-├── world/         # bruit, fond marin, rochers, algues, neige marine, ambiance, radiation
+├── world/         # plongée : fond marin, décor, objets, neige marine, ambiance, radiation
 ├── claw/          # pince : visée (raycast), IK du bras, machine à états, modèle
 ├── loot/          # objets, raretés, table de loot (JSON), modèles 3D, lueurs, effets de capture, soute
-├── ui/            # HUD, inventaire, vignettes des objets (HTML/CSS)
-├── story/         # état narratif, séquence de réveil (JSON)
-├── port/ save/   # phases suivantes
+├── ui/            # HUD, inventaire, dialogues, panneaux du port, vignettes (HTML/CSS)
+├── port/          # port : décor, joueur à pied, personnages, prix de la marchande
+├── story/         # état narratif, dialogues, réveil (JSON)
+├── save/          # état de la partie et sauvegarde localStorage
 docs/
 └── LORE.md        # référence narrative
 ```
@@ -66,7 +78,7 @@ docs/
 - [x] Phase 2 : la pince
 - [x] Phase 3 : loot et raretés
 - [x] Phase 4 : survie
-- [ ] Phase 5 : le port et les PNJ
+- [x] Phase 5 : le port et les PNJ
 - [ ] Phase 6 : monde, créatures et fragments de mémoire
 - [ ] Phase 7 : la fin
 - [ ] Phase 8 : polish

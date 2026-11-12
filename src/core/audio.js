@@ -329,4 +329,75 @@ export class Sound {
     if (!this.ctx) return;
     this.master.gain.setTargetAtTime(v * 0.6, this.ctx.currentTime, time / 3);
   }
+
+  /** Petit « bip » de texte qui s'écrit */
+  blip(pitch = 1) {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    const o = this.ctx.createOscillator();
+    o.type = 'triangle';
+    o.frequency.value = (180 + Math.random() * 30) * pitch;
+    const g = this.ctx.createGain();
+    this.envelope(g, t, 0.025, 0.003, 0.05);
+    o.connect(g).connect(this.master);
+    o.start(t);
+    o.stop(t + 0.07);
+  }
+
+  /** Pas sur le granit mouillé */
+  step() {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noise;
+    const f = this.ctx.createBiquadFilter();
+    f.type = 'bandpass';
+    f.frequency.value = 500 + Math.random() * 300;
+    f.Q.value = 1.2;
+    const g = this.ctx.createGain();
+    this.envelope(g, t, 0.08, 0.004, 0.08);
+    src.connect(f).connect(g).connect(this.master);
+    src.start(t, Math.random() * 0.9);
+    src.stop(t + 0.12);
+  }
+
+  /** Pièces qui tintent (vente) */
+  coin(many = false) {
+    if (!this.ready) return;
+    const t0 = this.ctx.currentTime;
+    const n = many ? 6 : 2;
+    for (let i = 0; i < n; i++) {
+      const t = t0 + i * 0.07 + Math.random() * 0.03;
+      for (const mul of [1, 2.6]) {
+        const o = this.ctx.createOscillator();
+        o.type = 'sine';
+        o.frequency.value = (2100 + Math.random() * 500) * mul;
+        const g = this.ctx.createGain();
+        this.envelope(g, t, 0.03 / mul, 0.002, 0.18);
+        o.connect(g).connect(this.master);
+        o.start(t);
+        o.stop(t + 0.2);
+      }
+    }
+  }
+
+  /** Amélioration achetée : cliquetis de clé et coup de marteau */
+  upgrade() {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    for (let i = 0; i < 4; i++) {
+      const src = this.ctx.createBufferSource();
+      src.buffer = this.noise;
+      const f = this.ctx.createBiquadFilter();
+      f.type = 'bandpass';
+      f.frequency.value = 2500;
+      f.Q.value = 3;
+      const g = this.ctx.createGain();
+      this.envelope(g, t + i * 0.08, 0.12, 0.002, 0.03);
+      src.connect(f).connect(g).connect(this.master);
+      src.start(t + i * 0.08, Math.random());
+      src.stop(t + i * 0.08 + 0.05);
+    }
+    setTimeout(() => this.clank(1), 380);
+  }
 }

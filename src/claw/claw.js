@@ -3,6 +3,7 @@ import { CLAW } from '../config/settings.js';
 import { clamp, damp } from '../core/utils.js';
 import { createClawModel } from './clawModel.js';
 import { solveTwoBone } from './ik.js';
+import { stats } from '../submarine/stats.js';
 
 /**
  * Pince du Nautiliar : machine à états.
@@ -88,7 +89,7 @@ export class Claw {
       this.goal.copy(aim.point);
       this._tmp.subVectors(this.goal, this.root);
       const d = this._tmp.length();
-      if (d > CLAW.RANGE) this.goal.copy(this.root).addScaledVector(this._tmp, CLAW.RANGE / d);
+      if (d > stats.clawRange) this.goal.copy(this.root).addScaledVector(this._tmp, stats.clawRange / d);
     }
     this.state = State.EXTEND;
     this.speed = 0;
@@ -138,10 +139,10 @@ export class Claw {
         // On s'arrête un peu avant le centre de l'objet : ce sont les doigts qui le saisissent
         this._approach.subVectors(this.goal, this.root).normalize();
         this._wristGoal.copy(this.goal).addScaledVector(this._approach, -CLAW.GRAB_OFFSET);
-        const arrived = this.moveWrist(this._wristGoal, dt, CLAW.EXTEND_SPEED, CLAW.EXTEND_ACCEL);
+        const arrived = this.moveWrist(this._wristGoal, dt, CLAW.EXTEND_SPEED * stats.clawSpeed, CLAW.EXTEND_ACCEL * stats.clawSpeed);
         this.open += (1 - this.open) * damp(10, dt);
         // Le sous-marin s'est trop éloigné : on abandonne
-        if (this.target && this.root.distanceTo(this.goal) > CLAW.RANGE * 1.2) {
+        if (this.target && this.root.distanceTo(this.goal) > stats.clawRange * 1.2) {
           this.startRetract();
         } else if (arrived) {
           this.state = State.GRAB;
@@ -173,9 +174,9 @@ export class Claw {
 
       case State.RETRACT: {
         // Plus l'objet est lourd, plus le retour est lent
-        const slow = CLAW.WEIGHT_REF / (CLAW.WEIGHT_REF + weight);
+        const slow = (CLAW.WEIGHT_REF / (CLAW.WEIGHT_REF + weight)) * stats.clawSpeed;
         const arrived = this.moveWrist(this._rest, dt, CLAW.RETRACT_SPEED * slow, CLAW.RETRACT_ACCEL * slow);
-        this.sound.motorPitch(0.6 + slow * 0.5);
+        this.sound.motorPitch(0.6 + Math.min(slow, 1) * 0.5);
         // Le bras tremble sous l'effort
         if (weight > 10) {
           const j = Math.min(weight / 100, 0.6) * 0.04;

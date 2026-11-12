@@ -411,3 +411,173 @@ body.inventory-open #reticle { display: none; }
 /* Les voiles passent sous le HUD : les jauges restent lisibles même quand la vision se resserre */
 #damage-vignette, #tunnel { z-index: 1; }
 #hud, #gauges, #warnings, #toast { z-index: 2; }
+
+/* ---------- Modes : HUD de plongée / HUD du port ---------- */
+body.mode-port .dive-only { display: none !important; }
+body.mode-dive .port-only { display: none !important; }
+body.mode-port, body.mode-port canvas { cursor: default; }
+
+#port-hud {
+  position: fixed;
+  top: 24px;
+  left: 24px;
+  pointer-events: none;
+  text-shadow: 2px 2px 0 #020407;
+}
+.money {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px;
+  background: var(--hud-bg);
+  border: 2px solid var(--hud-dim);
+}
+.money .label { font-size: 18px; letter-spacing: 3px; color: var(--hud-dim); }
+#money-value { font-size: 38px; line-height: 1; color: var(--hud-warm); }
+#port-hint {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  font-size: 22px;
+  background: var(--hud-bg);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ---------- Invite d'interaction ---------- */
+#prompt {
+  position: fixed;
+  left: 50%;
+  bottom: 84px;
+  transform: translate(-50%, 8px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+  font-size: 26px;
+  background: var(--hud-bg);
+  border: 2px solid var(--hud-dim);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 3;
+}
+#prompt.visible { opacity: 1; transform: translate(-50%, 0); }
+#prompt .key {
+  display: inline-block;
+  min-width: 28px;
+  padding: 0 6px;
+  text-align: center;
+  color: #020407;
+  background: var(--hud-warm);
+}
+
+/* ---------- Dialogue ---------- */
+#dialogue {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translate(-50%, 20px);
+  width: min(820px, 94vw);
+  min-height: 150px;
+  padding: 14px 20px 18px;
+  background: rgba(5, 9, 13, 0.92);
+  border: 2px solid var(--hud-dim);
+  box-shadow: 6px 6px 0 #020407;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+  z-index: 8;
+}
+#dialogue.open { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+#dialogue, #dialogue * { cursor: default; }
+.dlg-name {
+  display: inline-block;
+  margin: -30px 0 8px -6px;
+  padding: 2px 12px;
+  font-size: 22px;
+  letter-spacing: 3px;
+  color: #020407;
+  background: var(--hud-warm);
+}
+.dlg-text { font-size: 28px; line-height: 1.25; min-height: 70px; color: #ccd8cc; }
+.dlg-text.narration { color: var(--hud-dim); font-style: italic; }
+.dlg-choices { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+.dlg-choice { font-size: 24px; color: var(--hud-fg); padding: 2px 8px; border-left: 3px solid transparent; }
+.dlg-choice:hover, .dlg-choice.selected { color: var(--hud-warm); border-left-color: var(--hud-warm); background: rgba(205, 181, 124, 0.08); }
+.dlg-next {
+  position: absolute;
+  right: 18px;
+  bottom: 10px;
+  font-size: 20px;
+  color: var(--hud-warm);
+  opacity: 0;
+}
+.dlg-next.visible { opacity: 1; animation: blink 0.9s steps(2) infinite; }
+
+/* ---------- Panneaux du port ---------- */
+#panel {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(2, 4, 7, 0.6);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  z-index: 10;
+}
+#panel.open { opacity: 1; pointer-events: auto; }
+#panel, #panel * { cursor: default; }
+.port-panel { width: min(820px, 94vw); max-height: 90vh; display: flex; flex-direction: column; }
+.panel-body { padding: 12px 16px; overflow-y: auto; }
+.panel-quote { margin: 0 0 12px; font-size: 22px; font-style: italic; color: var(--hud-dim); }
+.panel-footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.port-panel button:disabled { opacity: 0.35; }
+.port-panel button:disabled:hover { color: var(--hud-fg); background: #0c1a22; border-color: var(--hud-dim); }
+.rows { display: flex; flex-direction: column; gap: 6px; }
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px;
+  background: #0c1a22;
+  border: 2px solid #11252e;
+  font-size: 22px;
+}
+.row img { width: 44px; height: 44px; image-rendering: pixelated; border: 2px solid; }
+.row-name { flex: 1; font-size: 24px; }
+.row-price { width: 110px; text-align: right; color: var(--hud-warm); }
+.up { color: #7fae6a; }
+.down { color: #b07a47; }
+.upgrade .up-info { flex: 1; }
+.up-cur { color: var(--hud-dim); font-size: 20px; }
+.up-next { color: var(--hud-fg); font-size: 20px; }
+.pips { margin-left: 8px; }
+.pips i { display: inline-block; width: 8px; height: 8px; margin-right: 3px; border: 1px solid var(--hud-dim); }
+.pips i.on { background: var(--hud-warm); border-color: var(--hud-warm); }
+.maxed { color: var(--hud-dim); letter-spacing: 3px; padding: 0 12px; }
+.row.is-abyssal { border-color: #3c7048; background: linear-gradient(90deg, #0c1a22, #12261a); }
+.port-panel button.abyssal { border-color: #7fbf7a; color: #cfe8c8; }
+.collection-grid { grid-template-columns: repeat(6, 64px) !important; }
+.collection-grid .slot { width: 64px; height: 64px; }
+.collection-grid .slot img { width: 60px; height: 60px; }
+.slot.unknown img { filter: brightness(0) opacity(0.55); }
+
+/* ---------- Transition ---------- */
+#transition {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #020407;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s;
+  z-index: 15;
+}
+#transition.on { opacity: 1; }
+#transition p { font-size: 28px; color: var(--hud-dim); font-style: italic; }

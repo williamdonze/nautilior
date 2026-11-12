@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CLAW } from '../config/settings.js';
+import { stats } from '../submarine/stats.js';
 import { findPickup } from '../world/pickups.js';
 
 /**
@@ -27,7 +27,7 @@ export class Aim {
     this.pickup = hits.length ? findPickup(hits[0].object) : null;
     if (this.pickup) {
       this.distance = clawRoot.distanceTo(this.pickup.object.position);
-      this.inRange = this.distance <= CLAW.RANGE;
+      this.inRange = this.distance <= stats.clawRange;
       this.point.copy(this.pickup.object.position);
     } else {
       this.inRange = false;
@@ -43,7 +43,7 @@ export class Aim {
     } else {
       // Rien sous le curseur : on vise le point du rayon le plus proche de la portée max
       const ray = this.raycaster.ray;
-      const t = Math.max(0, ray.direction.dot(this._tmp().subVectors(clawRoot, ray.origin))) + CLAW.RANGE;
+      const t = Math.max(0, ray.direction.dot(this._tmp().subVectors(clawRoot, ray.origin))) + stats.clawRange;
       ray.at(t, this.point);
     }
     return this;

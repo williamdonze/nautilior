@@ -109,9 +109,23 @@ export class Hud {
     });
   }
 
-  /** Ouverture en fondu depuis le noir */
-  intro() {
+  /** Ouverture en fondu depuis le noir, avec une ligne de texte */
+  intro(text = '') {
+    this.fade.querySelector('p').textContent = text;
     setTimeout(() => this.fade.classList.add('hidden'), 1800);
+  }
+
+  /** Invite d'interaction (« E  Parler au médecin ») ; '' pour la masquer */
+  setPrompt(text) {
+    if (text === this.lastPrompt) return;
+    this.lastPrompt = text;
+    this.promptEl ??= document.getElementById('prompt');
+    this.promptEl.querySelector('#prompt-text').textContent = text;
+    this.promptEl.classList.toggle('visible', !!text);
+  }
+
+  setMoney(amount) {
+    document.getElementById('money-value').textContent = `${amount.toLocaleString('fr-FR')} F`;
   }
 
   update(depth, input) {
@@ -181,9 +195,9 @@ export class Hud {
   }
 
   /** Affiche le nom, la rareté et la description de l'objet récupéré */
-  toast(item, rarity) {
+  toast(item, rarity, isNew = false) {
     this.toastEl.style.setProperty('--rarity', rarity.level > 0 ? rarity.color : '');
-    this.toastRarity.textContent = rarity.name.toUpperCase();
+    this.toastRarity.textContent = rarity.name.toUpperCase() + (isNew ? '  ·  NOUVEAU' : '');
     this.toastName.textContent = item.name;
     this.toastDesc.textContent = item.description;
     this.toastEl.classList.add('visible');

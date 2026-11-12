@@ -1,14 +1,37 @@
-import { HOLD } from '../config/settings.js';
+import { stats } from '../submarine/stats.js';
+import { getItem } from './loot.js';
 
 /**
- * Soute du sous-marin : nombre d'emplacements limité.
+ * Soute du sous-marin : nombre d'emplacements limité (selon les améliorations).
  * Chaque emplacement contient la définition d'un objet (voir items.json).
  */
 export class Hold {
-  constructor(capacity = HOLD.CAPACITY) {
-    this.capacity = capacity;
+  constructor() {
     this.items = [];
     this.listeners = new Set();
+  }
+
+  get capacity() {
+    return stats.holdCapacity;
+  }
+
+  /** Identifiants des objets (pour la sauvegarde) */
+  toIds() {
+    return this.items.map((it) => it.id);
+  }
+
+  /** Recharge la soute depuis une liste d'identifiants */
+  fromIds(ids) {
+    this.items = ids.map(getItem).filter(Boolean);
+    this.emit();
+  }
+
+  /** Vide la soute et renvoie son contenu */
+  takeAll() {
+    const all = this.items;
+    this.items = [];
+    this.emit();
+    return all;
   }
 
   get full() {
