@@ -8,3 +8,11 @@ export const gameState = {
   collection: [], // identifiants des objets déjà remontés au moins une fois
   hold: [], // identifiants des objets dans la soute
 };
+
+const DEFAULTS = JSON.stringify(gameState);
+
+/** Remet l'état de la partie à zéro (nouvelle partie) */
+export function resetGameState() {
+  for (const k of Object.keys(gameState)) delete gameState[k];
+  Object.assign(gameState, JSON.parse(DEFAULTS));
+}

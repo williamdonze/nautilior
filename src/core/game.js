@@ -7,13 +7,17 @@ import { DialogueBox } from '../ui/dialogueBox.js';
 import { Panels } from '../ui/panels.js';
 import { WakeUp } from '../story/wakeup.js';
 import { pickConversation } from '../story/dialogue.js';
-import { storyState } from '../story/state.js';
-import { gameState } from '../save/gameState.js';
+import { storyState, resetStoryState } from '../story/state.js';
+import { gameState, resetGameState } from '../save/gameState.js';
 import { save, load, clearSave, savePrechoice } from '../save/save.js';
 import { playEnding, showEndScreen } from '../story/endings.js';
 import { applyUpgrades, stats } from '../submarine/stats.js';
 import { SURVIVAL } from '../config/settings.js';
 import { MemoryView } from '../ui/memoryView.js';
+import { Soundscape } from './soundscape.js';
+import { Music } from './music.js';
+import { Menu } from '../ui/menu.js';
+import { hasSave } from '../save/save.js';
 import fragmentsData from '../story/fragments.json';
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -27,6 +31,10 @@ export class Game {
     Object.assign(this, { pixel, input, pointer, sound, hud });
     this.mode = 'port';
     this.busy = false; // transition ou séquence en cours : commandes bloquées
+    this.inMenu = false; // écran titre
+    this.pausedAll = false; // menu pause
+    this.soundscape = new Soundscape(sound);
+    this.music = new Music(sound);
 
     this.loaded = load();
     applyUpgrades(gameState.upgrades);
@@ -100,11 +108,72 @@ export class Game {
       if (this.mode === 'dive' && !this.busy) this.dive.click();
     });
 
-    // Accès console : nautiliar.game.newGame() pour repartir de zéro
-    this.newGame = () => {
-      clearSave();
-      location.reload();
-    };
+    this.menu = new Menu({
+      sound,
+      hasSave: () => hasSave(),
+      onContinue: () => this.leaveTitle(),
+      onNewGame: () => this.newGame(),
+      onResume: () => this.resume(),
+      onQuitToTitle: () => {
+        this.persist();
+        location.reload();
+      },
+      applySettings: () => this.applySettings?.(),
+    });
+  }
+
+  /**
+   * Efface la partie et recommence, sans recharger la page
+   * (le son, déjà débloqué par le clic, continue de fonctionner).
+   */
+  newGame() {
+    clearSave();
+    resetGameState();
+    resetStoryState();
+    applyUpgrades(gameState.upgrades);
+    this.hold.fromIds([]);
+    this.loaded = false;
+    this.inMenu = false;
+    this.port.player.object.visible = true;
+    this.port.holdCamera = false;
+    document.body.classList.remove('in-menu');
+    document.getElementById('fade').classList.remove('hidden');
+    this.start();
+  }
+
+  /* ------------------------------------------------------------ Écran titre et pause */
+
+  /** Écran titre : le quai dans la brume, la caméra glisse lentement */
+  showTitle() {
+    this.inMenu = true;
+    this.setMode('port');
+    this.port.enter('quay');
+    this.port.player.object.visible = false;
+    this.port.holdCamera = true;
+    document.body.classList.add('in-menu');
+    this.hud.intro('');
+    this.menu.show('main');
+  }
+
+  leaveTitle() {
+    this.inMenu = false;
+    this.port.player.object.visible = true;
+    this.port.holdCamera = false;
+    document.body.classList.remove('in-menu');
+    this.transition(() => this.start());
+  }
+
+  pause() {
+    this.pausedAll = true;
+    this.sound.motorStop();
+    this.menu.show('pause');
+    document.body.classList.add('in-menu');
+  }
+
+  resume() {
+    this.pausedAll = false;
+    this.menu.hide();
+    document.body.classList.remove('in-menu');
   }
 
   /* ------------------------------------------------------------ Démarrage */
@@ -207,6 +276,19 @@ export class Game {
   }
 
   key(code) {
+    if (this.inMenu) return;
+    const menuKey = code === 'Escape' || code === 'KeyP';
+    if (this.pausedAll) {
+      if (menuKey) this.resume();
+      return;
+    }
+    if (menuKey) {
+      // Échap ferme d'abord ce qui est ouvert ; sinon, pause
+      if (this.panels.isOpen) return code === 'Escape' && this.panels.close();
+      if (this.mode === 'dive' && this.dive.inventory.isOpen) return this.dive.inventory.close();
+      if (this.busy || this.dialogue.isOpen || document.getElementById('ending').classList.contains('open')) return;
+      return this.pause();
+    }
     if (this.mode === 'dive') {
       if (!this.busy) this.dive.key(code);
       return;
@@ -286,6 +368,20 @@ export class Game {
   /* ------------------------------------------------------------ Boucle */
 
   update(dt, time) {
+    // Ambiance et musique tournent toujours (même en pause, plus doucement)
+    const depth = this.mode === 'dive' ? this.dive.sub.depth : 0;
+    this.soundscape.update(dt, { mode: this.inMenu ? 'menu' : this.mode, depth, paused: this.pausedAll });
+    this.music.setMood(this.mode === 'dive' && !this.inMenu ? (depth > 900 ? 'deep' : 'dive') : 'port');
+    this.music.update(dt);
+
+    if (this.inMenu) {
+      this.port.update(dt, time, this.input, false);
+      const x = -6 + Math.sin(time * 0.045) * 16;
+      this.port.camera.position.set(x, 5.5 + Math.sin(time * 0.07), 15);
+      this.port.camera.lookAt(x * 0.5 + 4, 2.2, -8);
+      return;
+    }
+    if (this.pausedAll) return;
     if (this.mode === 'dive') {
       if (!this.paused) this.dive.update(dt, time);
     } else {

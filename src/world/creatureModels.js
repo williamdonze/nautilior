@@ -177,7 +177,7 @@ export function createFishGeometry() {
     new THREE.Float32BufferAttribute([0, 0, -0.3, 0, 0.18, -0.62, 0, -0.18, -0.62, 0, 0, -0.3, 0, -0.18, -0.62, 0, 0.18, -0.62], 3)
   );
   tail.computeVertexNormals();
-  const b = body.toNonIndexed();
+  const b = body.index ? body.toNonIndexed() : body;
   b.deleteAttribute('uv');
   const merged = new THREE.BufferGeometry();
   const p1 = b.attributes.position.array, p2 = tail.attributes.position.array;

@@ -1,12 +1,27 @@
 /**
  * Sons synthétisés avec la Web Audio API (aucun fichier audio nécessaire).
- * Tout passe par un filtre passe-bas commun pour un rendu étouffé, « sous l'eau ».
+ * Chaîne : effets → filtre « sous l'eau » → bus effets ─┐
+ *          musique → bus musique ─────────────────────────┼→ volume général → sortie
  * Le contexte audio ne démarre qu'après une première interaction (règle des navigateurs).
  */
 export class Sound {
   constructor() {
     this.ctx = null;
     this.motor = null;
+    this.volumes = { master: 0.8, music: 0.6, sfx: 0.8 };
+    this.fade = 1; // fondu temporaire (réveil à l'hôpital)
+  }
+
+  /** Volumes (0..1) : général, musique, effets */
+  setVolumes({ master, music, sfx }) {
+    if (master !== undefined) this.volumes.master = master;
+    if (music !== undefined) this.volumes.music = music;
+    if (sfx !== undefined) this.volumes.sfx = sfx;
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    this.mainGain.gain.setTargetAtTime(this.volumes.master * this.fade, t, 0.05);
+    this.musicBus.gain.setTargetAtTime(this.volumes.music * 0.5, t, 0.05);
+    this.master.gain.setTargetAtTime(this.volumes.sfx * 0.75, t, 0.05);
   }
 
   /** À appeler sur un clic ou une touche */
@@ -18,9 +33,23 @@ export class Sound {
       this.muffle = this.ctx.createBiquadFilter();
       this.muffle.type = 'lowpass';
       this.muffle.frequency.value = 2600;
-      this.master = this.ctx.createGain();
-      this.master.gain.value = 0.6;
-      this.muffle.connect(this.master).connect(this.ctx.destination);
+      this.mainGain = this.ctx.createGain();
+      this.mainGain.connect(this.ctx.destination);
+      this.master = this.ctx.createGain(); // bus des effets (nom historique)
+      this.musicBus = this.ctx.createGain();
+      this.muffle.connect(this.master).connect(this.mainGain);
+      this.musicBus.connect(this.mainGain);
+      // Écho partagé (sonar, mouettes, cloche) : un délai rebouclé
+      this.echo = this.ctx.createDelay(2);
+      this.echo.delayTime.value = 0.45;
+      const fb = this.ctx.createGain();
+      fb.gain.value = 0.42;
+      const echoFilter = this.ctx.createBiquadFilter();
+      echoFilter.type = 'lowpass';
+      echoFilter.frequency.value = 1800;
+      this.echo.connect(echoFilter).connect(fb).connect(this.echo);
+      echoFilter.connect(this.master);
+      this.setVolumes({});
       // Bruit blanc réutilisable
       const len = this.ctx.sampleRate;
       this.noise = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
@@ -324,10 +353,11 @@ export class Sound {
     src.stop(t + 0.01);
   }
 
-  /** Volume général (0..1), utilisé par le fondu au noir */
+  /** Fondu du volume général (0..1), utilisé par le fondu au noir */
   setMasterVolume(v, time = 0.5) {
+    this.fade = v;
     if (!this.ctx) return;
-    this.master.gain.setTargetAtTime(v * 0.6, this.ctx.currentTime, time / 3);
+    this.mainGain.gain.setTargetAtTime(this.volumes.master * v, this.ctx.currentTime, time / 3);
   }
 
   /** Petit « bip » de texte qui s'écrit */

@@ -169,6 +169,11 @@ export function showEndScreen(kind) {
     if (b.dataset.end === 'retry' && restorePrechoice()) location.reload();
     if (b.dataset.end === 'new') {
       clearSave();
+      try {
+        sessionStorage.setItem('nautiliar-autostart', '1');
+      } catch {
+        /* rien */
+      }
       location.reload();
     }
   };

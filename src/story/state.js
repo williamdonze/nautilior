@@ -20,3 +20,11 @@ export function storyValue(key) {
   if (key in storyState) return storyState[key];
   return storyState.flags[key] ?? false;
 }
+
+const DEFAULTS = JSON.stringify(storyState);
+
+/** Remet l'état narratif à zéro (nouvelle partie) */
+export function resetStoryState() {
+  for (const k of Object.keys(storyState)) delete storyState[k];
+  Object.assign(storyState, JSON.parse(DEFAULTS));
+}

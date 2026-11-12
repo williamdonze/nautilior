@@ -196,10 +196,14 @@ export class Pickups {
   }
 
   update(time, viewer) {
-    const far2 = 160 * 160;
+    const hide2 = 130 * 130; // au-delà, le brouillard les rend invisibles : on ne les dessine pas
+    const beacon2 = 260 * 260; // halos et colonnes servent de balises un peu plus loin
     for (const p of this.list) {
-      // Les objets lointains (noyés dans le brouillard) ne sont pas animés
-      if (viewer && p.object.position.distanceToSquared(viewer) > far2) continue;
+      const d2 = viewer ? p.object.position.distanceToSquared(viewer) : 0;
+      p.object.visible = d2 < hide2;
+      if (p.halo) p.halo.visible = d2 < beacon2;
+      if (p.pillar) p.pillar.visible = d2 < beacon2;
+      if (d2 > hide2) continue;
       if (p === this.highlighted) {
         // Surbrillance chaude de l'objet visé
         const k = 0.35 + Math.sin(time * 7) * 0.15;

@@ -10,7 +10,7 @@ import { getFloorHeight } from '../world/seabed.js';
  */
 export class FollowCamera {
   constructor(aspect) {
-    this.camera = new THREE.PerspectiveCamera(RENDER.FOV, aspect, 0.1, 400);
+    this.camera = new THREE.PerspectiveCamera(RENDER.FOV, aspect, 0.1, 260);
     this.lookAt = new THREE.Vector3();
     this._desired = new THREE.Vector3();
     this._desiredLook = new THREE.Vector3();
