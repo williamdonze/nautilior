@@ -64,6 +64,14 @@ export class DialogueBox {
     return action;
   }
 
+  /** Une réplique isolée d'un personnage (cinématiques) */
+  async line(npcId, text) {
+    this.open(NPCS[npcId]?.name ?? '');
+    await this.type(text);
+    await this.waitAdvance();
+    this.close();
+  }
+
   /** Une simple ligne de narration (sans personnage) */
   async narrate(text) {
     this.open('');

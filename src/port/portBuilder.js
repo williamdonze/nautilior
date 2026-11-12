@@ -43,12 +43,16 @@ function box(w, h, d, material, x, y, z, parent) {
   return m;
 }
 
+// Éléments que la fin « Traverser » transforme (le vrai Port-Kerys, vivant)
+const tagged = { shutters: [], darkWindows: [], boats: [] };
+
 /** Une fenêtre : éclairée, sombre, ou fermée par des volets */
 function windowAt(parent, x, y, z, state) {
-  box(0.9, 1.1, 0.12, state === 'lit' ? GLOW : DARK, x, y, z, parent);
+  const w = box(0.9, 1.1, 0.12, state === 'lit' ? GLOW : DARK, x, y, z, parent);
+  if (state !== 'lit') tagged.darkWindows.push(w);
   if (state === 'shut') {
-    box(0.48, 1.2, 0.1, SHUTTER, x - 0.24, y, z + 0.06, parent);
-    box(0.48, 1.2, 0.1, SHUTTER, x + 0.24, y, z + 0.06, parent);
+    tagged.shutters.push(box(0.48, 1.2, 0.1, SHUTTER, x - 0.24, y, z + 0.06, parent));
+    tagged.shutters.push(box(0.48, 1.2, 0.1, SHUTTER, x + 0.24, y, z + 0.06, parent));
   }
 }
 
@@ -149,6 +153,7 @@ function rottenBoat(group, x, y, z, rotY, tilt, length = 5) {
   }
   box(0.12, 2.2, 0.12, WOOD, length * 0.15, 0.8, 0, g).rotation.z = 0.5;
   group.add(g);
+  tagged.boats.push(g);
 }
 
 function lampPost(group, x, z, lit, lights) {
@@ -255,6 +260,8 @@ export function buildPort() {
     lights,
     interactables,
     sub,
+    tagged,
+    glowMaterial: GLOW,
     update(time) {
       waterUniforms.uTime.value = time;
       // Le sous-marin tangue doucement

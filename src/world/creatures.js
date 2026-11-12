@@ -284,10 +284,12 @@ export class Creatures {
     this.events = events;
     this.fish = new FishSchools(scene);
     this.mutants = [];
+    this.calm = false; // portail refermé : les bêtes s'apaisent et s'en vont
   }
 
   /** Retire toutes les créatures (nouvelle plongée) */
   clear() {
+    this.calm = false;
     for (const m of this.mutants) m.dispose(this.scene);
     this.mutants = [];
     for (const s of this.fish.schools) s.active = false;
@@ -305,6 +307,15 @@ export class Creatures {
         this.mutants[i].dispose(this.scene);
         this.mutants.splice(i, 1);
       }
+    }
+    if (this.calm) {
+      // Elles s'éloignent, apaisées, sans plus attaquer
+      for (const m of this.mutants) {
+        m.state = 'retreat';
+        m.timer = 99;
+        m.update(dt, time, sub, {});
+      }
+      return 0;
     }
     // Complète la population de la zone, une créature à la fois
     for (const [type, wanted] of Object.entries(zone.mutants ?? {})) {

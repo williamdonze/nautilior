@@ -9,7 +9,8 @@ import { WakeUp } from '../story/wakeup.js';
 import { pickConversation } from '../story/dialogue.js';
 import { storyState } from '../story/state.js';
 import { gameState } from '../save/gameState.js';
-import { save, load, clearSave } from '../save/save.js';
+import { save, load, clearSave, savePrechoice } from '../save/save.js';
+import { playEnding, showEndScreen } from '../story/endings.js';
 import { applyUpgrades, stats } from '../submarine/stats.js';
 import { SURVIVAL } from '../config/settings.js';
 import { MemoryView } from '../ui/memoryView.js';
@@ -43,6 +44,8 @@ export class Game {
       onCapture: (pickup) => (pickup.item.fragment ? this.foundFragment(pickup.item.fragmentId) : this.addToCollection(pickup.item)),
       onDeath: (cause) => this.death(cause),
       onReturn: () => this.goPort('quay', true),
+      onPortal: () => this.facePortal(),
+      canFacePortal: () => storyState.abyssalHull,
     });
     this.port = new Port({ sound });
 
@@ -61,7 +64,16 @@ export class Game {
       onMemory: (id) => this.showMemory(id),
       onUpgrade: (catId, level) => {
         applyUpgrades(gameState.upgrades);
-        if (level.abyssal) storyState.abyssalHull = true;
+        if (level.abyssal) {
+          storyState.abyssalHull = true;
+          this.pendingAbyssalTalk = true; // le mécano parlera en fermant l'atelier
+        }
+      },
+      onClose: () => {
+        if (this.pendingAbyssalTalk) {
+          this.pendingAbyssalTalk = false;
+          this.talk('mechanic');
+        }
       },
     });
     this.wakeUp = new WakeUp({
@@ -100,6 +112,26 @@ export class Game {
   start() {
     this.hud.setMoney(gameState.money);
     this.hud.updateCargo(this.hold);
+    if (storyState.ending) {
+      // Partie terminée : écran de fin
+      this.enterPort('quay', false);
+      this.busy = true;
+      this.hud.intro('');
+      showEndScreen(storyState.ending);
+      return;
+    }
+    if (gameState.resumeAt === 'portal') {
+      // « Revenir devant le portail » : on reprend juste avant le choix
+      delete gameState.resumeAt;
+      this.setMode('dive');
+      this.dive.enter(gameState.day, storyState.fragments);
+      const c = this.dive.portal.center;
+      this.dive.sub.teleport(c.x, c.y - 4, c.z + 26, Math.PI);
+      this.dive.follow.snap(this.dive.sub);
+      this.hud.intro('Devant le portail.');
+      this.persist();
+      return;
+    }
     if (this.loaded && storyState.flags.introDone) {
       this.enterPort('quay', false);
       this.hud.intro('Port-Kerys, 1984.');
@@ -205,6 +237,19 @@ export class Game {
   }
 
   /* ------------------------------------------------------------ Données */
+
+  /** Devant le portail : sauvegarde « avant le choix », puis le choix final */
+  async facePortal() {
+    if (this.busy) return;
+    this.busy = true;
+    this.paused = true;
+    savePrechoice();
+    const action = await this.dialogue.play('portal', pickConversation('portal'));
+    this.paused = false;
+    if (action === 'ending_close') return playEnding(this, 'close');
+    if (action === 'ending_cross') return playEnding(this, 'cross');
+    this.busy = false;
+  }
 
   /** Un fragment de mémoire est remonté : on le note, puis le souvenir s'affiche */
   foundFragment(id) {

@@ -51,6 +51,83 @@ export class Port {
 
     this.camera = new THREE.PerspectiveCamera(50, 1, 0.1, 200);
     this.lookAt = new THREE.Vector3();
+    this.cine = null; // plan de cinématique en cours
+    this.crowd = [];
+  }
+
+  /* ------------------------------------------------------------ Cinématiques */
+
+  /**
+   * Mouvement de caméra scripté (interpolation douce).
+   * @returns {Promise} résolue à la fin du mouvement
+   */
+  cameraMove(from, to, lookFrom, lookTo, duration) {
+    return new Promise((resolve) => {
+      this.cine = { t: 0, duration, from: v(from), to: v(to), lookFrom: v(lookFrom), lookTo: v(lookTo), resolve };
+    });
+  }
+
+  /** Les trois villageois réunis sur le quai, face au joueur */
+  gatherVillagers() {
+    const spots = { mechanic: [9.5, -1.5], doctor: [12, -2.2], merchant: [14.5, -1.5] };
+    for (const n of this.npcs) {
+      const [x, z] = spots[n.id];
+      n.x = x;
+      n.z = z;
+      n.yaw = 0;
+      n.character.object.position.set(x, 0, z);
+    }
+    this.circles = this.npcs.map((n) => ({ x: n.x, z: n.z, r: 0.45 }));
+  }
+
+  /** Dissolution du village des morts (0 → 1) : brume blanche, silhouettes qui s'effacent */
+  dissolve(t) {
+    const fogCol = new THREE.Color('#5f6564').lerp(new THREE.Color('#e8ece2'), t);
+    this.scene.fog.color.copy(fogCol);
+    this.scene.background.copy(fogCol);
+    this.scene.fog.density = 0.03 + t * t * 0.35;
+    for (const n of this.npcs) {
+      const o = n.character.object;
+      o.scale.set(1 - t * 0.6, Math.max(0.01, 1 - t), 1 - t * 0.6);
+      o.position.y = -t * 0.8;
+    }
+  }
+
+  /** Le vrai Port-Kerys : volets ouverts, fenêtres éclairées, ciel plus clair, foule sur le quai */
+  makeAlive() {
+    const T = this.world.tagged;
+    T.shutters.forEach((m) => (m.visible = false));
+    T.darkWindows.forEach((m) => (m.material = this.world.glowMaterial));
+    T.boats.forEach((m) => (m.visible = false));
+    this.scene.background.set('#9a9a94');
+    this.scene.fog.color.set('#9a9a94');
+    this.scene.fog.density = 0.018;
+    this.scene.traverse((o) => {
+      if (o.isHemisphereLight) o.intensity = 2.4;
+      if (o.isDirectionalLight) o.intensity = 1.8;
+    });
+    // Les morts ne sont plus là
+    for (const n of this.npcs) n.character.object.visible = false;
+    // La foule, en arc de cercle autour du quai
+    const coats = ['#2f4a66', '#63321b', '#cdb57c', '#5b8fc0', '#a8bdb2', '#8a4f28', '#3c7048', '#7a5a26'];
+    for (let i = 0; i < 22; i++) {
+      const a = Math.PI * (0.15 + (i / 21) * 0.7);
+      const r = 5 + (i % 3) * 1.6;
+      const c = createCharacter({
+        coat: coats[i % coats.length],
+        legs: i % 2 ? '#26292b' : '#2f4a66',
+        hat: i % 4 === 0 ? 'cap' : i % 5 === 0 ? 'scarf' : null,
+        hatColor: coats[(i + 3) % coats.length],
+        long: i % 3 === 0,
+        hair: ['#3e2114', '#878a85', '#22140d', '#7d6f48'][i % 4],
+      });
+      const x = 12 + Math.cos(a) * r * 1.6;
+      const z = 3.5 - Math.sin(a) * r;
+      c.object.position.set(x, 0, z);
+      c.object.rotation.y = Math.atan2(12 - x, 4.5 - z);
+      this.scene.add(c.object);
+      this.crowd.push(c);
+    }
   }
 
   setAspect(aspect) {
@@ -78,13 +155,28 @@ export class Port {
     const noInput = { axis: () => 0 };
     this.player.update(dt, time, controls ? input : noInput, this.world.colliders, this.circles, layout.bounds);
     if (this.player.character.stepped() && this.player.speed > 0.5) this.sound.step();
+    for (const c of this.crowd) c.animate(dt, 0, time + c.object.position.x);
 
-    // Caméra : suit le joueur en douceur
     const p = this.player.position;
-    const desired = new THREE.Vector3().copy(p).add(CAMERA_OFFSET);
-    this.camera.position.lerp(desired, damp(4, dt));
-    this.lookAt.lerp(new THREE.Vector3(p.x, 1.2, p.z - 2), damp(6, dt));
-    this.camera.lookAt(this.lookAt);
+    if (this.cine) {
+      // Cinématique : la caméra suit le script
+      const c = this.cine;
+      c.t = Math.min(1, c.t + dt / c.duration);
+      const e = c.t * c.t * (3 - 2 * c.t);
+      this.camera.position.lerpVectors(c.from, c.to, e);
+      this.lookAt.lerpVectors(c.lookFrom, c.lookTo, e);
+      this.camera.lookAt(this.lookAt);
+      if (c.t >= 1) {
+        this.cine = null;
+        c.resolve();
+      }
+    } else if (!this.holdCamera) {
+      // Caméra : suit le joueur en douceur
+      const desired = new THREE.Vector3().copy(p).add(CAMERA_OFFSET);
+      this.camera.position.lerp(desired, damp(4, dt));
+      this.lookAt.lerp(new THREE.Vector3(p.x, 1.2, p.z - 2), damp(6, dt));
+      this.camera.lookAt(this.lookAt);
+    }
 
     // Les personnages se tournent vers le joueur quand il approche
     for (const n of this.npcs) {
@@ -108,6 +200,8 @@ export class Port {
     this.world.update(time);
   }
 }
+
+const v = (a) => (a.isVector3 ? a.clone() : new THREE.Vector3(a[0], a[1], a[2]));
 
 /** « Parler au médecin », « Parler à la marchande »… */
 function talkLabel(name) {

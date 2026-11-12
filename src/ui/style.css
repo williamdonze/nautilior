@@ -636,3 +636,64 @@ body.mode-port, body.mode-port canvas { cursor: default; }
 .memories-list { display: flex; flex-wrap: wrap; gap: 6px; }
 .port-panel .memory-btn { font-size: 20px; padding: 2px 10px; }
 .memory-btn.locked { font-size: 20px; padding: 2px 10px; color: #17323b; border: 2px dashed #11252e; }
+
+/* ---------- Cinématiques ---------- */
+body.cinema .dive-only, body.cinema .port-only, body.cinema #prompt { display: none !important; }
+body.cinema, body.cinema canvas { cursor: default; }
+#letterbox div {
+  position: fixed;
+  left: 0;
+  right: 0;
+  height: 0;
+  background: #020407;
+  transition: height 1.2s ease;
+  z-index: 6;
+  pointer-events: none;
+}
+#letterbox div:first-child { top: 0; }
+#letterbox div:last-child { bottom: 0; }
+body.cinema #letterbox div { height: 9vh; }
+body.cinema #dialogue { bottom: calc(9vh + 12px); }
+
+#veil {
+  position: fixed;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition-property: opacity;
+  transition-timing-function: ease-in-out;
+  z-index: 16;
+}
+#veil.on { opacity: 1; }
+
+/* ---------- Écran de fin ---------- */
+#ending {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #020407;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 2s;
+  z-index: 25;
+}
+#ending.open { opacity: 1; pointer-events: auto; }
+#ending, #ending * { cursor: default; }
+.end-frame { text-align: center; max-width: min(720px, 90vw); }
+.end-kicker { font-size: 22px; letter-spacing: 6px; color: var(--hud-dim); }
+#ending h1 { margin: 8px 0 12px; font-size: 64px; font-weight: normal; letter-spacing: 6px; color: #ccd8cc; }
+.end-sub { font-size: 26px; font-style: italic; color: var(--hud-fg); }
+.end-stats { font-size: 22px; color: var(--hud-dim); margin-top: 26px; }
+.end-found { font-size: 22px; color: var(--hud-warm); }
+.end-buttons { display: flex; gap: 14px; justify-content: center; margin-top: 26px; flex-wrap: wrap; }
+.end-buttons button {
+  font-family: inherit;
+  font-size: 24px;
+  padding: 4px 18px;
+  color: var(--hud-fg);
+  background: #0c1a22;
+  border: 2px solid var(--hud-dim);
+}
+.end-buttons button:hover { color: #020407; background: var(--hud-warm); border-color: var(--hud-warm); }

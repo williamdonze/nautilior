@@ -49,11 +49,15 @@ Les flèches du clavier fonctionnent aussi. Les touches sont lues par position p
 - `src/config/creatures.json` : vitesse, agressivité et dégâts des créatures mutées.
 - `src/story/fragments.json` : les 7 fragments de mémoire (position, texte du souvenir, image).
 - `SEABED` dans `settings.js` : profil du fond (profondeur le long du parcours, canyon).
+- `src/story/endings.json` : textes des deux fins.
 
 ## Sauvegarde
 
 Sauvegarde automatique dans le `localStorage` (retour au port, ventes, achats, dialogues, réveil).
 Pour recommencer une partie : `nautiliar.game.newGame()` dans la console (un menu arrivera en phase 8).
+
+Juste avant le choix final, une sauvegarde à part est créée : depuis l'écran de fin,
+« Revenir devant le portail » permet de voir l'autre fin.
 
 En console : `nautiliar.pixel.setPixelHeight(180)` change la pixelisation à chaud.
 
@@ -74,12 +78,12 @@ src/
 ├── config/        # réglages et données (JSON)
 ├── core/          # jeu (modes port/plongée), renderer pixelisé, shader, clavier, souris, sons, boucle
 ├── submarine/     # modèle, pilotage avec inertie, phare, caméra, bulles, survie (oxygène, coque)
-├── world/         # plongée : fond par zones, épaves, canyon, créatures, objets, ambiance, radiation
+├── world/         # plongée : fond par zones, épaves, canyon, créatures, portail, objets, ambiance, radiation
 ├── claw/          # pince : visée (raycast), IK du bras, machine à états, modèle
 ├── loot/          # objets, raretés, table de loot (JSON), modèles 3D, lueurs, effets de capture, soute
 ├── ui/            # HUD, inventaire, dialogues, panneaux, souvenirs (images pixel), vignettes
 ├── port/          # port : décor, joueur à pied, personnages, prix de la marchande
-├── story/         # état narratif, dialogues, fragments de mémoire, réveil (JSON)
+├── story/         # état narratif, dialogues, fragments de mémoire, réveil, fins (JSON + scripts)
 ├── save/          # état de la partie et sauvegarde localStorage
 docs/
 └── LORE.md        # référence narrative
@@ -93,5 +97,5 @@ docs/
 - [x] Phase 4 : survie
 - [x] Phase 5 : le port et les PNJ
 - [x] Phase 6 : monde, créatures et fragments de mémoire
-- [ ] Phase 7 : la fin
+- [x] Phase 7 : la fin
 - [ ] Phase 8 : polish

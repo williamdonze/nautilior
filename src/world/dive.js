@@ -17,14 +17,15 @@ import { Inventory } from '../ui/inventory.js';
 import { SURVIVAL, SUBMARINE, RADIATION } from '../config/settings.js';
 import { Creatures } from './creatures.js';
 import { zoneAtDepth } from './zones.js';
+import { createPortal } from './portal.js';
 
 /**
  * La plongée : monde sous-marin, sous-marin, pince, survie et leurs effets.
  * Événements vers le jeu : onCapture(pickup) → true si nouvel objet, onDeath(cause), onReturn().
  */
 export class Dive {
-  constructor({ pixel, input, pointer, sound, hud, hold, thumbnails, onCapture, onDeath, onReturn }) {
-    Object.assign(this, { pixel, input, pointer, sound, hud, hold, onCapture, onDeath, onReturn });
+  constructor({ pixel, input, pointer, sound, hud, hold, thumbnails, onCapture, onDeath, onReturn, onPortal, canFacePortal }) {
+    Object.assign(this, { pixel, input, pointer, sound, hud, hold, onCapture, onDeath, onReturn, onPortal, canFacePortal });
 
     const scene = (this.scene = new THREE.Scene());
     this.ambience = createAmbience(scene);
@@ -37,6 +38,9 @@ export class Dive {
     this.snow = createMarineSnow();
     scene.add(this.snow.object);
     this.radiationSource = createRadiationSource(scene);
+    this.portal = createPortal(scene);
+    this.nearPortal = false;
+    this.autopilot = null; // cinématique : le sous-marin est piloté par le script
 
     // --- Sous-marin et caméra
     this.sub = new Submarine(scene, this.decor.colliders);
@@ -130,6 +134,7 @@ export class Dive {
   }
 
   leave() {
+    this.sound.setDrone(0);
     this.inventory.close();
     this.claw.reset();
     this.sound.motorStop();
@@ -168,6 +173,7 @@ export class Dive {
     if (code === 'KeyI' || code === 'Tab') this.inventory.toggle();
     else if (code === 'Escape') this.inventory.close();
     else if (code === 'KeyE' && this.survival.atSurface && !this.claw.busy) this.onReturn();
+    else if (code === 'KeyE' && this.nearPortal && !this.claw.busy) this.onPortal();
   }
 
   /** Sons et effets liés à la survie */
@@ -209,8 +215,10 @@ export class Dive {
 
   update(dt, time) {
     const { sub, survival, follow, hud, scene, sound } = this;
-    survival.update(dt, sub);
-    sub.update(dt, time, survival.dead ? this.noInput : this.input);
+    // Pendant une cinématique, ni l'air ni la coque ne s'épuisent
+    if (!this.autopilot) survival.update(dt, sub);
+    sub.update(dt, time, survival.dead || this.autopilot ? this.noInput : this.input);
+    if (this.autopilot) this.autopilot(dt);
     this.claw.update(dt, time);
     follow.update(dt, sub);
 
@@ -241,7 +249,14 @@ export class Dive {
     this.bubbles.update(dt, this._propPos, Math.abs(sub.throttle) * 22 + 0.5);
 
     hud.update(sub.depth, this.input);
-    hud.setPrompt(survival.atSurface && !survival.dead ? 'Rentrer au port' : '');
+    // Le portail : bourdonnement qui monte à l'approche, et invite quand on est devant
+    const portalDist = sub.position.distanceTo(this.portal.center);
+    this.portal.update(time);
+    sound.setDrone(Math.max(0, 1 - portalDist / 160) * this.portal.open);
+    this.nearPortal = portalDist < 32 && this.portal.open > 0.5 && !survival.dead && !this.autopilot && this.canFacePortal();
+    hud.setPrompt(
+      survival.dead || this.autopilot ? '' : survival.atSurface ? 'Rentrer au port' : this.nearPortal ? 'Faire face au portail' : ''
+    );
 
     // --- Zones et faune
     const zone = zoneAtDepth(sub.depth);
@@ -251,7 +266,7 @@ export class Dive {
     }
     if (!survival.dead) {
       const damage = this.creatures.update(dt, time, sub, zone);
-      if (damage > 0) survival.damage(damage, 'creature');
+      if (damage > 0 && !this.autopilot) survival.damage(damage, 'creature');
     }
 
     // --- Un fragment de mémoire tout proche « appelle »

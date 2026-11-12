@@ -479,4 +479,101 @@ export class Sound {
       o.stop(t + 7.1);
     }
   }
+
+  /**
+   * Bourdonnement continu du portail (0 = silence).
+   * Deux oscillateurs graves légèrement désaccordés, créés à la première utilisation.
+   */
+  setDrone(level) {
+    if (!this.ready) return;
+    if (!this.drone) {
+      const g = this.ctx.createGain();
+      g.gain.value = 0;
+      const f = this.ctx.createBiquadFilter();
+      f.type = 'lowpass';
+      f.frequency.value = 300;
+      const oscs = [55, 55.7, 82.4].map((freq) => {
+        const o = this.ctx.createOscillator();
+        o.type = 'sawtooth';
+        o.frequency.value = freq;
+        o.connect(f);
+        o.start();
+        return o;
+      });
+      f.connect(g).connect(this.muffle);
+      this.drone = { g, oscs };
+    }
+    this.drone.g.gain.setTargetAtTime(level * 0.12, this.ctx.currentTime, 0.3);
+  }
+
+  /** Grondement sourd (fermeture du portail, effondrement) */
+  boom(duration = 3) {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    const o = this.ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(70, t);
+    o.frequency.exponentialRampToValueAtTime(25, t + duration);
+    const g = this.ctx.createGain();
+    this.envelope(g, t, 0.6, 0.05, duration);
+    o.connect(g).connect(this.master);
+    o.start(t);
+    o.stop(t + duration + 0.1);
+    this.noiseBurst(t, 0.4, duration * 0.6, 'lowpass', 200);
+  }
+
+  /** Grand souffle lumineux (traversée) */
+  whoosh(duration = 3) {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noise;
+    src.loop = true;
+    const f = this.ctx.createBiquadFilter();
+    f.type = 'bandpass';
+    f.Q.value = 0.8;
+    f.frequency.setValueAtTime(200, t);
+    f.frequency.exponentialRampToValueAtTime(4000, t + duration);
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.5, t + duration * 0.8);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+    src.connect(f).connect(g).connect(this.master);
+    src.start(t);
+    src.stop(t + duration + 0.05);
+  }
+
+  /** Port vivant : brouhaha de foule et mouettes */
+  crowd(duration = 12) {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noise;
+    src.loop = true;
+    const f = this.ctx.createBiquadFilter();
+    f.type = 'bandpass';
+    f.frequency.value = 700;
+    f.Q.value = 0.6;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.12, t + 2);
+    g.gain.setValueAtTime(0.12, t + duration - 2);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+    src.connect(f).connect(g).connect(this.master);
+    src.start(t);
+    src.stop(t + duration);
+    // Mouettes : glissandos aigus
+    for (let i = 0; i < 6; i++) {
+      const ti = t + 1 + Math.random() * (duration - 2);
+      const o = this.ctx.createOscillator();
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(1400, ti);
+      o.frequency.exponentialRampToValueAtTime(900, ti + 0.35);
+      const gg = this.ctx.createGain();
+      this.envelope(gg, ti, 0.03, 0.02, 0.35);
+      o.connect(gg).connect(this.master);
+      o.start(ti);
+      o.stop(ti + 0.4);
+    }
+  }
 }
