@@ -64,7 +64,7 @@ Les flèches du clavier fonctionnent aussi. Les touches sont lues par position p
 
 Sauvegarde automatique dans le `localStorage` (retour au port, ventes, achats, dialogues, réveil).
 « Nouvelle partie » depuis l'écran titre efface la partie en cours.
-Les réglages (volumes, pixelisation, tramage, compteur d'images/s) sont dans le menu Réglages
+Les réglages (volumes, qualité graphique, compteur d'images/s) sont dans le menu Réglages
 (écran titre ou pause) et conservés à part.
 
 Juste avant le choix final, une sauvegarde à part est créée : depuis l'écran de fin,
