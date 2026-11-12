@@ -21,6 +21,8 @@ npm run preview   # sert le build de production
 | Tourner | Q / D | A / D |
 | Monter | Espace | Espace |
 | Descendre | Maj | Shift |
+| Viser / pince | Souris + clic gauche | Souris + clic gauche |
+| Zoom caméra | Molette | Molette |
 
 Les flèches du clavier fonctionnent aussi. Les touches sont lues par position physique (`event.code`) : AZERTY et QWERTY marchent sans réglage.
 
@@ -29,6 +31,8 @@ Les flèches du clavier fonctionnent aussi. Les touches sont lues par position p
 - `src/config/settings.js` : résolution de la pixelisation (`RENDER.PIXEL_HEIGHT`), dithering, physique du sous-marin, caméra, relief, densité du décor.
 - `src/config/palette.json` : palette de couleurs limitée appliquée en post-processing.
 - `src/config/depthAmbience.json` : couleur et densité du brouillard, lumière selon la profondeur.
+- `CLAW` dans `settings.js` : portée, vitesses du bras, effet du poids.
+- `src/loot/items.json` : objets ramassables (nom, description, poids, forme, fréquence).
 
 En console : `nautiliar.pixel.setPixelHeight(180)` change la pixelisation à chaud.
 
@@ -38,11 +42,13 @@ En console : `nautiliar.pixel.setPixelHeight(180)` change la pixelisation à cha
 src/
 ├── main.js        # assemblage de la scène et boucle principale
 ├── config/        # réglages et données (JSON)
-├── core/          # renderer pixelisé, shader palette/dithering, inputs, boucle
+├── core/          # renderer pixelisé, shader palette/dithering, clavier, souris, sons, boucle
 ├── submarine/     # modèle, pilotage avec inertie, phare, caméra, bulles
 ├── world/         # bruit, fond marin, rochers, algues, neige marine, ambiance
+├── claw/          # pince : visée (raycast), IK du bras, machine à états, modèle
+├── loot/          # objets (JSON), modèles 3D, soute
 ├── ui/            # HUD (HTML/CSS)
-├── claw/ loot/ port/ story/ save/   # phases suivantes
+├── port/ story/ save/   # phases suivantes
 docs/
 └── LORE.md        # référence narrative
 ```
@@ -50,7 +56,7 @@ docs/
 ## Avancement
 
 - [x] Phase 1 : bases (rendu pixelisé, fond marin, sous-marin pilotable, caméra, HUD profondeur)
-- [ ] Phase 2 : la pince
+- [x] Phase 2 : la pince
 - [ ] Phase 3 : loot et raretés
 - [ ] Phase 4 : survie
 - [ ] Phase 5 : le port et les PNJ

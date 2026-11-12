@@ -1,0 +1,59 @@
+{
+  "_comment": "Objets ramassables. Phase 2 : nom, description, poids (kg), forme 3D, couleur, fréquence d'apparition. La phase 3 ajoutera rareté, prix et profondeur minimale.",
+  "items": [
+    {
+      "id": "galet_granit",
+      "name": "Galet de granit rose",
+      "description": "Poli par des siècles de courant. Il est tiède dans la main.",
+      "weight": 4,
+      "shape": "pebble",
+      "color": "#8a6f68",
+      "spawnWeight": 30
+    },
+    {
+      "id": "bouteille_cidre",
+      "name": "Bouteille de cidre",
+      "description": "Encore bouchée. Quelque chose roule à l'intérieur.",
+      "weight": 1,
+      "shape": "bottle",
+      "color": "#2f4a33",
+      "spawnWeight": 22
+    },
+    {
+      "id": "flotteur_filet",
+      "name": "Flotteur de filet",
+      "description": "Liège et ficelle. Le filet qui le tenait a disparu.",
+      "weight": 1,
+      "shape": "float",
+      "color": "#b07a47",
+      "spawnWeight": 22
+    },
+    {
+      "id": "assiette_faience",
+      "name": "Assiette de faïence",
+      "description": "Un motif bleu de Quimper. Personne n'a fini son repas.",
+      "weight": 1,
+      "shape": "plate",
+      "color": "#ccd8cc",
+      "spawnWeight": 14
+    },
+    {
+      "id": "casier_homard",
+      "name": "Casier à homard",
+      "description": "La porte est ouverte. Le casier est vide depuis longtemps.",
+      "weight": 14,
+      "shape": "trap",
+      "color": "#63321b",
+      "spawnWeight": 10
+    },
+    {
+      "id": "ancre_doris",
+      "name": "Ancre de doris",
+      "description": "Trop lourde pour une si petite barque. La chaîne a été tranchée net.",
+      "weight": 60,
+      "shape": "anchor",
+      "color": "#3f4446",
+      "spawnWeight": 5
+    }
+  ]
+}

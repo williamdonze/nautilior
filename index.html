@@ -21,10 +21,24 @@
         <span class="value"><span id="depth-value">0000</span><span class="unit">m</span></span>
       </div>
       <div class="depth-gauge"><div id="depth-marker"></div></div>
+      <div class="cargo">
+        <span class="label">SOUTE</span>
+        <span id="cargo-count">00</span>
+        <span id="cargo-weight">0 kg</span>
+      </div>
     </div>
 
+    <!-- Réticule de visée de la pince -->
+    <div id="reticle">
+      <span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span>
+      <span id="reticle-label"></span>
+    </div>
+
+    <!-- Message de capture -->
+    <div id="toast"><div id="toast-name"></div><div id="toast-desc"></div></div>
+
     <div id="hint">
-      ZQSD / WASD : piloter &nbsp;·&nbsp; ESPACE : monter &nbsp;·&nbsp; MAJ : descendre
+      ZQSD / WASD : piloter &nbsp;·&nbsp; ESPACE : monter &nbsp;·&nbsp; MAJ : descendre &nbsp;·&nbsp; CLIC : pince
     </div>
 
     <!-- Fondu au noir (ouverture) -->

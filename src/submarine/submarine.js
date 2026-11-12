@@ -32,7 +32,7 @@ export class Submarine {
     this.pitch = 0;
 
     // --- Phare : principale source de lumière en profondeur
-    this.spot = new THREE.SpotLight('#efe3bb', 200, 90, 0.5, 0.5, 1.0);
+    this.spot = new THREE.SpotLight('#efe3bb', 55, 90, 0.5, 0.5, 0.8);
     this.spot.position.copy(model.lampPosition);
     this.spotTarget = new THREE.Object3D();
     this.spotTarget.position.set(0, -9, 24); // incliné vers le fond

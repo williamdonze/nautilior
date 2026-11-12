@@ -64,11 +64,41 @@ export const SUBMARINE = {
 };
 
 export const CAMERA = {
-  DISTANCE: 11,
-  HEIGHT: 6,
+  DISTANCE: 11, // distance par défaut (molette pour zoomer)
+  ZOOM_MIN: 0.65, // facteur de zoom (×distance et ×hauteur)
+  ZOOM_MAX: 1.4,
+  HEIGHT: 6.5,
+  SIDE: 3.2, // décalage latéral (vue par-dessus l'épaule) : on voit la pince travailler devant le nez
   LOOK_AHEAD: 10,
   LOOK_DOWN: 3, // vise légèrement sous le sous-marin pour voir le fond éclairé
   POS_SMOOTH: 3.2, // plus grand = suit plus vite
   LOOK_SMOOTH: 6,
   SPEED_FOV_BOOST: 6, // degrés de FOV en plus à pleine vitesse
+};
+
+/* ---------- Pince ---------- */
+export const CLAW = {
+  RANGE: 12, // portée maximale (m), mesurée depuis l'épaule du bras
+  // Points dans le repère du sous-marin (avant = +Z)
+  ROOT: { x: 0, y: -0.95, z: 2.3 }, // épaule, sous le nez
+  REST: { x: 0, y: -1.55, z: 3.5 }, // poignet replié au repos
+  POLE: { x: 0, y: -0.5, z: -1 }, // le coude plie vers le bas / l'arrière
+  SEGMENT_MIN: 0.85, // longueur minimale d'un segment (bras replié)
+  SLEEVE_LENGTH: 1.1, // gaine fixe ; au-delà, la tige télescopique sort
+  GRAB_OFFSET: 0.95, // distance poignet → centre de la prise
+  EXTEND_SPEED: 17,
+  EXTEND_ACCEL: 45,
+  RETRACT_SPEED: 10,
+  RETRACT_ACCEL: 30,
+  WEIGHT_REF: 25, // kg : à ce poids, le retour est deux fois plus lent
+  CLOSE_TIME: 0.22, // fermeture des mâchoires
+  HOLD_TIME: 0.32, // petite pause après la prise
+  STOW_TIME: 0.45, // rangement dans la soute
+};
+
+/* ---------- Objets posés au fond (test de la pince, enrichi en phase 3) ---------- */
+export const PICKUPS = {
+  COUNT: 90,
+  NEAR_SPAWN: 28, // nombre d'objets placés près du point de départ
+  NEAR_RADIUS: 60,
 };
