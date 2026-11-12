@@ -75,7 +75,8 @@ export class Claw {
    */
   fire(aim) {
     if (this.busy) return false;
-    if (aim.pickup && aim.inRange && this.hold.full) {
+    // Les fragments de mémoire ne prennent pas de place dans la soute
+    if (aim.pickup && aim.inRange && this.hold.full && !aim.pickup.item.fragment) {
       // Soute pleine : la pince refuse de partir
       this.sound.deny();
       return 'full';
@@ -259,7 +260,7 @@ export class Claw {
     this.carried = null;
     this.state = State.IDLE;
     this.pickups.dispose(pickup);
-    if (!this.hold.add(pickup.item)) {
+    if (!pickup.item.fragment && !this.hold.add(pickup.item)) {
       // Sécurité : soute remplie entre-temps → l'objet retombe
       this.pickups.drop(pickup.item, hatch);
       this.sound.deny();

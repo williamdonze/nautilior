@@ -55,6 +55,7 @@ export class Submarine {
     this._forward = new THREE.Vector3();
     this._side = new THREE.Vector3();
     this._tmp = new THREE.Vector3();
+    this._prev = new THREE.Vector3();
   }
 
   /** Direction avant dans le plan horizontal */
@@ -75,6 +76,7 @@ export class Submarine {
   /** Remet le sous-marin à un point donné, immobile */
   teleport(x, y, z, yaw) {
     this.position.set(x, y, z);
+    this._prev.copy(this.position);
     this.velocity.set(0, 0, 0);
     this.yaw = yaw;
     this.yawVelocity = 0;
@@ -109,6 +111,7 @@ export class Submarine {
     this.velocity.y = vy;
 
     // --- Intégration
+    this._prev.copy(this.position);
     this.position.addScaledVector(this.velocity, dt);
 
     this.collide();
@@ -131,20 +134,36 @@ export class Submarine {
     const S = SUBMARINE;
     const p = this.position;
     const B = WORLD.BOUNDS;
-
     // Fond : on teste le centre, l'avant et l'arrière de la coque
-    const fwd = this.forward;
-    let floor = getFloorHeight(p.x, p.z);
-    floor = Math.max(floor, getFloorHeight(p.x + fwd.x * 3.5, p.z + fwd.z * 3.5));
-    floor = Math.max(floor, getFloorHeight(p.x - fwd.x * 3.5, p.z - fwd.z * 3.5));
-    const minY = floor + S.HULL_RADIUS;
+    const floorAt = (x, z) => {
+      const fwd = this.forward;
+      return Math.max(
+        getFloorHeight(x, z),
+        getFloorHeight(x + fwd.x * 3.5, z + fwd.z * 3.5),
+        getFloorHeight(x - fwd.x * 3.5, z - fwd.z * 3.5)
+      );
+    };
+    let minY = floorAt(p.x, p.z) + S.HULL_RADIUS;
     if (p.y < minY) {
-      p.y = minY;
-      // Vitesse de choc : verticale + une part de l'horizontale (on racle le fond)
-      if (this.velocity.y < 0) this.onImpact?.(-this.velocity.y + this.speed * 0.3);
-      if (this.velocity.y < 0) this.velocity.y *= -0.25; // petit rebond mou
-      this.velocity.x *= 0.96;
-      this.velocity.z *= 0.96;
+      const moved = Math.hypot(p.x - this._prev.x, p.z - this._prev.z);
+      const rise = minY - p.y;
+      if (moved > 1e-4 && rise / moved > 1.5) {
+        // Paroi trop raide (canyon, épave) : on bloque l'avance au lieu de grimper
+        this.onImpact?.(this.speed);
+        p.x = this._prev.x;
+        p.z = this._prev.z;
+        this.velocity.x *= -0.25;
+        this.velocity.z *= -0.25;
+        minY = floorAt(p.x, p.z) + S.HULL_RADIUS;
+      }
+      if (p.y < minY) {
+        p.y = minY;
+        // Vitesse de choc : verticale + une part de l'horizontale (on racle le fond)
+        if (this.velocity.y < 0) this.onImpact?.(-this.velocity.y + this.speed * 0.3);
+        if (this.velocity.y < 0) this.velocity.y *= -0.25; // petit rebond mou
+        this.velocity.x *= 0.96;
+        this.velocity.z *= 0.96;
+      }
     }
 
     // Surface

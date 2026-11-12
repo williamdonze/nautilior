@@ -276,6 +276,124 @@ const SHAPES = {
     g.rotation.z = 0.35;
     return g;
   },
+
+  porthole(main, dark) {
+    const g = new THREE.Group();
+    const ring = mesh(new THREE.TorusGeometry(0.3, 0.08, 4, 10), main);
+    g.add(ring);
+    const glass = mesh(new THREE.CircleGeometry(0.26, 10), new THREE.MeshLambertMaterial({ color: '#17323b', side: THREE.DoubleSide }));
+    g.add(glass);
+    for (let i = 0; i < 4; i++) {
+      const bolt = mesh(new THREE.BoxGeometry(0.08, 0.08, 0.08), dark);
+      const a = (i / 4) * Math.PI * 2 + 0.4;
+      bolt.position.set(Math.cos(a) * 0.38, Math.sin(a) * 0.38, 0);
+      g.add(bolt);
+    }
+    g.userData.extraMaterials = [glass.material];
+    g.rotation.x = -Math.PI / 2 + 0.2;
+    return g;
+  },
+
+  tile(main) {
+    const g = new THREE.Group();
+    g.add(mesh(new THREE.BoxGeometry(0.22, 0.06, 0.22), main));
+    return g;
+  },
+
+  wheel(main, dark) {
+    const g = new THREE.Group();
+    g.add(mesh(new THREE.TorusGeometry(0.45, 0.05, 4, 10), main));
+    g.add(mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.12, 6).rotateX(Math.PI / 2), dark));
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      const spoke = mesh(new THREE.BoxGeometry(0.04, 0.75, 0.04), main);
+      spoke.position.set(Math.cos(a) * 0.3, Math.sin(a) * 0.3, 0);
+      spoke.rotation.z = a - Math.PI / 2;
+      g.add(spoke);
+    }
+    g.rotation.x = -Math.PI / 2 + 0.3;
+    return g;
+  },
+
+  statue(main, dark) {
+    const g = new THREE.Group();
+    const base = mesh(new THREE.BoxGeometry(0.3, 0.1, 0.3), dark);
+    g.add(base);
+    const body = mesh(new THREE.CylinderGeometry(0.1, 0.16, 0.55, 6), main);
+    body.position.y = 0.32;
+    g.add(body);
+    const head = mesh(new THREE.IcosahedronGeometry(0.09, 0), main);
+    head.position.y = 0.67;
+    g.add(head);
+    for (const s of [-1, 1]) {
+      const arm = mesh(new THREE.BoxGeometry(0.05, 0.25, 0.06), main);
+      arm.position.set(s * 0.1, 0.62, 0.02);
+      arm.rotation.z = s * 0.5;
+      g.add(arm);
+    }
+    g.rotation.z = 1.3;
+    return g;
+  },
+
+  tear(main) {
+    const g = new THREE.Group();
+    const drop = mesh(new THREE.ConeGeometry(0.12, 0.3, 6), main);
+    drop.position.y = 0.15;
+    g.add(drop);
+    const bottom = mesh(new THREE.SphereGeometry(0.12, 6, 4), main);
+    g.add(bottom);
+    g.rotation.z = 1.2;
+    return g;
+  },
+
+  /* --- Objets-souvenirs (fragments de mémoire) --- */
+  keepsake_photo(main) {
+    const g = new THREE.Group();
+    const card = mesh(new THREE.BoxGeometry(0.42, 0.02, 0.3), main);
+    g.add(card);
+    const picture = mesh(new THREE.BoxGeometry(0.34, 0.025, 0.22), new THREE.MeshLambertMaterial({ color: '#7d6f48', flatShading: true }));
+    g.add(picture);
+    g.userData.extraMaterials = [picture.material];
+    g.rotation.x = 0.15;
+    return g;
+  },
+  keepsake_ring(main) {
+    const g = new THREE.Group();
+    const ring = mesh(new THREE.TorusGeometry(0.12, 0.035, 4, 10), new THREE.MeshLambertMaterial({ color: '#e0b050', flatShading: true }));
+    ring.rotation.x = Math.PI / 2 - 0.3;
+    g.add(ring);
+    g.userData.extraMaterials = [ring.material];
+    return g;
+  },
+  keepsake_tag(main, dark) {
+    return SHAPES.medal(main, dark);
+  },
+  keepsake_logbook(main, dark) {
+    const g = new THREE.Group();
+    g.add(mesh(new THREE.BoxGeometry(0.4, 0.1, 0.3), dark));
+    const pages = mesh(new THREE.BoxGeometry(0.37, 0.08, 0.27), main);
+    pages.position.set(0.01, 0.01, 0);
+    g.add(pages);
+    return g;
+  },
+  keepsake_newspaper(main) {
+    const g = new THREE.Group();
+    const paper = mesh(new THREE.BoxGeometry(0.5, 0.02, 0.36), main);
+    paper.rotation.y = 0.3;
+    g.add(paper);
+    return g;
+  },
+  keepsake_watch(main, dark) {
+    return SHAPES.watch(main, dark);
+  },
+  keepsake_memorial(main, dark) {
+    const g = new THREE.Group();
+    const slab = mesh(new THREE.BoxGeometry(0.8, 0.12, 0.55), new THREE.MeshLambertMaterial({ color: '#6b6e6c', flatShading: true }));
+    g.add(slab);
+    g.userData.extraMaterials = [slab.material];
+    g.rotation.z = 0.15;
+    return g;
+  },
 };
 
 /**

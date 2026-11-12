@@ -1,0 +1,25 @@
+{
+  "_comment": "Zones de profondeur. zMin/zMax = étendue le long de l'axe Z (le monde descend vers -Z). pickups = nombre d'objets posés. fishSchools = bancs de poissons normaux autour du joueur. mutants = nombre max de créatures mutées actives autour du joueur, par type.",
+  "zones": [
+    {
+      "id": "recif", "name": "Le Récif", "minDepth": 0, "maxDepth": 150,
+      "zMin": -175, "zMax": 150, "pickups": 70,
+      "fishSchools": 6, "mutants": {}
+    },
+    {
+      "id": "epaves", "name": "Les Épaves", "minDepth": 150, "maxDepth": 500,
+      "zMin": -545, "zMax": -175, "pickups": 90,
+      "fishSchools": 2, "mutants": { "eel": 2 }
+    },
+    {
+      "id": "canyon", "name": "Le Canyon", "minDepth": 500, "maxDepth": 1000,
+      "zMin": -860, "zMax": -545, "pickups": 70,
+      "fishSchools": 0, "mutants": { "eel": 2, "lantern": 3 }
+    },
+    {
+      "id": "abysses", "name": "Les Abysses", "minDepth": 1000, "maxDepth": 99999,
+      "zMin": -1130, "zMax": -860, "pickups": 55,
+      "fishSchools": 0, "mutants": { "eel": 2, "lantern": 3, "jelly": 4 }
+    }
+  ]
+}

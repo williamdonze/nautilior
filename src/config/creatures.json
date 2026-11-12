@@ -1,0 +1,42 @@
+{
+  "_comment": "Créatures mutées. speed = nage normale, chargeSpeed = attaque (m/s), aggroRadius = distance à laquelle elles repèrent le sous-marin, damage = dégâts à la morsure (ou par seconde au contact pour la méduse), retreatTime = fuite après une morsure (s), cooldown = repos avant de recharger (s).",
+  "fish": {
+    "perSchool": 18,
+    "speed": 2.6,
+    "fleeSpeed": 7,
+    "fleeRadius": 10
+  },
+  "mutants": {
+    "eel": {
+      "name": "Anguille mutée",
+      "speed": 3,
+      "chargeSpeed": 12,
+      "aggroRadius": 26,
+      "damage": 9,
+      "biteRadius": 3.4,
+      "retreatTime": 3.5,
+      "cooldown": 3
+    },
+    "lantern": {
+      "name": "Poisson-lanterne",
+      "speed": 2,
+      "chargeSpeed": 9,
+      "aggroRadius": 34,
+      "damage": 15,
+      "biteRadius": 4.6,
+      "retreatTime": 4,
+      "cooldown": 4
+    },
+    "jelly": {
+      "name": "Méduse irradiée",
+      "speed": 0.8,
+      "chargeSpeed": 1.6,
+      "aggroRadius": 16,
+      "damage": 7,
+      "biteRadius": 4.2,
+      "retreatTime": 0,
+      "cooldown": 0,
+      "contact": true
+    }
+  }
+}

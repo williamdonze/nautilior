@@ -400,4 +400,83 @@ export class Sound {
     }
     setTimeout(() => this.clank(1), 380);
   }
+
+  /** Cri grave et distordu d'une créature qui charge */
+  growl(volume = 1) {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    const dur = 1.1;
+    const o = this.ctx.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(70, t);
+    o.frequency.linearRampToValueAtTime(45, t + dur);
+    // Trémolo irrégulier
+    const lfo = this.ctx.createOscillator();
+    lfo.frequency.value = 13;
+    const lfoGain = this.ctx.createGain();
+    lfoGain.gain.value = 18;
+    lfo.connect(lfoGain).connect(o.frequency);
+    const f = this.ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.value = 500;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.22 * volume, t + 0.15);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(f).connect(g).connect(this.muffle);
+    o.start(t);
+    lfo.start(t);
+    o.stop(t + dur + 0.05);
+    lfo.stop(t + dur + 0.05);
+  }
+
+  /** Morsure : craquement et choc */
+  bite() {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    this.noiseBurst(t, 0.5, 0.12, 'bandpass', 900, 1.5);
+    this.noiseBurst(t + 0.06, 0.4, 0.1, 'bandpass', 1400, 2);
+    this.thunk(60);
+    this.creak(1.2);
+  }
+
+  /** Appel d'un fragment de mémoire tout proche : accord lointain, presque une voix */
+  whisper(intensity = 0.5) {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    for (const [freq, delay] of [[392, 0], [466.16, 0.4], [587.33, 0.8]]) {
+      const o = this.ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = freq;
+      o.detune.value = (Math.random() - 0.5) * 20;
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t + delay);
+      g.gain.exponentialRampToValueAtTime(0.03 * intensity + 0.001, t + delay + 0.6);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + delay + 2.2);
+      o.connect(g).connect(this.muffle);
+      o.start(t + delay);
+      o.stop(t + delay + 2.3);
+    }
+  }
+
+  /** Ouverture d'un souvenir : nappe douce et mélancolique */
+  memory() {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    for (const freq of [220, 261.63, 329.63, 392]) {
+      const o = this.ctx.createOscillator();
+      o.type = 'triangle';
+      o.frequency.value = freq;
+      const f = this.ctx.createBiquadFilter();
+      f.type = 'lowpass';
+      f.frequency.value = 900;
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.035, t + 1.5);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 7);
+      o.connect(f).connect(g).connect(this.master);
+      o.start(t);
+      o.stop(t + 7.1);
+    }
+  }
 }

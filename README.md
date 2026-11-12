@@ -45,6 +45,10 @@ Les flèches du clavier fonctionnent aussi. Les touches sont lues par position p
 - `src/story/dialogues.json` : dialogues des villageois (conditions selon l'état narratif).
 - `src/config/upgrades.json` : améliorations du mécano (niveaux, coûts, effets), dont la coque abyssale.
 - `src/port/layout.json` : disposition du port (bâtiments, personnages, points d'interaction).
+- `src/config/zones.json` : les 4 zones (profondeurs, objets, poissons et créatures par zone).
+- `src/config/creatures.json` : vitesse, agressivité et dégâts des créatures mutées.
+- `src/story/fragments.json` : les 7 fragments de mémoire (position, texte du souvenir, image).
+- `SEABED` dans `settings.js` : profil du fond (profondeur le long du parcours, canyon).
 
 ## Sauvegarde
 
@@ -52,6 +56,15 @@ Sauvegarde automatique dans le `localStorage` (retour au port, ventes, achats, d
 Pour recommencer une partie : `nautiliar.game.newGame()` dans la console (un menu arrivera en phase 8).
 
 En console : `nautiliar.pixel.setPixelHeight(180)` change la pixelisation à chaud.
+
+## Le monde
+
+| Zone | Profondeur | On y trouve |
+| --- | --- | --- |
+| Le Récif | 0 – 150 m | algues, bancs de poissons, objets communs |
+| Les Épaves | 150 – 500 m | chalutiers naufragés, anguilles mutées |
+| Le Canyon | 500 – 1000 m | parois, aiguilles rocheuses, squelette de baleine, poissons-lanternes |
+| Les Abysses | > 1000 m | tiges luminescentes, méduses irradiées, le portail |
 
 ## Structure
 
@@ -61,12 +74,12 @@ src/
 ├── config/        # réglages et données (JSON)
 ├── core/          # jeu (modes port/plongée), renderer pixelisé, shader, clavier, souris, sons, boucle
 ├── submarine/     # modèle, pilotage avec inertie, phare, caméra, bulles, survie (oxygène, coque)
-├── world/         # plongée : fond marin, décor, objets, neige marine, ambiance, radiation
+├── world/         # plongée : fond par zones, épaves, canyon, créatures, objets, ambiance, radiation
 ├── claw/          # pince : visée (raycast), IK du bras, machine à états, modèle
 ├── loot/          # objets, raretés, table de loot (JSON), modèles 3D, lueurs, effets de capture, soute
-├── ui/            # HUD, inventaire, dialogues, panneaux du port, vignettes (HTML/CSS)
+├── ui/            # HUD, inventaire, dialogues, panneaux, souvenirs (images pixel), vignettes
 ├── port/          # port : décor, joueur à pied, personnages, prix de la marchande
-├── story/         # état narratif, dialogues, réveil (JSON)
+├── story/         # état narratif, dialogues, fragments de mémoire, réveil (JSON)
 ├── save/          # état de la partie et sauvegarde localStorage
 docs/
 └── LORE.md        # référence narrative
@@ -79,6 +92,6 @@ docs/
 - [x] Phase 3 : loot et raretés
 - [x] Phase 4 : survie
 - [x] Phase 5 : le port et les PNJ
-- [ ] Phase 6 : monde, créatures et fragments de mémoire
+- [x] Phase 6 : monde, créatures et fragments de mémoire
 - [ ] Phase 7 : la fin
 - [ ] Phase 8 : polish

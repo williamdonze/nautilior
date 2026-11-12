@@ -15,6 +15,8 @@ import { Aim } from '../claw/aim.js';
 import { CaptureFx } from '../loot/captureFx.js';
 import { Inventory } from '../ui/inventory.js';
 import { SURVIVAL, SUBMARINE, RADIATION } from '../config/settings.js';
+import { Creatures } from './creatures.js';
+import { zoneAtDepth } from './zones.js';
 
 /**
  * La plongée : monde sous-marin, sous-marin, pince, survie et leurs effets.
@@ -69,6 +71,20 @@ export class Dive {
       },
     });
 
+    // --- Faune
+    this.creatures = new Creatures(scene, {
+      growl: () => sound.growl(),
+      bite: (mutant, dir) => {
+        sound.bite();
+        this.follow.shake(0.6);
+        hud.damageFlash(1);
+        this.bubbles.burst(this.sub.position, 30, 4);
+        this.sub.velocity.addScaledVector(dir, 6); // le choc repousse le sous-marin
+      },
+    });
+    this.zoneId = null;
+    this.whisperTimer = 0;
+
     // --- Survie
     this.survival = new Survival();
     this.survival.onDeath = (cause) => {
@@ -100,8 +116,10 @@ export class Dive {
   }
 
   /** Début d'une plongée : on part du quai, juste sous la surface */
-  enter(seed) {
-    this.pickups.reset(seed);
+  enter(seed, foundFragments = []) {
+    this.pickups.reset(seed, foundFragments);
+    this.creatures.clear();
+    this.zoneId = null;
     this.claw.reset();
     this.sub.applyLight(stats);
     this.survival.reset(); // la coque a été réparée au port
@@ -190,7 +208,7 @@ export class Dive {
   }
 
   update(dt, time) {
-    const { sub, survival, follow, hud, scene } = this;
+    const { sub, survival, follow, hud, scene, sound } = this;
     survival.update(dt, sub);
     sub.update(dt, time, survival.dead ? this.noInput : this.input);
     this.claw.update(dt, time);
@@ -198,7 +216,7 @@ export class Dive {
 
     this.aim.update(this.pointer, this.claw.root);
     this.pickups.setHighlighted(!this.claw.busy && this.aim.inRange ? this.aim.pickup : null);
-    this.pickups.update(time);
+    this.pickups.update(time, follow.camera.position);
     hud.updateReticle(this.pointer, this.aim, this.claw.busy, this.hold.full);
     this.captureFx.update(dt, follow.camera);
 
@@ -224,5 +242,27 @@ export class Dive {
 
     hud.update(sub.depth, this.input);
     hud.setPrompt(survival.atSurface && !survival.dead ? 'Rentrer au port' : '');
+
+    // --- Zones et faune
+    const zone = zoneAtDepth(sub.depth);
+    if (zone.id !== this.zoneId) {
+      this.zoneId = zone.id;
+      hud.showZone(zone);
+    }
+    if (!survival.dead) {
+      const damage = this.creatures.update(dt, time, sub, zone);
+      if (damage > 0) survival.damage(damage, 'creature');
+    }
+
+    // --- Un fragment de mémoire tout proche « appelle »
+    this.whisperTimer -= dt;
+    if (this.whisperTimer <= 0) {
+      let nearest = Infinity;
+      for (const f of this.pickups.fragments) nearest = Math.min(nearest, f.object.position.distanceTo(sub.position));
+      if (nearest < 45) {
+        sound.whisper(1 - nearest / 45);
+        this.whisperTimer = 2 + nearest / 8;
+      } else this.whisperTimer = 1;
+    }
   }
 }

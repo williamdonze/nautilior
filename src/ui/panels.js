@@ -1,6 +1,8 @@
 import { getRarity, ITEMS, RARITIES } from '../loot/loot.js';
 import { sellPrice } from '../port/market.js';
 import { UPGRADES, stats } from '../submarine/stats.js';
+import fragmentsData from '../story/fragments.json';
+import { storyState } from '../story/state.js';
 
 /**
  * Panneaux du port : boutique de la marchande, atelier du mécano, collection de la criée.
@@ -28,6 +30,7 @@ export class Panels {
       else if (act === 'sell') this.sell(Number(arg));
       else if (act === 'sellAll') this.sellAll();
       else if (act === 'buy') this.buy(arg);
+      else if (act === 'memory') this.onMemory?.(arg);
       else if (act === 'select') {
         this.selected = arg;
         this.render();
@@ -193,12 +196,25 @@ export class Panels {
       const n = all.filter((i) => found.has(i.id)).length;
       return `<span style="color:${r.color}">${n}/${all.length}</span>`;
     }).join(' · ');
+    // Souvenirs : on peut les relire
+    const memories = fragmentsData.fragments
+      .map((f, i) => {
+        const known = storyState.fragments.includes(f.id);
+        return known
+          ? `<button class="memory-btn" data-act="memory" data-arg="${f.id}">${i + 1}. ${f.name}</button>`
+          : `<span class="memory-btn locked">${i + 1}. ???</span>`;
+      })
+      .join('');
     return `${this.header('L\'ANCIENNE CRIÉE', `${found.size}/${ITEMS.length} · ${byRarity}`)}
       <div class="panel-body">
         <p class="panel-quote">Sur les étals vides, tu ranges ce que la mer t'a rendu.</p>
         <div class="inv-body collection">
           <div id="inv-grid" class="collection-grid">${cells}</div>
           <div id="inv-details">${details}</div>
+        </div>
+        <div class="memories">
+          <div class="memories-title">SOUVENIRS · ${storyState.fragments.length}/${fragmentsData.fragments.length}</div>
+          <div class="memories-list">${memories}</div>
         </div>
       </div>`;
   }

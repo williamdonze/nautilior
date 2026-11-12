@@ -63,7 +63,20 @@ export class FollowCamera {
 
     // Jamais sous le fond ni au-dessus de la surface
     const p = this.base;
-    p.y = Math.max(p.y, getFloorHeight(p.x, p.z) + 1.2);
+    // On regarde le fond autour de la caméra (pas seulement dessous) : sur les pentes raides,
+    // le relief voisin viendrait sinon se coller à l'objectif
+    let around = getFloorHeight(p.x, p.z);
+    for (const [ox, oz] of [[3, 0], [-3, 0], [0, 3], [0, -3]]) around = Math.max(around, getFloorHeight(p.x + ox, p.z + oz));
+    p.y = Math.max(p.y, around + 2);
+    // Le relief ne doit pas couper la vue vers le sous-marin (pentes du canyon) :
+    // on vérifie quelques points sur la ligne sous-marin → caméra et on remonte si besoin
+    const s = sub.position;
+    for (const t of [0.35, 0.7]) {
+      const x = s.x + (p.x - s.x) * t;
+      const z = s.z + (p.z - s.z) * t;
+      const needed = s.y + (getFloorHeight(x, z) + 1.5 - s.y) / t;
+      if (p.y < needed) p.y += (needed - p.y) * damp(8, dt);
+    }
     p.y = Math.min(p.y, WORLD.SURFACE_Y - 0.4);
 
     // Secousse qui s'amortit rapidement

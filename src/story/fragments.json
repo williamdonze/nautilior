@@ -1,0 +1,75 @@
+{
+  "_comment": "Fragments de mémoire : objets personnels du joueur venus du vrai monde. Positions fixes (x, z) ; ils ne réapparaissent pas une fois trouvés. 'art' = image pixel dessinée dans ui/memoryArt.js. 'lines' = le souvenir, affiché ligne par ligne.",
+  "fragments": [
+    {
+      "id": "photo", "name": "Photographie délavée", "x": 38, "z": -70, "art": "photo",
+      "description": "Le papier a gondolé. Deux silhouettes sur un quai, au soleil.",
+      "title": "Un quai plein de monde",
+      "lines": [
+        "Le quai de Port-Kerys, un dimanche. Il y a du monde partout.",
+        "Des enfants courent entre les casiers. Quelqu'un rit à côté de toi.",
+        "C'est le même quai. Les mêmes maisons. Mais les volets sont ouverts."
+      ]
+    },
+    {
+      "id": "alliance", "name": "Alliance", "x": -72, "z": -135, "art": "ring",
+      "description": "Un anneau d'or tout simple. Il glisse à ton doigt comme s'il l'attendait.",
+      "title": "Une promesse",
+      "lines": [
+        "Une main serre la tienne, sur le pas d'une porte.",
+        "« Reviens avant la nuit. »",
+        "Tu avais promis. Tu promets toujours."
+      ]
+    },
+    {
+      "id": "plaque", "name": "Plaque de plongée", "x": 24, "z": -262, "art": "tag",
+      "description": "Une plaque d'identité gravée à ton nom. Tu le lis, et il ne te dit rien.",
+      "title": "Le jour de la plongée",
+      "lines": [
+        "Le bateau tangue. Quelqu'un vérifie tes bouteilles, deux fois.",
+        "« Pas plus de quarante mètres. Tu m'entends ? Pas plus. »",
+        "Tu as souri. Tu as basculé en arrière, dans l'eau grise."
+      ]
+    },
+    {
+      "id": "carnet", "name": "Carnet de bord", "x": -46, "z": -462, "art": "logbook",
+      "description": "Les pages ont collé entre elles. La dernière se lit encore.",
+      "title": "La dernière page",
+      "lines": [
+        "« 14 octobre 1984. Mer calme. Descente à 15 h 50. »",
+        "Ton écriture. Puis, en dessous, une autre main, qui tremble :",
+        "« 17 h. Toujours pas remonté. »"
+      ]
+    },
+    {
+      "id": "journal", "name": "Coupure de journal", "x": -6, "z": -650, "art": "newspaper", "inCanyon": true,
+      "description": "Du papier journal, miraculeusement lisible. Une photo en noir et blanc.",
+      "title": "Les recherches",
+      "lines": [
+        "« Disparition en mer au large de Port-Kerys. »",
+        "Des bateaux quadrillent la baie pendant des jours. Sur le quai, on t'appelle.",
+        "« Les recherches sont suspendues. » Ils ont écrit ton nom en entier."
+      ]
+    },
+    {
+      "id": "montre", "name": "Montre de plongée", "x": 0, "z": -805, "art": "watch", "inCanyon": true,
+      "description": "Le verre est fendu. Les aiguilles ne bougent plus.",
+      "title": "4 h 12",
+      "lines": [
+        "L'eau est froide. Le détendeur siffle, puis se tait.",
+        "Tu tires sur le tuyau. Rien. Tu regardes ta montre : 4 h 12.",
+        "Tu ne l'as plus jamais regardée après."
+      ]
+    },
+    {
+      "id": "stele", "name": "Plaque commémorative", "x": 34, "z": -985, "art": "memorial",
+      "description": "Une plaque de granit arrachée à un quai. « À nos disparus en mer. »",
+      "title": "À nos disparus",
+      "lines": [
+        "Tu as déjà lu cette plaque, enfant, sur le vrai quai. Des fleurs fanées dessous.",
+        "Trois noms, gravés il y a longtemps : un médecin, un mécanicien, une commerçante.",
+        "Ils sont morts bien avant ta naissance. Ils t'attendent pourtant, là-haut."
+      ]
+    }
+  ]
+}

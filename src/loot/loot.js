@@ -11,7 +11,10 @@ export const ITEMS = itemsData.items;
 const rarityById = new Map(RARITIES.map((r) => [r.id, r]));
 const itemById = new Map(ITEMS.map((it) => [it.id, it]));
 
-export const getRarity = (id) => rarityById.get(id) ?? RARITIES[0];
+/** Pseudo-rareté des fragments de mémoire : lueur blanche et froide, jamais tirée au sort */
+export const FRAGMENT_RARITY = { id: 'souvenir', name: 'Souvenir', level: 3, color: '#e8ece2', glow: 0.55, halo: 3.4, pillar: 7 };
+
+export const getRarity = (id) => (id === 'souvenir' ? FRAGMENT_RARITY : rarityById.get(id) ?? RARITIES[0]);
 export const getItem = (id) => itemById.get(id);
 
 /** Poids de chaque rareté à une profondeur donnée (interpolation entre paliers) */

@@ -3,6 +3,7 @@ import { DECOR, WORLD, SEABED } from '../config/settings.js';
 import { createRandom, paintFaces } from '../core/utils.js';
 import { createNoise2D } from './noise.js';
 import { getFloorHeight } from './seabed.js';
+import { createLandmarks } from './landmarks.js';
 
 const rand = createRandom(WORLD.SEED + 7);
 const noise = createNoise2D(WORLD.SEED + 3);
@@ -10,7 +11,7 @@ const noise = createNoise2D(WORLD.SEED + 3);
 /** Position aléatoire sur toute la surface du fond (un peu au-delà de la zone navigable) */
 function randomFloorPoint() {
   const x = rand.range(-SEABED.WIDTH / 2 + 10, SEABED.WIDTH / 2 - 10);
-  const z = rand.range(SEABED.CENTER_Z - SEABED.LENGTH / 2 + 10, SEABED.CENTER_Z + SEABED.LENGTH / 2 - 10);
+  const z = rand.range(SEABED.Z_END + 10, SEABED.Z_START - 10);
   return { x, z, y: getFloorHeight(x, z) };
 }
 
@@ -141,6 +142,8 @@ export function createDecor() {
   const group = new THREE.Group();
   group.add(createRocks(colliders));
   group.add(createAlgae(uniforms));
+  const landmarks = createLandmarks(colliders, uniforms);
+  group.add(landmarks);
   return {
     group,
     colliders,

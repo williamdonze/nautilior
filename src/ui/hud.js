@@ -2,7 +2,7 @@
  * HUD en HTML par-dessus le canvas :
  * profondeur, soute, réticule de la pince, message de capture, aide aux commandes.
  */
-const GAUGE_MAX_DEPTH = 250; // profondeur représentée en bas de la jauge
+const GAUGE_MAX_DEPTH = 1250; // profondeur représentée en bas de la jauge
 
 export class Hud {
   constructor() {
@@ -109,6 +109,17 @@ export class Hud {
     });
   }
 
+  /** Bandeau d'entrée dans une zone (« LES ÉPAVES · 150 – 500 m ») */
+  showZone(zone) {
+    const el = document.getElementById('zone-banner');
+    el.querySelector('.zb-name').textContent = zone.name.toUpperCase();
+    el.querySelector('.zb-depth').textContent =
+      zone.maxDepth > 5000 ? `au-delà de ${zone.minDepth} m` : `${zone.minDepth} – ${zone.maxDepth} m`;
+    el.classList.remove('show');
+    void el.offsetWidth;
+    el.classList.add('show');
+  }
+
   /** Ouverture en fondu depuis le noir, avec une ligne de texte */
   intro(text = '') {
     this.fade.querySelector('p').textContent = text;
@@ -153,7 +164,7 @@ export class Hud {
     let state = '';
     let label = '';
     if (busy) state = 'busy';
-    else if (aim.pickup && aim.inRange && holdFull) {
+    else if (aim.pickup && aim.inRange && holdFull && !aim.pickup.item.fragment) {
       state = 'full';
       label = 'SOUTE PLEINE';
     } else if (aim.pickup && aim.inRange) {

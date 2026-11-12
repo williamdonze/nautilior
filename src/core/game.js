@@ -12,6 +12,8 @@ import { gameState } from '../save/gameState.js';
 import { save, load, clearSave } from '../save/save.js';
 import { applyUpgrades, stats } from '../submarine/stats.js';
 import { SURVIVAL } from '../config/settings.js';
+import { MemoryView } from '../ui/memoryView.js';
+import fragmentsData from '../story/fragments.json';
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -38,13 +40,15 @@ export class Game {
       pixel, input, pointer, sound, hud,
       hold: this.hold,
       thumbnails: this.thumbnails,
-      onCapture: (pickup) => this.addToCollection(pickup.item),
+      onCapture: (pickup) => (pickup.item.fragment ? this.foundFragment(pickup.item.fragmentId) : this.addToCollection(pickup.item)),
       onDeath: (cause) => this.death(cause),
       onReturn: () => this.goPort('quay', true),
     });
     this.port = new Port({ sound });
 
     this.dialogue = new DialogueBox(sound);
+    this.memoryView = new MemoryView(sound);
+    this.paused = false; // plongée figée (souvenir affiché)
     this.panels = new Panels({
       gameState,
       hold: this.hold,
@@ -54,6 +58,7 @@ export class Game {
         this.persist();
         hud.setMoney(gameState.money);
       },
+      onMemory: (id) => this.showMemory(id),
       onUpgrade: (catId, level) => {
         applyUpgrades(gameState.upgrades);
         if (level.abyssal) storyState.abyssalHull = true;
@@ -105,7 +110,7 @@ export class Game {
       this.hud.intro('Port-Kerys, 1984.');
       wait(4200).then(async () => {
         this.busy = false;
-        await this.talk('doctor');
+        if (this.mode === 'port') await this.talk('doctor');
       });
     }
   }
@@ -143,7 +148,7 @@ export class Game {
   goDive() {
     this.transition(() => {
       this.setMode('dive');
-      this.dive.enter(gameState.day);
+      this.dive.enter(gameState.day, storyState.fragments);
       this.persist();
     }, 'Le Nautiliar s\'enfonce sous la surface.');
   }
@@ -201,6 +206,26 @@ export class Game {
 
   /* ------------------------------------------------------------ Données */
 
+  /** Un fragment de mémoire est remonté : on le note, puis le souvenir s'affiche */
+  foundFragment(id) {
+    if (!storyState.fragments.includes(id)) storyState.fragments.push(id);
+    this.persist();
+    // Petit délai : on voit d'abord l'objet rentrer dans le sous-marin
+    setTimeout(() => this.showMemory(id, true), 900);
+    return true;
+  }
+
+  /** Affiche un souvenir ; en plongée, le temps s'arrête pendant ce temps */
+  async showMemory(id, pause = false) {
+    const index = fragmentsData.fragments.findIndex((f) => f.id === id);
+    if (index < 0 || this.memoryView.isOpen) return;
+    this.busy = true;
+    if (pause) this.paused = true;
+    await this.memoryView.show(fragmentsData.fragments[index], index + 1);
+    this.paused = false;
+    this.busy = false;
+  }
+
   /** Ajoute un objet à la collection ; renvoie true s'il est nouveau */
   addToCollection(item) {
     if (gameState.collection.includes(item.id)) return false;
@@ -217,7 +242,7 @@ export class Game {
 
   update(dt, time) {
     if (this.mode === 'dive') {
-      this.dive.update(dt, time);
+      if (!this.paused) this.dive.update(dt, time);
     } else {
       this.port.update(dt, time, this.input, this.portControls);
       const f = this.port.focus;

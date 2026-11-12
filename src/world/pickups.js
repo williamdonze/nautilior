@@ -2,6 +2,10 @@ import * as THREE from 'three';
 import { PICKUPS, SUBMARINE, WORLD } from '../config/settings.js';
 import { createRandom } from '../core/utils.js';
 import { rollItem, getRarity } from '../loot/loot.js';
+import zonesData from '../config/zones.json';
+import fragmentsData from '../story/fragments.json';
+import { WRECK_SPOTS } from './landmarks.js';
+import { canyonCenter } from './seabed.js';
 import { createItemModel } from '../loot/models.js';
 import { createHalo, createPillar } from '../loot/glow.js';
 import { getFloorHeight } from './seabed.js';
@@ -22,33 +26,72 @@ export class Pickups {
     this.spawnAll();
   }
 
-  /** Nouvelle plongée : le fond est repeuplé (tirage différent selon le jour) */
-  reset(seed) {
+  /**
+   * Nouvelle plongée : le fond est repeuplé (tirage différent selon le jour),
+   * et les fragments de mémoire pas encore trouvés sont reposés à leur place.
+   */
+  reset(seed, foundFragments = []) {
     for (const p of [...this.list]) this.dispose(p);
     this.list = [];
     this.highlighted = null;
     this.rand = createRandom(WORLD.SEED + 101 + seed * 7919);
     this.spawnAll();
+    for (const f of fragmentsData.fragments) {
+      if (!foundFragments.includes(f.id)) this.spawnFragment(f);
+    }
+  }
+
+  /** Pose un objet tiré au sort selon la profondeur du fond en (x, z) */
+  spawnRandom(x, z) {
+    return this.spawn(rollItem(-getFloorHeight(x, z), this.rand), x, z);
   }
 
   spawnAll() {
     const B = WORLD.BOUNDS;
     const sp = SUBMARINE.SPAWN;
-    for (let i = 0; i < PICKUPS.COUNT; i++) {
-      let x, z;
-      if (i < PICKUPS.NEAR_SPAWN) {
-        // Une partie près du départ pour trouver vite de quoi ramasser
-        const a = this.rand() * Math.PI * 2;
-        const d = 8 + this.rand() * PICKUPS.NEAR_RADIUS;
-        x = sp.x + Math.cos(a) * d;
-        z = sp.z + Math.sin(a) * d;
-      } else {
-        x = this.rand.range(B.minX, B.maxX);
-        z = this.rand.range(B.minZ, B.maxZ);
-      }
-      const depth = -getFloorHeight(x, z);
-      this.spawn(rollItem(depth, this.rand), x, z);
+    // Près du départ, pour trouver vite de quoi ramasser
+    for (let i = 0; i < PICKUPS.NEAR_SPAWN; i++) {
+      const a = this.rand() * Math.PI * 2;
+      const d = 8 + this.rand() * PICKUPS.NEAR_RADIUS;
+      this.spawnRandom(sp.x + Math.cos(a) * d, sp.z + Math.sin(a) * d);
     }
+    // Zone par zone ; dans le canyon, la plupart tombent dans le lit
+    for (const zone of zonesData.zones) {
+      for (let i = 0; i < zone.pickups; i++) {
+        const z = this.rand.range(Math.max(zone.zMin, B.minZ), Math.min(zone.zMax, B.maxZ));
+        const x = zone.id === 'canyon' && this.rand() < 0.7
+          ? canyonCenter(z) + this.rand.range(-25, 25)
+          : this.rand.range(B.minX, B.maxX);
+        this.spawnRandom(x, z);
+      }
+    }
+    // Les épaves attirent les trouvailles
+    for (const [wx, wz] of WRECK_SPOTS) {
+      for (let i = 0; i < 4; i++) this.spawnRandom(wx + this.rand.range(-14, 14), wz + this.rand.range(-14, 14));
+    }
+  }
+
+  /** Fragment de mémoire : un objet unique, à une place fixe */
+  spawnFragment(f) {
+    const x = f.inCanyon ? canyonCenter(f.z) + f.x : f.x;
+    const item = {
+      id: `fragment_${f.id}`,
+      fragmentId: f.id,
+      fragment: true,
+      name: f.name,
+      description: f.description,
+      rarity: 'souvenir',
+      weight: 0.4,
+      price: 0,
+      shape: `keepsake_${f.art}`,
+      color: '#ccd8cc',
+    };
+    return this.spawn(item, x, f.z);
+  }
+
+  /** Fragments encore au fond (pour l'appel de proximité) */
+  get fragments() {
+    return this.list.filter((p) => p.item.fragment);
   }
 
   /**
@@ -144,13 +187,19 @@ export class Pickups {
     this.highlighted = pickup;
   }
 
-  /** Objets 3D candidats au raycast */
-  get objects() {
-    return this.list.map((p) => p.object);
+  /** Objets 3D candidats au raycast : seulement ceux qui sont proches (performance) */
+  objectsNear(position, radius = PICKUPS.NEAR_RENDER) {
+    const r2 = radius * radius;
+    const out = [];
+    for (const p of this.list) if (p.object.position.distanceToSquared(position) < r2) out.push(p.object);
+    return out;
   }
 
-  update(time) {
+  update(time, viewer) {
+    const far2 = 160 * 160;
     for (const p of this.list) {
+      // Les objets lointains (noyés dans le brouillard) ne sont pas animés
+      if (viewer && p.object.position.distanceToSquared(viewer) > far2) continue;
       if (p === this.highlighted) {
         // Surbrillance chaude de l'objet visé
         const k = 0.35 + Math.sin(time * 7) * 0.15;

@@ -21,26 +21,31 @@ export const RENDER = {
 export const WORLD = {
   SEED: 1984,
   // Zone navigable (en mètres, 1 unité = 1 m)
-  BOUNDS: { minX: -200, maxX: 200, minZ: -350, maxZ: 150 },
+  BOUNDS: { minX: -170, maxX: 170, minZ: -1120, maxZ: 150 },
   // Surface de l'eau
   SURFACE_Y: 0,
 };
 
 export const SEABED = {
-  WIDTH: 520,
-  LENGTH: 640,
-  CENTER_Z: -100,
-  SEGMENTS_X: 104,
-  SEGMENTS_Z: 128,
-  BASE_DEPTH: 30, // profondeur du plateau de départ
-  SLOPE_START: 30, // z à partir duquel le fond plonge (vers -z)
-  SLOPE: 0.55, // mètres de descente par mètre parcouru
+  WIDTH: 420,
+  Z_START: 220, // le fond s'étend de Z_START à Z_END
+  Z_END: -1180,
+  CHUNK_LENGTH: 200, // découpage en morceaux (culling hors champ)
+  CELL: 5, // taille d'une maille (m)
+  // Profil de profondeur le long de Z : [z, profondeur] (interpolation douce entre les points)
+  PROFILE: [
+    [220, 20], [40, 30], [-150, 145], [-200, 170], [-330, 300], [-380, 320],
+    [-520, 480], [-560, 520], [-620, 640], [-700, 780], [-820, 1000], [-880, 1100], [-1180, 1190],
+  ],
+  // Bords du canyon (au-dessus du lit) : [z, profondeur]
+  RIM: [[-560, 520], [-700, 565], [-820, 630], [-880, 1100], [-1180, 1190]],
+  CANYON: { zStart: -560, zEnd: -880, halfWidth: 55, meander: 35 },
   AMPLITUDE: 9, // relief du bruit
   RIDGE_AMPLITUDE: 7, // crêtes rocheuses
 };
 
 export const DECOR = {
-  ROCKS: 260,
+  ROCKS: 900,
   ALGAE_CLUMPS: 140,
   ALGAE_PER_CLUMP: [5, 14],
   ALGAE_MAX_DEPTH: 110, // pas d'algues trop profond (plus de lumière)
@@ -98,9 +103,10 @@ export const CLAW = {
 
 /* ---------- Objets posés au fond (test de la pince, enrichi en phase 3) ---------- */
 export const PICKUPS = {
-  COUNT: 140,
-  NEAR_SPAWN: 28, // nombre d'objets placés près du point de départ
+  // Le nombre d'objets par zone est dans config/zones.json
+  NEAR_SPAWN: 28, // objets supplémentaires placés près du point de départ
   NEAR_RADIUS: 60,
+  NEAR_RENDER: 70, // seuls les objets à moins de cette distance sont visés (performance)
 };
 
 
@@ -122,11 +128,11 @@ export const SURVIVAL = {
   LOSS_FRACTION: 0.5, // part de la soute perdue au réveil
 };
 
-/* ---------- Radiation (provisoire : la source sera le portail des abysses en phase 6) ---------- */
+/* ---------- Radiation : émise par le portail, au fond des abysses ---------- */
 export const RADIATION = {
-  SOURCE: { x: 0, z: -335 }, // point le plus profond de la carte actuelle
-  RADIUS: 115, // rayon d'influence (m)
-  DAMAGE: 2.5, // dégâts/s au cœur de la zone
+  SOURCE: { x: 0, z: -1060 }, // emplacement du portail
+  RADIUS: 280, // rayon d'influence (m)
+  DAMAGE: 3, // dégâts/s au cœur de la zone
   CRUSH_MULT: 2, // la pression abîme jusqu'à 3× plus vite sous radiation
   COLOR: '#7fbf7a',
 };

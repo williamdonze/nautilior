@@ -10,6 +10,7 @@ import { Sound } from './core/audio.js';
 import { startLoop } from './core/loop.js';
 import { Hud } from './ui/hud.js';
 import { Game } from './core/game.js';
+import { getFloorHeight } from './world/seabed.js';
 
 const pixel = new PixelRenderer(document.getElementById('game'));
 const input = new Input();
@@ -29,4 +30,4 @@ startLoop(
 );
 
 // Accès console pour le débogage (ex. : nautiliar.pixel.setPixelHeight(180), nautiliar.game.newGame())
-window.nautiliar = { game, pixel, get dive() { return game.dive; }, get port() { return game.port; } };
+window.nautiliar = { game, pixel, getFloorHeight, get dive() { return game.dive; }, get port() { return game.port; } };

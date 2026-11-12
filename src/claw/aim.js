@@ -23,7 +23,7 @@ export class Aim {
   /** Mise à jour à chaque frame (raycast léger : seulement les objets) */
   update(pointer, clawRoot) {
     this.raycaster.setFromCamera(pointer.ndc, this.camera);
-    const hits = this.raycaster.intersectObjects(this.pickups.objects, true);
+    const hits = this.raycaster.intersectObjects(this.pickups.objectsNear(clawRoot), true);
     this.pickup = hits.length ? findPickup(hits[0].object) : null;
     if (this.pickup) {
       this.distance = clawRoot.distanceTo(this.pickup.object.position);
@@ -37,7 +37,7 @@ export class Aim {
   /** Au clic dans le vide : point visé sur le fond, ou à portée max dans la direction du curseur */
   resolvePoint(clawRoot) {
     if (this.pickup) return this;
-    const hit = this.raycaster.intersectObject(this.seabed, false)[0];
+    const hit = this.raycaster.intersectObject(this.seabed, true)[0];
     if (hit) {
       this.point.copy(hit.point);
     } else {
