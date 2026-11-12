@@ -5,7 +5,7 @@ import { WORLD } from '../config/settings.js';
  * Bulles émises par l'hélice quand le moteur tourne.
  * Petit pool de particules recyclées.
  */
-export function createBubbles(max = 120) {
+export function createBubbles(max = 220) {
   const positions = new Float32Array(max * 3);
   const life = new Float32Array(max); // 0 = morte, 1 = naissance
   const vel = new Float32Array(max * 3);
@@ -47,8 +47,25 @@ export function createBubbles(max = 120) {
   let cursor = 0;
   let accumulator = 0;
 
+  /** Fait naître une bulle (recycle la plus ancienne) */
+  function emit(origin, spread, speed) {
+    const i = cursor;
+    cursor = (cursor + 1) % max;
+    positions[i * 3] = origin.x + (Math.random() - 0.5) * spread;
+    positions[i * 3 + 1] = origin.y + (Math.random() - 0.5) * spread;
+    positions[i * 3 + 2] = origin.z + (Math.random() - 0.5) * spread;
+    vel[i * 3] = (Math.random() - 0.5) * speed;
+    vel[i * 3 + 1] = 0.8 + Math.random() * 1.2;
+    vel[i * 3 + 2] = (Math.random() - 0.5) * speed;
+    life[i] = 1;
+  }
+
   return {
     object: points,
+    /** Gerbe de bulles ponctuelle (capture, choc…) */
+    burst(origin, count = 20, speed = 3) {
+      for (let k = 0; k < count; k++) emit(origin, 0.4, speed);
+    },
     /**
      * @param {number} dt
      * @param {THREE.Vector3} origin position monde de l'hélice
@@ -58,15 +75,7 @@ export function createBubbles(max = 120) {
       accumulator += rate * dt;
       while (accumulator >= 1) {
         accumulator -= 1;
-        const i = cursor;
-        cursor = (cursor + 1) % max;
-        positions[i * 3] = origin.x + (Math.random() - 0.5) * 0.6;
-        positions[i * 3 + 1] = origin.y + (Math.random() - 0.5) * 0.6;
-        positions[i * 3 + 2] = origin.z + (Math.random() - 0.5) * 0.6;
-        vel[i * 3] = (Math.random() - 0.5) * 0.8;
-        vel[i * 3 + 1] = 0.8 + Math.random() * 1.2;
-        vel[i * 3 + 2] = (Math.random() - 0.5) * 0.8;
-        life[i] = 1;
+        emit(origin, 0.6, 0.8);
       }
       for (let i = 0; i < max; i++) {
         if (life[i] <= 0) continue;

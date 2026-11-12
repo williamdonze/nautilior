@@ -1,10 +1,15 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  // Chemins relatifs : le build fonctionne aussi sur GitHub Pages (phase 8)
+  // Chemins relatifs : le build fonctionne tel quel sur GitHub Pages (sous-dossier du dépôt)
   base: './',
   build: {
-    // Three.js pèse ~500 ko : on relève le seuil d'avertissement
     chunkSizeWarningLimit: 900,
+    rollupOptions: {
+      output: {
+        // Three.js dans un fichier à part : il reste en cache entre deux mises à jour du jeu
+        manualChunks: { three: ['three'] },
+      },
+    },
   },
 });

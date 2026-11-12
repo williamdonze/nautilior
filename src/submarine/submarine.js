@@ -32,7 +32,7 @@ export class Submarine {
     this.pitch = 0;
 
     // --- Phare : principale source de lumière en profondeur
-    this.spot = new THREE.SpotLight('#efe3bb', 200, 90, 0.5, 0.5, 1.0);
+    this.spot = new THREE.SpotLight('#efe3bb', 55, 90, 0.5, 0.5, 0.8);
     this.spot.position.copy(model.lampPosition);
     this.spotTarget = new THREE.Object3D();
     this.spotTarget.position.set(0, -9, 24); // incliné vers le fond
@@ -55,6 +55,7 @@ export class Submarine {
     this._forward = new THREE.Vector3();
     this._side = new THREE.Vector3();
     this._tmp = new THREE.Vector3();
+    this._prev = new THREE.Vector3();
   }
 
   /** Direction avant dans le plan horizontal */
@@ -70,6 +71,16 @@ export class Submarine {
   /** Profondeur en mètres (0 à la surface) */
   get depth() {
     return Math.max(0, WORLD.SURFACE_Y - this.position.y);
+  }
+
+  /** Remet le sous-marin à un point donné, immobile */
+  teleport(x, y, z, yaw) {
+    this.position.set(x, y, z);
+    this._prev.copy(this.position);
+    this.velocity.set(0, 0, 0);
+    this.yaw = yaw;
+    this.yawVelocity = 0;
+    this.throttle = 0;
   }
 
   update(dt, time, input) {
@@ -100,6 +111,7 @@ export class Submarine {
     this.velocity.y = vy;
 
     // --- Intégration
+    this._prev.copy(this.position);
     this.position.addScaledVector(this.velocity, dt);
 
     this.collide();
@@ -122,18 +134,36 @@ export class Submarine {
     const S = SUBMARINE;
     const p = this.position;
     const B = WORLD.BOUNDS;
-
     // Fond : on teste le centre, l'avant et l'arrière de la coque
-    const fwd = this.forward;
-    let floor = getFloorHeight(p.x, p.z);
-    floor = Math.max(floor, getFloorHeight(p.x + fwd.x * 3.5, p.z + fwd.z * 3.5));
-    floor = Math.max(floor, getFloorHeight(p.x - fwd.x * 3.5, p.z - fwd.z * 3.5));
-    const minY = floor + S.HULL_RADIUS;
+    const floorAt = (x, z) => {
+      const fwd = this.forward;
+      return Math.max(
+        getFloorHeight(x, z),
+        getFloorHeight(x + fwd.x * 3.5, z + fwd.z * 3.5),
+        getFloorHeight(x - fwd.x * 3.5, z - fwd.z * 3.5)
+      );
+    };
+    let minY = floorAt(p.x, p.z) + S.HULL_RADIUS;
     if (p.y < minY) {
-      p.y = minY;
-      if (this.velocity.y < 0) this.velocity.y *= -0.25; // petit rebond mou
-      this.velocity.x *= 0.96;
-      this.velocity.z *= 0.96;
+      const moved = Math.hypot(p.x - this._prev.x, p.z - this._prev.z);
+      const rise = minY - p.y;
+      if (moved > 1e-4 && rise / moved > 1.5) {
+        // Paroi trop raide (canyon, épave) : on bloque l'avance au lieu de grimper
+        this.onImpact?.(this.speed);
+        p.x = this._prev.x;
+        p.z = this._prev.z;
+        this.velocity.x *= -0.25;
+        this.velocity.z *= -0.25;
+        minY = floorAt(p.x, p.z) + S.HULL_RADIUS;
+      }
+      if (p.y < minY) {
+        p.y = minY;
+        // Vitesse de choc : verticale + une part de l'horizontale (on racle le fond)
+        if (this.velocity.y < 0) this.onImpact?.(-this.velocity.y + this.speed * 0.3);
+        if (this.velocity.y < 0) this.velocity.y *= -0.25; // petit rebond mou
+        this.velocity.x *= 0.96;
+        this.velocity.z *= 0.96;
+      }
     }
 
     // Surface
@@ -163,6 +193,7 @@ export class Submarine {
         // Annule la composante de vitesse qui rentre dans le rocher
         const vn = this.velocity.x * nx + this.velocity.y * ny + this.velocity.z * nz;
         if (vn < 0) {
+          this.onImpact?.(-vn);
           this.velocity.x -= vn * nx * 1.2;
           this.velocity.y -= vn * ny * 1.2;
           this.velocity.z -= vn * nz * 1.2;
@@ -181,6 +212,13 @@ export class Submarine {
   /** Position monde de l'hélice (pour les bulles) */
   getPropellerPosition(out) {
     return this.propeller.getWorldPosition(out);
+  }
+
+  /** Réglages du phare selon les améliorations */
+  applyLight(stats) {
+    this.spot.intensity = stats.lightIntensity;
+    this.spot.distance = stats.lightRange;
+    this.spot.angle = stats.lightAngle;
   }
 
   /** Ajuste l'intensité visuelle du faisceau selon la profondeur */

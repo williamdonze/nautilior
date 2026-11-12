@@ -1,0 +1,60 @@
+{
+  "_comment": "Améliorations vendues par le mécano. Chaque niveau remplace les caractéristiques listées dans 'stats'. Le niveau 0 est l'équipement d'origine. Coûts en francs.",
+  "categories": [
+    {
+      "id": "oxygen",
+      "name": "Réserves d'oxygène",
+      "levels": [
+        { "label": "Bouteilles d'origine", "cost": 0, "stats": { "oxygenMax": 150 } },
+        { "label": "Bouteilles soudées", "cost": 350, "stats": { "oxygenMax": 210 } },
+        { "label": "Bouteilles de la Marine", "cost": 1100, "stats": { "oxygenMax": 280 } },
+        { "label": "Recycleur d'air", "cost": 3200, "stats": { "oxygenMax": 370 } },
+        { "label": "Recycleur double", "cost": 8000, "stats": { "oxygenMax": 480 } }
+      ]
+    },
+    {
+      "id": "hull",
+      "name": "Coque",
+      "levels": [
+        { "label": "Tôle d'origine", "cost": 0, "stats": { "crushDepth": 130, "hullMax": 100 } },
+        { "label": "Tôles rivetées", "cost": 600, "stats": { "crushDepth": 200, "hullMax": 115 } },
+        { "label": "Renforts d'acier", "cost": 1800, "stats": { "crushDepth": 320, "hullMax": 130 } },
+        { "label": "Double coque", "cost": 4500, "stats": { "crushDepth": 500, "hullMax": 150 } },
+        { "label": "Coque de bathyscaphe", "cost": 9500, "stats": { "crushDepth": 750, "hullMax": 170 } },
+        { "label": "Sphère de pression", "cost": 17000, "stats": { "crushDepth": 1000, "hullMax": 190 } },
+        { "label": "Coque abyssale", "cost": 60000, "abyssal": true, "stats": { "crushDepth": 2000, "hullMax": 240 } }
+      ]
+    },
+    {
+      "id": "claw",
+      "name": "Pince",
+      "levels": [
+        { "label": "Bras d'origine", "cost": 0, "stats": { "clawRange": 12, "clawSpeed": 1 } },
+        { "label": "Vérins graissés", "cost": 300, "stats": { "clawRange": 14, "clawSpeed": 1.2 } },
+        { "label": "Bras allongé", "cost": 950, "stats": { "clawRange": 17, "clawSpeed": 1.35 } },
+        { "label": "Hydraulique neuve", "cost": 2600, "stats": { "clawRange": 21, "clawSpeed": 1.6 } }
+      ]
+    },
+    {
+      "id": "hold",
+      "name": "Soute",
+      "levels": [
+        { "label": "Soute d'origine", "cost": 0, "stats": { "holdCapacity": 8 } },
+        { "label": "Casiers en plus", "cost": 250, "stats": { "holdCapacity": 10 } },
+        { "label": "Cale élargie", "cost": 800, "stats": { "holdCapacity": 12 } },
+        { "label": "Cale de chalutier", "cost": 2200, "stats": { "holdCapacity": 16 } },
+        { "label": "Grande cale", "cost": 5500, "stats": { "holdCapacity": 20 } }
+      ]
+    },
+    {
+      "id": "light",
+      "name": "Phare",
+      "levels": [
+        { "label": "Lampe d'origine", "cost": 0, "stats": { "lightIntensity": 55, "lightRange": 90, "lightAngle": 0.5 } },
+        { "label": "Ampoule neuve", "cost": 300, "stats": { "lightIntensity": 80, "lightRange": 110, "lightAngle": 0.55 } },
+        { "label": "Projecteur de chalutier", "cost": 1000, "stats": { "lightIntensity": 115, "lightRange": 135, "lightAngle": 0.6 } },
+        { "label": "Projecteur à arc", "cost": 2800, "stats": { "lightIntensity": 160, "lightRange": 160, "lightAngle": 0.66 } }
+      ]
+    }
+  ]
+}

@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Nautiliar</title>
+    <meta name="description" content="Nautiliar — exploration sous-marine narrative. Bretagne, 1984." />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet" />
@@ -15,20 +17,122 @@
     <div id="vignette"></div>
 
     <!-- HUD -->
-    <div id="hud">
+    <div id="hud" class="dive-only">
       <div class="depth">
         <span class="label">PROFONDEUR</span>
         <span class="value"><span id="depth-value">0000</span><span class="unit">m</span></span>
       </div>
-      <div class="depth-gauge"><div id="depth-marker"></div></div>
+      <div class="depth-gauge">
+        <div id="crush-zone"></div>
+        <div id="depth-marker"></div>
+      </div>
+      <div class="cargo">
+        <span class="label">SOUTE</span>
+        <span id="cargo-count">00</span>
+        <span id="cargo-weight">0 kg</span>
+      </div>
     </div>
 
-    <div id="hint">
-      ZQSD / WASD : piloter &nbsp;·&nbsp; ESPACE : monter &nbsp;·&nbsp; MAJ : descendre
+    <!-- Jauges de survie -->
+    <div id="gauges" class="dive-only">
+      <div class="gauge" id="g-oxygen"><span class="label">O2</span><div class="bar"><div class="fill"></div></div><span class="pct">100</span></div>
+      <div class="gauge" id="g-hull"><span class="label">COQUE</span><div class="bar"><div class="fill"></div></div><span class="pct">100</span></div>
+      <div class="gauge" id="g-rad"><span class="label">RAD</span><div class="bar"><div class="fill"></div></div><span class="pct">0</span></div>
     </div>
+    <div id="warnings" class="dive-only"></div>
+
+    <!-- Voiles : dégâts (rouge), manque d'air (vision qui se resserre) -->
+    <div id="damage-vignette" class="dive-only"></div>
+    <div id="tunnel" class="dive-only"></div>
+
+    <!-- Réticule de visée de la pince -->
+    <div id="reticle" class="dive-only">
+      <span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span>
+      <span id="reticle-label"></span>
+    </div>
+
+    <!-- Message de capture -->
+    <div id="toast"><div id="toast-rarity"></div><div id="toast-name"></div><div id="toast-desc"></div></div>
+
+    <!-- Éclat coloré plein écran (captures épiques et légendaires) -->
+    <div id="flash"></div>
+
+    <!-- Inventaire -->
+    <div id="inventory">
+      <div class="inv-panel">
+        <div class="inv-header">
+          <span class="inv-title">SOUTE</span>
+          <span id="inv-summary"></span>
+          <button id="inv-close">✕</button>
+        </div>
+        <div class="inv-body">
+          <div id="inv-grid"></div>
+          <div id="inv-details"></div>
+        </div>
+        <div class="inv-footer">I / TAB : fermer &nbsp;·&nbsp; les prix sont estimés, la marchande décidera</div>
+      </div>
+    </div>
+
+    <div id="hint" class="dive-only">
+      ZQSD / WASD : piloter &nbsp;·&nbsp; ESPACE : monter &nbsp;·&nbsp; MAJ : descendre &nbsp;·&nbsp; CLIC : pince &nbsp;·&nbsp; I / TAB : soute
+    </div>
+
+    <!-- HUD du port -->
+    <div id="port-hud" class="port-only">
+      <div class="money"><span class="label">BOURSE</span><span id="money-value">0 F</span></div>
+    </div>
+    <div id="port-hint" class="port-only">ZQSD / WASD : marcher &nbsp;·&nbsp; E : interagir</div>
+
+    <!-- Invite d'interaction -->
+    <div id="prompt"><span class="key">E</span><span id="prompt-text"></span></div>
+
+    <!-- Boîte de dialogue -->
+    <div id="dialogue">
+      <div class="dlg-name"></div>
+      <div class="dlg-text"></div>
+      <div class="dlg-choices"></div>
+      <div class="dlg-next">▼</div>
+    </div>
+
+    <!-- Panneaux du port (marchande, mécano, collection) -->
+    <div id="panel"></div>
+
+    <!-- Bandes noires des cinématiques -->
+    <div id="letterbox"><div></div><div></div></div>
+
+    <!-- Fondu plein écran des fins (noir ou blanc) -->
+    <div id="veil"></div>
+
+    <!-- Écran de fin -->
+    <div id="ending"></div>
+
+    <!-- Menus : titre, pause, réglages -->
+    <div id="menu"></div>
+
+    <!-- Compteur d'images par seconde -->
+    <div id="fps"></div>
+
+    <!-- Transition au noir -->
+    <div id="transition"><p></p></div>
+
+    <!-- Bandeau d'entrée de zone -->
+    <div id="zone-banner" class="dive-only"><div class="zb-name"></div><div class="zb-depth"></div></div>
+
+    <!-- Souvenir (fragment de mémoire) -->
+    <div id="memory">
+      <div class="mem-frame">
+        <canvas></canvas>
+        <div class="mem-title"></div>
+        <div class="mem-lines"></div>
+        <div class="mem-next">E / clic : continuer</div>
+      </div>
+    </div>
+
+    <!-- Écran noir du réveil -->
+    <div id="blackout"><div id="blackout-text"></div></div>
 
     <!-- Fondu au noir (ouverture) -->
-    <div id="fade"><p>Port-Kerys, 1984.</p></div>
+    <div id="fade"><p></p></div>
 
     <script type="module" src="/src/main.js"></script>
   </body>

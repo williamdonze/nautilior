@@ -1,0 +1,40 @@
+{
+  "_comment": "Textes des deux fins. 'who' = doctor / mechanic / merchant (réplique d'un personnage), absent = narration.",
+  "close": {
+    "abyss": [
+      "(Tu refermes la pince du Nautiliar sur le bord de la déchirure, et tu tires.)",
+      "(Elle se referme dans un long soupir. Le vert s'éteint, d'un coup.)",
+      "(Autour de toi, les bêtes s'arrêtent. Puis elles s'en vont, lentement, apaisées.)"
+    ],
+    "port": [
+      { "text": "(Ils t'attendent tous les trois sur le quai. Ils ne t'ont jamais attendu ensemble.)" },
+      { "who": "mechanic", "text": "C'est fini. Elle ne fera plus de mal à personne." },
+      { "who": "merchant", "text": "Tu as bien fait. Tu restes, maintenant. Pour de bon." },
+      { "text": "(Ils sourient. Tous les trois. Trop.)" },
+      { "text": "(Tu regardes la route qui sort du village. Elle se perd dans la brume, et ne mène nulle part. Elle n'a jamais mené nulle part.)" },
+      { "text": "(Tu comprends que tu ne partiras jamais d'ici.)" },
+      { "who": "doctor", "text": "Bienvenue chez toi." }
+    ],
+    "title": "Bienvenue chez toi",
+    "subtitle": "Tu as fermé le portail. L'Envers ne s'éteindra pas. Toi non plus."
+  },
+  "cross": {
+    "abyss": [
+      "(Tu pousses le moteur. Le Nautiliar entre dans la lumière.)",
+      "(Derrière toi, l'Envers s'effondre sans un bruit.)"
+    ],
+    "dissolve": [
+      "(Sur le quai, trois silhouettes te regardent partir. Elles ne disent rien.)",
+      "(Puis la brume les reprend, et le village avec elles.)"
+    ],
+    "alive": [
+      "(Tu crèves la surface. L'air froid. Le soleil. Des cris.)",
+      "(Le quai est noir de monde. Les volets sont ouverts. Quelqu'un hurle ton nom.)",
+      "(« Il était porté disparu depuis des mois… » « C'est lui ! C'est bien lui ! »)",
+      "(Une main serre la tienne. Celle qui t'avait dit de rentrer avant la nuit.)",
+      "(Tu es rentré chez toi.)"
+    ],
+    "title": "Rentré chez toi",
+    "subtitle": "Tu as traversé. L'Envers s'est éteint, et ceux qui le peuplaient avec lui."
+  }
+}

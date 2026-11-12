@@ -1,74 +1,69 @@
 /**
  * Nautiliar — point d'entrée.
- * Assemble le renderer pixelisé, le monde sous-marin, le sous-marin, la caméra et le HUD.
+ * Crée le renderer pixelisé, les entrées, le son et le HUD, puis lance le jeu.
  */
-import * as THREE from 'three';
 import './ui/style.css';
 import { PixelRenderer } from './core/renderer.js';
 import { Input } from './core/input.js';
+import { Pointer } from './core/pointer.js';
+import { Sound } from './core/audio.js';
 import { startLoop } from './core/loop.js';
-import { createSeabed } from './world/seabed.js';
-import { createDecor } from './world/decor.js';
-import { createMarineSnow } from './world/marineSnow.js';
-import { createAmbience } from './world/ambience.js';
-import { Submarine } from './submarine/submarine.js';
-import { FollowCamera } from './submarine/followCamera.js';
-import { createBubbles } from './submarine/bubbles.js';
 import { Hud } from './ui/hud.js';
+import { Game } from './core/game.js';
+import { getFloorHeight } from './world/seabed.js';
+import { loadPreferences, preferences, PIXEL_LEVELS } from './save/preferences.js';
 
-const container = document.getElementById('game');
-const pixel = new PixelRenderer(container);
+const pixel = new PixelRenderer(document.getElementById('game'));
 const input = new Input();
+const pointer = new Pointer();
+const sound = new Sound();
 const hud = new Hud();
 
-const scene = new THREE.Scene();
-const ambience = createAmbience(scene);
+// Le son ne peut démarrer qu'après une interaction (phase de capture : avant les menus)
+window.addEventListener('keydown', () => sound.unlock(), true);
+window.addEventListener('pointerdown', () => sound.unlock(), true);
 
-// --- Monde
-scene.add(createSeabed());
-const decor = createDecor();
-scene.add(decor.group);
-const snow = createMarineSnow();
-scene.add(snow.object);
+const game = new Game({ pixel, input, pointer, sound, hud });
 
-// --- Sous-marin
-const sub = new Submarine(scene, decor.colliders);
-const bubbles = createBubbles();
-scene.add(bubbles.object);
-
-// --- Caméra
-const follow = new FollowCamera(pixel.aspect);
-follow.snap(sub);
-pixel.onResize = (aspect) => follow.setAspect(aspect);
-
-// Vecteurs réutilisés chaque frame
-const lightPos = new THREE.Vector3();
-const lightDir = new THREE.Vector3();
-const propPos = new THREE.Vector3();
-
-function update(dt, time) {
-  sub.update(dt, time, input);
-  follow.update(dt, sub);
-
-  ambience.update(follow.depth, sub.position, time);
-  sub.setBeamVisibility(ambience.state.beam);
-
-  decor.update(time);
-  sub.getLightRay(lightPos, lightDir);
-  snow.update(time, follow.camera.position, lightPos, lightDir, ambience.state.ambient);
-
-  sub.getPropellerPosition(propPos);
-  bubbles.update(dt, propPos, Math.abs(sub.throttle) * 22 + 0.5);
-
-  hud.update(sub.depth, input);
+// --- Réglages du joueur
+const fpsEl = document.getElementById('fps');
+function applySettings() {
+  sound.setVolumes(preferences);
+  const h = PIXEL_LEVELS[preferences.pixelLevel]?.height ?? 240;
+  if (pixel.pixelHeight !== h) pixel.setPixelHeight(h);
+  pixel.setDither(preferences.dither);
+  fpsEl.style.display = preferences.showFps ? 'block' : 'none';
 }
+loadPreferences();
+applySettings();
+game.applySettings = applySettings;
 
-function render() {
-  pixel.render(scene, follow.camera);
+// --- Écran titre (sauf juste après « Nouvelle partie »)
+let autostart = false;
+try {
+  autostart = sessionStorage.getItem('nautiliar-autostart') === '1';
+  sessionStorage.removeItem('nautiliar-autostart');
+} catch {
+  /* rien */
 }
+if (autostart) game.start();
+else game.showTitle();
 
-hud.intro();
-startLoop(update, render);
+// --- Boucle, avec compteur d'images par seconde
+let frames = 0, fpsTime = 0;
+startLoop(
+  (dt, time) => {
+    game.update(dt, time);
+    frames++;
+    fpsTime += dt;
+    if (fpsTime >= 0.5) {
+      if (preferences.showFps) fpsEl.textContent = `${Math.round(frames / fpsTime)} i/s`;
+      frames = 0;
+      fpsTime = 0;
+    }
+  },
+  () => game.render()
+);
 
-// Accès console pour le débogage (ex. : nautiliar.pixel.setPixelHeight(180))
-window.nautiliar = { scene, sub, pixel, follow };
+// Accès console pour le débogage (ex. : nautiliar.pixel.setPixelHeight(180), nautiliar.game.newGame())
+window.nautiliar = { game, pixel, getFloorHeight, get dive() { return game.dive; }, get port() { return game.port; } };

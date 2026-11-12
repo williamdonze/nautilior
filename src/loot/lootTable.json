@@ -1,0 +1,65 @@
+{
+  "_comment": "Chances de chaque rareté selon la profondeur (interpolées entre les paliers). Une fois la rareté tirée, on choisit un objet de cette rareté dont la profondeur minimale est atteinte (sinon on descend d'une rareté).",
+  "bands": [
+    {
+      "depth": 0,
+      "weights": {
+        "commun": 80,
+        "peu_commun": 18,
+        "rare": 2,
+        "epique": 0,
+        "legendaire": 0
+      }
+    },
+    {
+      "depth": 60,
+      "weights": {
+        "commun": 55,
+        "peu_commun": 30,
+        "rare": 12,
+        "epique": 3,
+        "legendaire": 0
+      }
+    },
+    {
+      "depth": 150,
+      "weights": {
+        "commun": 38,
+        "peu_commun": 32,
+        "rare": 20,
+        "epique": 8,
+        "legendaire": 2
+      }
+    },
+    {
+      "depth": 350,
+      "weights": {
+        "commun": 25,
+        "peu_commun": 30,
+        "rare": 28,
+        "epique": 13,
+        "legendaire": 4
+      }
+    },
+    {
+      "depth": 600,
+      "weights": {
+        "commun": 15,
+        "peu_commun": 25,
+        "rare": 32,
+        "epique": 20,
+        "legendaire": 8
+      }
+    },
+    {
+      "depth": 1000,
+      "weights": {
+        "commun": 5,
+        "peu_commun": 15,
+        "rare": 32,
+        "epique": 30,
+        "legendaire": 18
+      }
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "_comment": "Textes de la séquence de réveil (oxygène épuisé ou coque brisée). Le médecin parle toujours en premier. {items} = objets perdus.",
+  "causes": {
+    "oxygen": [
+      "L'air devient épais comme de l'eau.",
+      "Tes poumons brûlent. Puis plus rien.",
+      "Le noir monte doucement, comme une marée."
+    ],
+    "hull": [
+      "La coque gémit, puis cède.",
+      "Le métal hurle. L'eau entre.",
+      "Un craquement. Le froid partout."
+    ]
+  },
+  "doctor": "Encore toi…",
+  "followUps": [
+    "La mer t'a rendu. Elle finit toujours par te rendre.",
+    "Tu respirais à peine. Comme la première fois.",
+    "Ne pose pas de questions. Repose-toi.",
+    "Tu as de la chance. Ou autre chose.",
+    "Le mécano a repêché ta boîte de conserve. Elle tient encore."
+  ],
+  "lost": "Ta soute est plus légère : {items}.",
+  "nothingLost": "La soute était vide. Elle l'est encore."
+}

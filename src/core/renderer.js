@@ -54,6 +54,17 @@ export class PixelRenderer {
     this.resize();
   }
 
+  /** Intensité du tramage (0 = aucun) */
+  setDither(v) {
+    this.material.uniforms.uDither.value = v;
+  }
+
+  /** Ondulation de l'image (0 = aucune) */
+  setDistortion(amount, time) {
+    this.material.uniforms.uDistort.value = amount;
+    this.material.uniforms.uTime.value = time;
+  }
+
   get aspect() {
     return window.innerWidth / window.innerHeight;
   }
