@@ -231,6 +231,22 @@ export class Claw {
     this.updateFlash(dt);
   }
 
+  /** Remise à zéro brutale (réveil à l'hôpital) : un objet tenu retombe au fond */
+  reset() {
+    if (this.carried) {
+      const p = this.carried.object.position;
+      this.pickups.dispose(this.carried);
+      this.pickups.spawn(this.carried.item, p.x, p.z);
+      this.carried = null;
+    }
+    this.target = null;
+    this.state = State.IDLE;
+    this.speed = 0;
+    this.sound.motorStop();
+    this.updateAnchors();
+    this.wrist.copy(this._rest);
+  }
+
   startRetract() {
     this.state = State.RETRACT;
     this.speed = 0;

@@ -240,4 +240,93 @@ export class Sound {
       o.stop(ti + 0.1);
     }
   }
+
+  /** Grincement de coque sous la pression */
+  creak(strength = 1) {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    const dur = 0.6 + Math.random() * 0.9;
+    const o = this.ctx.createOscillator();
+    o.type = 'sawtooth';
+    const f0 = 55 + Math.random() * 40;
+    o.frequency.setValueAtTime(f0, t);
+    o.frequency.linearRampToValueAtTime(f0 * (0.7 + Math.random() * 0.6), t + dur);
+    const bp = this.ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 280 + Math.random() * 350;
+    bp.Q.value = 6;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.18 * strength, t + dur * 0.3);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(bp).connect(g).connect(this.muffle);
+    o.start(t);
+    o.stop(t + dur + 0.05);
+  }
+
+  /** Choc contre le fond ou un rocher */
+  impact(strength = 1) {
+    if (!this.ready) return;
+    this.thunk(40);
+    this.clank(0.4 * strength);
+    this.creak(Math.min(1.5, strength));
+  }
+
+  /** Bip d'alerte (oxygène faible) */
+  alarm(critical = false) {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    const notes = critical ? [880, 880] : [740, 554];
+    notes.forEach((freq, i) => {
+      const o = this.ctx.createOscillator();
+      o.type = 'square';
+      o.frequency.value = freq;
+      const g = this.ctx.createGain();
+      this.envelope(g, t + i * 0.16, 0.035, 0.005, 0.12);
+      o.connect(g).connect(this.muffle);
+      o.start(t + i * 0.16);
+      o.stop(t + i * 0.16 + 0.15);
+    });
+  }
+
+  /** Battement de cœur sourd */
+  heartbeat(volume = 1) {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    [0, 0.22].forEach((dt, i) => {
+      const o = this.ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(70, t + dt);
+      o.frequency.exponentialRampToValueAtTime(40, t + dt + 0.12);
+      const g = this.ctx.createGain();
+      this.envelope(g, t + dt, (i ? 0.25 : 0.35) * volume, 0.01, 0.16);
+      o.connect(g).connect(this.muffle);
+      o.start(t + dt);
+      o.stop(t + dt + 0.2);
+    });
+  }
+
+  /** Clic de compteur Geiger */
+  geiger() {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noise;
+    const hp = this.ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 2500;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.3, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.006);
+    // Ne passe pas par le filtre « sous l'eau » : c'est l'appareil dans la cabine
+    src.connect(hp).connect(g).connect(this.master);
+    src.start(t, Math.random() * 0.9);
+    src.stop(t + 0.01);
+  }
+
+  /** Volume général (0..1), utilisé par le fondu au noir */
+  setMasterVolume(v, time = 0.5) {
+    if (!this.ctx) return;
+    this.master.gain.setTargetAtTime(v * 0.6, this.ctx.currentTime, time / 3);
+  }
 }

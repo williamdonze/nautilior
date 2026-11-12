@@ -107,3 +107,35 @@ export const PICKUPS = {
 export const HOLD = {
   CAPACITY: 8, // emplacements (augmentera avec les améliorations en phase 5)
 };
+
+/* ---------- Survie ---------- */
+export const SURVIVAL = {
+  // Caractéristiques de base du Nautiliar (les améliorations de la phase 5 les modifieront)
+  OXYGEN_MAX: 150, // secondes d'air au repos
+  HULL_MAX: 100,
+  CRUSH_DEPTH: 130, // profondeur max supportée par la coque (m)
+
+  OXYGEN_USE: 1, // par seconde
+  OXYGEN_USE_THRUST: 0.6, // en plus, à pleine poussée
+  OXYGEN_REFILL: 30, // par seconde en surface
+  SURFACE_DEPTH: 2.5, // en dessous de cette profondeur, on est « en surface »
+  SURFACE_REPAIR: 2, // réparation de fortune en surface (provisoire, le mécano s'en chargera en phase 5)
+
+  CRUSH_DAMAGE_BASE: 0.6, // dégâts/s dès qu'on dépasse la profondeur max…
+  CRUSH_DAMAGE_PER_M: 0.06, // …plus tant par mètre de dépassement
+  IMPACT_THRESHOLD: 3.5, // vitesse de choc (m/s) au-delà de laquelle la coque s'abîme
+  IMPACT_DAMAGE: 4, // dégâts par m/s au-delà du seuil
+
+  OXYGEN_WARNING: 0.25, // alerte sous 25 %
+  OXYGEN_CRITICAL: 0.12,
+  LOSS_FRACTION: 0.5, // part de la soute perdue au réveil
+};
+
+/* ---------- Radiation (provisoire : la source sera le portail des abysses en phase 6) ---------- */
+export const RADIATION = {
+  SOURCE: { x: 0, z: -335 }, // point le plus profond de la carte actuelle
+  RADIUS: 115, // rayon d'influence (m)
+  DAMAGE: 2.5, // dégâts/s au cœur de la zone
+  CRUSH_MULT: 2, // la pression abîme jusqu'à 3× plus vite sous radiation
+  COLOR: '#7fbf7a',
+};

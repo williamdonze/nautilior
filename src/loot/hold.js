@@ -30,6 +30,22 @@ export class Hold {
     return item;
   }
 
+  /**
+   * Perd une partie de la soute au hasard (réveil à l'hôpital).
+   * @param {number} fraction part perdue (arrondie au supérieur)
+   * @returns {object[]} objets perdus
+   */
+  loseFraction(fraction) {
+    const n = Math.ceil(this.items.length * fraction);
+    const lost = [];
+    for (let i = 0; i < n; i++) {
+      const index = Math.floor(Math.random() * this.items.length);
+      lost.push(...this.items.splice(index, 1));
+    }
+    if (lost.length) this.emit();
+    return lost;
+  }
+
   get count() {
     return this.items.length;
   }

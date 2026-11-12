@@ -13,6 +13,8 @@ export const PixelShader = {
     uDither: { value: 0.05 },
     uPaletteMix: { value: 1.0 },
     uSaturation: { value: 0.85 },
+    uDistort: { value: 0 }, // ondulation de l'image (radiation)
+    uTime: { value: 0 },
   },
 
   vertexShader: /* glsl */ `
@@ -30,6 +32,8 @@ export const PixelShader = {
     uniform float uDither;
     uniform float uPaletteMix;
     uniform float uSaturation;
+    uniform float uDistort;
+    uniform float uTime;
     varying vec2 vUv;
 
     // Matrice de Bayer calculée (évite les tableaux constants)
@@ -41,7 +45,13 @@ export const PixelShader = {
     }
 
     void main() {
-      vec3 col = linearToSRGB(clamp(texture2D(tDiffuse, vUv).rgb, 0.0, 1.0));
+      // Légère ondulation de l'image, comme une eau qui tremble
+      vec2 uv = vUv;
+      if (uDistort > 0.0) {
+        uv.x += sin(vUv.y * 38.0 + uTime * 2.7) * 0.0035 * uDistort;
+        uv.y += cos(vUv.x * 27.0 + uTime * 1.9) * 0.0025 * uDistort;
+      }
+      vec3 col = linearToSRGB(clamp(texture2D(tDiffuse, uv).rgb, 0.0, 1.0));
 
       float luma = dot(col, vec3(0.299, 0.587, 0.114));
       col = mix(vec3(luma), col, uSaturation);

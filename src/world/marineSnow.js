@@ -35,6 +35,8 @@ export function createMarineSnow() {
         uColor: { value: new THREE.Color('#83a39a') },
         uLitColor: { value: new THREE.Color('#efe3bb') },
         uAmbient: { value: 1 },
+        uTint: { value: new THREE.Color('#7fbf7a') },
+        uTintAmount: { value: 0 },
       },
     ]),
     vertexShader: /* glsl */ `
@@ -73,10 +75,13 @@ export function createMarineSnow() {
       uniform vec3 uColor;
       uniform vec3 uLitColor;
       uniform float uAmbient;
+      uniform vec3 uTint;
+      uniform float uTintAmount;
       varying float vLit;
       #include <fog_pars_fragment>
       void main() {
-        vec3 c = uColor * uAmbient + uLitColor * vLit;
+        // Sous radiation, les particules luisent faiblement en vert
+        vec3 c = uColor * uAmbient + uLitColor * vLit + uTint * uTintAmount;
         gl_FragColor = vec4(c, 1.0);
         #include <fog_fragment>
       }
@@ -94,14 +99,16 @@ export function createMarineSnow() {
      * @param {THREE.Vector3} lightPos position du phare
      * @param {THREE.Vector3} lightDir direction du phare (normalisée)
      * @param {number} ambient luminosité ambiante (0..1)
+     * @param {number} radiation niveau de radiation (0..1)
      */
-    update(time, center, lightPos, lightDir, ambient) {
+    update(time, center, lightPos, lightDir, ambient, radiation = 0) {
       const u = material.uniforms;
       u.uTime.value = time;
       u.uCenter.value.copy(center);
       u.uLightPos.value.copy(lightPos);
       u.uLightDir.value.copy(lightDir);
       u.uAmbient.value = 0.25 + ambient * 0.6;
+      u.uTintAmount.value = radiation * 0.6;
     },
   };
 }

@@ -72,6 +72,15 @@ export class Submarine {
     return Math.max(0, WORLD.SURFACE_Y - this.position.y);
   }
 
+  /** Remet le sous-marin à un point donné, immobile */
+  teleport(x, y, z, yaw) {
+    this.position.set(x, y, z);
+    this.velocity.set(0, 0, 0);
+    this.yaw = yaw;
+    this.yawVelocity = 0;
+    this.throttle = 0;
+  }
+
   update(dt, time, input) {
     const S = SUBMARINE;
     const thrustInput = input.axis('backward', 'forward');
@@ -131,6 +140,8 @@ export class Submarine {
     const minY = floor + S.HULL_RADIUS;
     if (p.y < minY) {
       p.y = minY;
+      // Vitesse de choc : verticale + une part de l'horizontale (on racle le fond)
+      if (this.velocity.y < 0) this.onImpact?.(-this.velocity.y + this.speed * 0.3);
       if (this.velocity.y < 0) this.velocity.y *= -0.25; // petit rebond mou
       this.velocity.x *= 0.96;
       this.velocity.z *= 0.96;
@@ -163,6 +174,7 @@ export class Submarine {
         // Annule la composante de vitesse qui rentre dans le rocher
         const vn = this.velocity.x * nx + this.velocity.y * ny + this.velocity.z * nz;
         if (vn < 0) {
+          this.onImpact?.(-vn);
           this.velocity.x -= vn * nx * 1.2;
           this.velocity.y -= vn * ny * 1.2;
           this.velocity.z -= vn * nz * 1.2;

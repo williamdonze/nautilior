@@ -37,6 +37,8 @@ Les flèches du clavier fonctionnent aussi. Les touches sont lues par position p
 - `src/loot/rarities.json` : les 5 raretés (couleur, lueur, halo, colonne de lumière).
 - `src/loot/lootTable.json` : chances de chaque rareté selon la profondeur.
 - `HOLD.CAPACITY` dans `settings.js` : nombre d'emplacements de la soute.
+- `SURVIVAL` et `RADIATION` dans `settings.js` : réserve d'oxygène, profondeur max de la coque, dégâts, zone de radiation.
+- `src/story/wakeup.json` : textes du réveil à l'hôpital.
 
 En console : `nautiliar.pixel.setPixelHeight(180)` change la pixelisation à chaud.
 
@@ -47,12 +49,13 @@ src/
 ├── main.js        # assemblage de la scène et boucle principale
 ├── config/        # réglages et données (JSON)
 ├── core/          # renderer pixelisé, shader palette/dithering, clavier, souris, sons, boucle
-├── submarine/     # modèle, pilotage avec inertie, phare, caméra, bulles
-├── world/         # bruit, fond marin, rochers, algues, neige marine, ambiance
+├── submarine/     # modèle, pilotage avec inertie, phare, caméra, bulles, survie (oxygène, coque)
+├── world/         # bruit, fond marin, rochers, algues, neige marine, ambiance, radiation
 ├── claw/          # pince : visée (raycast), IK du bras, machine à états, modèle
 ├── loot/          # objets, raretés, table de loot (JSON), modèles 3D, lueurs, effets de capture, soute
 ├── ui/            # HUD, inventaire, vignettes des objets (HTML/CSS)
-├── port/ story/ save/   # phases suivantes
+├── story/         # état narratif, séquence de réveil (JSON)
+├── port/ save/   # phases suivantes
 docs/
 └── LORE.md        # référence narrative
 ```
@@ -62,7 +65,7 @@ docs/
 - [x] Phase 1 : bases (rendu pixelisé, fond marin, sous-marin pilotable, caméra, HUD profondeur)
 - [x] Phase 2 : la pince
 - [x] Phase 3 : loot et raretés
-- [ ] Phase 4 : survie
+- [x] Phase 4 : survie
 - [ ] Phase 5 : le port et les PNJ
 - [ ] Phase 6 : monde, créatures et fragments de mémoire
 - [ ] Phase 7 : la fin
