@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nautiliar</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="game"></div>
+
+    <!-- Voile et vignette par-dessus le rendu 3D -->
+    <div id="vignette"></div>
+
+    <!-- HUD -->
+    <div id="hud">
+      <div class="depth">
+        <span class="label">PROFONDEUR</span>
+        <span class="value"><span id="depth-value">0000</span><span class="unit">m</span></span>
+      </div>
+      <div class="depth-gauge"><div id="depth-marker"></div></div>
+    </div>
+
+    <div id="hint">
+      ZQSD / WASD : piloter &nbsp;·&nbsp; ESPACE : monter &nbsp;·&nbsp; MAJ : descendre
+    </div>
+
+    <!-- Fondu au noir (ouverture) -->
+    <div id="fade"><p>Port-Kerys, 1984.</p></div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
