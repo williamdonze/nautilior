@@ -1,0 +1,12 @@
+{
+  "_comment": "Palette limitée (sRGB). Le post-processing ramène chaque pixel à la couleur la plus proche.",
+  "colors": [
+    "#020407", "#05090d", "#081118", "#0c1a22", "#11252e", "#17323b", "#1f4049", "#2a5056",
+    "#376163", "#4a7472", "#638a84", "#83a39a", "#a8bdb2", "#ccd8cc", "#e8ece2",
+    "#1a2a20", "#2c4430", "#46613f", "#6a8556",
+    "#22140d", "#3e2114", "#63321b", "#8a4f28", "#b07a47",
+    "#26292b", "#3f4446", "#5f6564", "#878a85",
+    "#cdb57c", "#efe3bb",
+    "#3c7048", "#7fbf7a"
+  ]
+}
