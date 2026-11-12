@@ -79,10 +79,11 @@ html, body {
   left: 50%;
   transform: translateX(-50%);
   padding: 6px 14px;
-  font-size: 22px;
+  font-size: 20px;
   background: var(--hud-bg);
   color: var(--hud-fg);
-  white-space: nowrap;
+  max-width: min(900px, calc(100vw - 280px));
+  text-align: center;
   pointer-events: none;
   transition: opacity 2s;
 }
@@ -291,7 +292,7 @@ body.inventory-open #reticle { display: none; }
   position: relative;
 }
 .slot.empty { background: #070d12; border-style: dashed; border-color: #11252e; }
-.slot img { width: 76px; height: 76px; image-rendering: pixelated; }
+.slot img { width: 76px; height: 76px; }
 .slot:not(.empty):hover { transform: translateY(-2px); }
 .slot.selected { outline: 2px solid var(--hud-warm); outline-offset: 2px; }
 
@@ -547,7 +548,7 @@ body.mode-port, body.mode-port canvas { cursor: default; }
   border: 2px solid #11252e;
   font-size: 22px;
 }
-.row img { width: 44px; height: 44px; image-rendering: pixelated; border: 2px solid; }
+.row img { width: 44px; height: 44px; border: 2px solid; }
 .row-name { flex: 1; font-size: 24px; }
 .row-price { width: 110px; text-align: right; color: var(--hud-warm); }
 .up { color: #7fae6a; }
@@ -765,3 +766,130 @@ body.in-menu, body.in-menu canvas { cursor: default; }
 @media (max-width: 700px) {
   .setting { grid-template-columns: 1fr; gap: 4px; }
 }
+
+/* ---------- Radar ---------- */
+#radar {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  width: 200px;
+  pointer-events: none;
+  z-index: 2;
+}
+#radar-canvas {
+  display: block;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px #17323b, 0 0 0 6px #05090d, 0 0 24px rgba(127, 191, 122, 0.15);
+}
+.radar-label {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  padding: 0 10px;
+  font-size: 18px;
+  letter-spacing: 3px;
+  color: var(--hud-dim);
+  text-shadow: 2px 2px 0 #020407;
+}
+#radar-range { color: #7fbf7a; }
+@media (max-width: 800px) {
+  #radar, #radar-canvas { width: 140px; }
+  #radar-canvas { height: 140px; }
+}
+
+/* ---------- Poste de pilotage (vue à la 1re personne) ---------- */
+#cockpit { position: fixed; inset: 0; pointer-events: none; display: none; z-index: 1; }
+#cockpit.on { display: block; }
+body.mode-port #cockpit, body.cinema #cockpit, body.in-menu #cockpit { display: none; }
+#cockpit .frame, #cockpit .glass { position: absolute; inset: 0; }
+
+/* 0 — hublot rond, fer rouillé et rivets (les rivets sont sur un anneau, dans .glass) */
+#cockpit.hull-0 .frame {
+  background: radial-gradient(circle at 50% 50%, transparent 0 41vmin, #2a1d14 41.3vmin, #4a3220 43vmin, #22160e 47vmin, #120c08 48vmin);
+}
+#cockpit.hull-0 .glass, #cockpit.hull-1 .glass {
+  background: repeating-conic-gradient(from 3deg, #7a6650 0 2deg, transparent 2deg 15deg);
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 0 43.6vmin, #000 43.8vmin 45.2vmin, transparent 45.4vmin);
+  mask-image: radial-gradient(circle at 50% 50%, transparent 0 43.6vmin, #000 43.8vmin 45.2vmin, transparent 45.4vmin);
+}
+/* 1 — hublot rond, laiton rapiécé */
+#cockpit.hull-1 .frame {
+  background: radial-gradient(circle at 50% 50%, transparent 0 41vmin, #5a4626 41.3vmin, #8a6a3a 43vmin, #3e2e18 47vmin, #14100a 48vmin);
+}
+#cockpit.hull-1 .glass { background: repeating-conic-gradient(from 3deg, #c8a870 0 1.6deg, transparent 1.6deg 12deg); }
+/* 2 — deux hublots jumelés, acier */
+#cockpit.hull-2 .frame {
+  background:
+    radial-gradient(circle at 30% 52%, transparent 0 30vmin, #3f4a54 30.3vmin, #26303a 33vmin, transparent 33.3vmin),
+    radial-gradient(circle at 70% 52%, transparent 0 30vmin, #3f4a54 30.3vmin, #26303a 33vmin, transparent 33.3vmin),
+    #10161b;
+  -webkit-mask-image:
+    radial-gradient(circle at 30% 52%, transparent 30vmin, #000 30.3vmin),
+    radial-gradient(circle at 70% 52%, transparent 30vmin, #000 30.3vmin);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    radial-gradient(circle at 30% 52%, transparent 30vmin, #000 30.3vmin),
+    radial-gradient(circle at 70% 52%, transparent 30vmin, #000 30.3vmin);
+  mask-composite: intersect;
+}
+/* 3 — verrière ovale de la double coque, montants */
+#cockpit.hull-3 .frame {
+  background:
+    linear-gradient(90deg, transparent 49.6%, #3a4648 49.6% 50.4%, transparent 50.4%),
+    radial-gradient(ellipse 62vw 44vh at 50% 50%, transparent 0 96%, #4a5658 97%, #1c2426 100%);
+}
+#cockpit.hull-3 .glass {
+  background: radial-gradient(ellipse 62vw 44vh at 50% 50%, transparent 0 98%, #0c1214 100%);
+}
+/* 4 — bathyscaphe : petit hublot épais dans la sphère, gros boulons */
+#cockpit.hull-4 .frame {
+  background: radial-gradient(circle at 50% 50%, transparent 0 33vmin, #45484a 33.3vmin, #6b6e6c 36vmin, #26292b 41vmin, #0c0e0f 42vmin);
+}
+#cockpit.hull-4 .glass {
+  background: repeating-conic-gradient(from 0deg, #a8b0b2 0 3deg, transparent 3deg 22.5deg);
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 0 37.4vmin, #000 37.6vmin 39.4vmin, transparent 39.6vmin);
+  mask-image: radial-gradient(circle at 50% 50%, transparent 0 37.4vmin, #000 37.6vmin 39.4vmin, transparent 39.6vmin);
+}
+/* 5 — grand dôme de la sphère de pression */
+#cockpit.hull-5 .frame {
+  background: radial-gradient(circle at 50% 50%, transparent 0 58vmin, #8a9396 58.3vmin, #45484a 60vmin, #0c0e0f 62vmin);
+}
+#cockpit.hull-5 .glass {
+  background: radial-gradient(ellipse at 30% 25%, rgba(232, 236, 226, 0.06), transparent 40%);
+}
+/* 6 — coque abyssale : écran panoramique anguleux, lignes lumineuses */
+#cockpit.hull-6 .frame {
+  border: 2.2vmin solid #14181b;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 0 0, 6% 10%, 6% 86%, 14% 94%, 86% 94%, 94% 86%, 94% 10%, 86% 4%, 14% 4%, 6% 10%);
+  background: #14181b;
+}
+#cockpit.hull-6 .glass {
+  inset: 4% 6% 6% 6%;
+  border: 1px solid rgba(127, 208, 192, 0.45);
+  clip-path: polygon(0 6%, 9% 0, 91% 0, 100% 6%, 100% 92%, 91% 100%, 9% 100%, 0 92%);
+  background:
+    linear-gradient(90deg, rgba(127, 208, 192, 0.35) 0 2px, transparent 2px) 50% 0 / 1px 14px no-repeat,
+    linear-gradient(rgba(127, 208, 192, 0.05), transparent 30%, transparent 70%, rgba(127, 208, 192, 0.05));
+}
+
+/* ---------- Capture de la souris ---------- */
+#lock-hint {
+  position: fixed;
+  left: 50%;
+  top: 58%;
+  transform: translateX(-50%);
+  display: none;
+  padding: 6px 16px;
+  font-size: 26px;
+  letter-spacing: 3px;
+  color: var(--hud-warm);
+  background: var(--hud-bg);
+  border: 2px solid var(--hud-warm);
+  pointer-events: none;
+  z-index: 3;
+  animation: blink 1.4s steps(2) infinite;
+}
+body.mode-dive.needs-lock #lock-hint { display: block; }
+body.cinema #lock-hint, body.in-menu #lock-hint { display: none !important; }

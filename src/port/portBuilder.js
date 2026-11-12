@@ -248,26 +248,39 @@ export function buildPort() {
   water.position.y = -1.1;
   group.add(water);
 
-  // --- Le Nautiliar à quai
-  const sub = createSubmarineModel();
-  sub.root.position.set(layout.sub.x, -0.75, layout.sub.z);
-  sub.root.rotation.y = -Math.PI / 2;
-  group.add(sub.root);
+  // --- Le Nautiliar à quai (le modèle change avec la coque)
+  const subRoot = new THREE.Group();
+  subRoot.position.set(layout.sub.x, -0.75, layout.sub.z);
+  subRoot.rotation.y = -Math.PI / 2;
+  group.add(subRoot);
+  let sub = createSubmarineModel(0);
+  subRoot.add(sub.group);
 
   return {
     group,
     colliders,
     lights,
     interactables,
-    sub,
+    get sub() {
+      return sub;
+    },
     tagged,
     glowMaterial: GLOW,
+    /** Remplace le sous-marin à quai par le modèle du niveau de coque */
+    setSubModel(level) {
+      if (sub.level === level) return;
+      subRoot.clear();
+      sub = createSubmarineModel(level);
+      subRoot.add(sub.group);
+      // Les plus gros modèles flottent un peu plus haut
+      subRoot.position.y = level === 4 ? 0.2 : level >= 5 ? -0.2 : -0.75;
+    },
     update(time) {
       waterUniforms.uTime.value = time;
       // Le sous-marin tangue doucement
-      sub.root.position.y = -0.75 + Math.sin(time * 0.9) * 0.08;
-      sub.root.rotation.z = Math.sin(time * 0.7) * 0.03;
-      sub.propeller.rotation.z += 0.002;
+      subRoot.position.y += (Math.sin(time * 0.9) * 0.08 - (subRoot.userData.bob ?? 0));
+      subRoot.userData.bob = Math.sin(time * 0.9) * 0.08;
+      subRoot.rotation.z = Math.sin(time * 0.7) * 0.03;
     },
   };
 }

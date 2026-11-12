@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { DECOR } from '../config/settings.js';
+import { pointScale } from '../core/renderer.js';
 
 /**
  * Neige marine : particules qui flottent et tombent lentement.
@@ -24,6 +25,8 @@ export function createMarineSnow() {
 
   const material = new THREE.ShaderMaterial({
     fog: true,
+    transparent: true,
+    depthWrite: false,
     uniforms: THREE.UniformsUtils.merge([
       THREE.UniformsLib.fog,
       {
@@ -37,6 +40,7 @@ export function createMarineSnow() {
         uAmbient: { value: 1 },
         uTint: { value: new THREE.Color('#7fbf7a') },
         uTintAmount: { value: 0 },
+        uPointScale: pointScale,
       },
     ]),
     vertexShader: /* glsl */ `
@@ -45,6 +49,7 @@ export function createMarineSnow() {
       uniform float uBox;
       uniform vec3 uLightPos;
       uniform vec3 uLightDir;
+      uniform float uPointScale;
       attribute float aSeed;
       varying float vLit;
       #include <fog_pars_vertex>
@@ -61,7 +66,8 @@ export function createMarineSnow() {
         vec4 mvPosition = modelViewMatrix * vec4(p, 1.0);
         gl_Position = projectionMatrix * mvPosition;
         float dist = max(-mvPosition.z, 0.1);
-        gl_PointSize = clamp(5.0 / dist, 1.0, 2.0);
+        // Taille en pixels proportionnelle à la résolution (lisible même en plein écran)
+        gl_PointSize = clamp(6.0 / dist, 1.0, 2.4) * uPointScale * 0.7;
 
         // Éclairage par le phare (cône simplifié)
         vec3 toP = p - uLightPos;
@@ -82,12 +88,16 @@ export function createMarineSnow() {
       void main() {
         // Sous radiation, les particules luisent faiblement en vert
         vec3 c = uColor * uAmbient + uLitColor * vLit + uTint * uTintAmount;
-        gl_FragColor = vec4(c, 1.0);
+        // Flocon rond aux bords doux
+        float r = length(gl_PointCoord - 0.5) * 2.0;
+        if (r > 1.0) discard;
+        gl_FragColor = vec4(c, (1.0 - r * r) * (0.55 + vLit * 0.45));
         #include <fog_fragment>
       }
     `,
   });
 
+  material.uniforms.uPointScale = pointScale; // référence partagée (merge l'aurait copiée)
   const points = new THREE.Points(geo, material);
   points.frustumCulled = false; // les positions sont calculées dans le shader
 

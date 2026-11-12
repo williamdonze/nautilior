@@ -196,7 +196,7 @@ export class Pickups {
   }
 
   update(time, viewer) {
-    const hide2 = 130 * 130; // au-delà, le brouillard les rend invisibles : on ne les dessine pas
+    const hide2 = 95 * 95; // au-delà, le brouillard les rend invisibles : on ne les dessine pas
     const beacon2 = 260 * 260; // halos et colonnes servent de balises un peu plus loin
     for (const p of this.list) {
       const d2 = viewer ? p.object.position.distanceToSquared(viewer) : 0;

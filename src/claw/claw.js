@@ -16,8 +16,6 @@ import { stats } from '../submarine/stats.js';
 const State = { IDLE: 'idle', EXTEND: 'extend', GRAB: 'grab', RETRACT: 'retract', STOW: 'stow' };
 
 const v3 = (o) => new THREE.Vector3(o.x, o.y, o.z);
-const ROOT_LOCAL = v3(CLAW.ROOT);
-const REST_LOCAL = v3(CLAW.REST);
 const POLE_LOCAL = v3(CLAW.POLE).normalize();
 const STOW_LOCAL = new THREE.Vector3(0, -0.4, 1.4); // trappe de la soute
 
@@ -104,8 +102,9 @@ export class Claw {
   updateAnchors() {
     const body = this.sub.body;
     body.updateWorldMatrix(true, false);
-    this.root.copy(ROOT_LOCAL).applyMatrix4(body.matrixWorld);
-    this._rest.copy(REST_LOCAL).applyMatrix4(body.matrixWorld);
+    // L'épaule et la position repliée dépendent du modèle de sous-marin
+    this.root.copy(this.sub.clawRoot).applyMatrix4(body.matrixWorld);
+    this._rest.copy(this.sub.clawRest).applyMatrix4(body.matrixWorld);
     this._pole.copy(POLE_LOCAL).transformDirection(body.matrixWorld);
   }
 

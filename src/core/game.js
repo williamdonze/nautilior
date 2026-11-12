@@ -72,6 +72,7 @@ export class Game {
       onMemory: (id) => this.showMemory(id),
       onUpgrade: (catId, level) => {
         applyUpgrades(gameState.upgrades);
+        if (catId === 'hull') this.applyHullModel();
         if (level.abyssal) {
           storyState.abyssalHull = true;
           this.pendingAbyssalTalk = true; // le mécano parlera en fermant l'atelier
@@ -105,7 +106,15 @@ export class Game {
     // Commandes
     input.onPress((code) => this.key(code));
     pointer.onClick(() => {
-      if (this.mode === 'dive' && !this.busy) this.dive.click();
+      if (this.mode === 'dive' && !this.busy && !this.pausedAll && !this.inMenu) this.dive.click();
+    });
+    // Échap libère la souris capturée (le navigateur le fait lui-même) : on met alors en pause
+    pointer.onLockChange((locked) => {
+      if (locked || this.releasingPointer) {
+        this.releasingPointer = false;
+        return;
+      }
+      if (this.mode === 'dive' && !this.inMenu && !this.pausedAll && !this.busy && !this.dive.inventory.isOpen) this.pause();
     });
 
     this.menu = new Menu({
@@ -132,6 +141,7 @@ export class Game {
     resetStoryState();
     applyUpgrades(gameState.upgrades);
     this.hold.fromIds([]);
+    this.applyHullModel();
     this.loaded = false;
     this.inMenu = false;
     this.port.player.object.visible = true;
@@ -145,6 +155,7 @@ export class Game {
 
   /** Écran titre : le quai dans la brume, la caméra glisse lentement */
   showTitle() {
+    this.applyHullModel();
     this.inMenu = true;
     this.setMode('port');
     this.port.enter('quay');
@@ -164,6 +175,8 @@ export class Game {
   }
 
   pause() {
+    if (this.pausedAll) return;
+    this.pausedAt = performance.now();
     this.pausedAll = true;
     this.sound.motorStop();
     this.menu.show('pause');
@@ -174,11 +187,35 @@ export class Game {
     this.pausedAll = false;
     this.menu.hide();
     document.body.classList.remove('in-menu');
+    // On reprend les commandes directement (le clic sur « Reprendre » autorise la capture)
+    if (this.mode === 'dive' && this.dive.view === 'first') this.pointer.lock();
+  }
+
+  /**
+   * La souris n'est capturée que pendant le pilotage à la 1re personne ;
+   * inventaire, dialogues, souvenirs et cinématiques ont besoin du curseur.
+   */
+  managePointer() {
+    const piloting = this.mode === 'dive' && this.dive.view === 'first' && !this.busy && !this.paused &&
+      !this.pausedAll && !this.inMenu && !this.dive.inventory.isOpen && !this.dialogue.isOpen;
+    if (!piloting && this.pointer.locked) {
+      this.releasingPointer = true;
+      this.pointer.unlock();
+    }
+    document.body.classList.toggle('needs-lock', piloting && !this.pointer.locked);
+  }
+
+  /** Le sous-marin (à quai et en plongée) prend la forme du niveau de coque */
+  applyHullModel() {
+    const level = gameState.upgrades.hull ?? 0;
+    this.port.world.setSubModel(level);
+    this.dive.setHullLevel(level);
   }
 
   /* ------------------------------------------------------------ Démarrage */
 
   start() {
+    this.applyHullModel();
     this.hud.setMoney(gameState.money);
     this.hud.updateCargo(this.hold);
     if (storyState.ending) {
@@ -279,7 +316,8 @@ export class Game {
     if (this.inMenu) return;
     const menuKey = code === 'Escape' || code === 'KeyP';
     if (this.pausedAll) {
-      if (menuKey) this.resume();
+      // (la même touche Échap peut à la fois libérer la souris et arriver ici : on l'ignore)
+      if (menuKey && performance.now() - (this.pausedAt ?? 0) > 300) this.resume();
       return;
     }
     if (menuKey) {
@@ -374,6 +412,7 @@ export class Game {
     this.music.setMood(this.mode === 'dive' && !this.inMenu ? (depth > 900 ? 'deep' : 'dive') : 'port');
     this.music.update(dt);
 
+    this.managePointer();
     if (this.inMenu) {
       this.port.update(dt, time, this.input, false);
       const x = -6 + Math.sin(time * 0.045) * 16;

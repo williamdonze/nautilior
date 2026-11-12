@@ -51,6 +51,7 @@ export async function playEnding(game, kind) {
   game.paused = false;
   document.body.classList.add('cinema');
   dive.inventory.close();
+  if (game.mode === 'dive') dive.setView('third'); // les cinématiques se voient de l'extérieur
 
   if (kind === 'close') {
     /* ---------- Fermer : la déchirure se referme, le vert s'éteint ---------- */

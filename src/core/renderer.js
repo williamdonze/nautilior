@@ -1,62 +1,78 @@
 import * as THREE from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
-import { PixelShader } from './pixelShader.js';
-import { RENDER } from '../config/settings.js';
-import paletteData from '../config/palette.json';
-import { hexToSRGBVector } from './utils.js';
 
 /**
- * Renderer pixelisé :
- * la scène est rendue dans une texture basse résolution (NearestFilter),
- * puis affichée en plein écran à travers le shader palette + dithering.
+ * Renderer du jeu : rendu net en pleine résolution, avec antialiasing (MSAA),
+ * puis une passe finale légère : ondulation de l'image près du portail (radiation),
+ * conversion sRGB et vignettage.
+ * `quality` règle la résolution de rendu (1 = pleine résolution).
  */
-export class PixelRenderer {
+
+/** Échelle partagée des particules (neige marine, bulles…) : leur taille suit la résolution */
+export const pointScale = { value: 1 };
+
+const PostShader = {
+  uniforms: {
+    tDiffuse: { value: null },
+    uDistort: { value: 0 },
+    uTime: { value: 0 },
+  },
+  vertexShader: /* glsl */ `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = vec4(position.xy, 0.0, 1.0);
+    }
+  `,
+  fragmentShader: /* glsl */ `
+    uniform sampler2D tDiffuse;
+    uniform float uDistort;
+    uniform float uTime;
+    varying vec2 vUv;
+    vec3 linearToSRGB(vec3 c) {
+      return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(vec3(0.0031308), c));
+    }
+    void main() {
+      vec2 uv = vUv;
+      if (uDistort > 0.0) {
+        uv.x += sin(vUv.y * 38.0 + uTime * 2.7) * 0.0035 * uDistort;
+        uv.y += cos(vUv.x * 27.0 + uTime * 1.9) * 0.0025 * uDistort;
+      }
+      vec3 col = linearToSRGB(clamp(texture2D(tDiffuse, uv).rgb, 0.0, 1.0));
+      // Vignettage doux, comme à travers un hublot
+      float v = smoothstep(1.25, 0.45, length(vUv - 0.5) * 1.6);
+      gl_FragColor = vec4(col * mix(0.55, 1.0, v), 1.0);
+    }
+  `,
+};
+
+export class GameRenderer {
   constructor(container) {
     this.renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
-    this.renderer.setPixelRatio(1); // inutile de rendre plus fin : l'image finale est volontairement grossière
     container.appendChild(this.renderer.domElement);
+    this.quality = 1;
 
-    this.pixelHeight = RENDER.PIXEL_HEIGHT;
+    // Cible pleine résolution, multi-échantillonnée (antialiasing), HalfFloat pour les noirs profonds
+    this.target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 });
 
-    // Cible basse résolution. HalfFloat pour garder de la précision dans les noirs profonds.
-    this.target = new THREE.WebGLRenderTarget(1, 1, {
-      minFilter: THREE.NearestFilter,
-      magFilter: THREE.NearestFilter,
-      type: THREE.HalfFloatType,
-      depthBuffer: true,
-    });
-
-    const palette = paletteData.colors.map(hexToSRGBVector);
     this.material = new THREE.ShaderMaterial({
-      uniforms: THREE.UniformsUtils.clone(PixelShader.uniforms),
-      vertexShader: PixelShader.vertexShader,
-      fragmentShader: PixelShader.fragmentShader,
-      defines: { PALETTE_SIZE: palette.length },
+      uniforms: THREE.UniformsUtils.clone(PostShader.uniforms),
+      vertexShader: PostShader.vertexShader,
+      fragmentShader: PostShader.fragmentShader,
       depthTest: false,
       depthWrite: false,
     });
-    this.material.uniforms.uPalette.value = palette;
-    this.material.uniforms.uResolution.value = new THREE.Vector2();
-    this.material.uniforms.uDither.value = RENDER.DITHER;
-    this.material.uniforms.uPaletteMix.value = RENDER.PALETTE_MIX;
-    this.material.uniforms.uSaturation.value = RENDER.SATURATION;
     this.material.uniforms.tDiffuse.value = this.target.texture;
-
     this.quad = new FullScreenQuad(this.material);
 
     this.resize();
     window.addEventListener('resize', () => this.resize());
   }
 
-  /** Change la résolution interne (utile pour les réglages de la phase 8). */
-  setPixelHeight(height) {
-    this.pixelHeight = height;
+  /** Qualité de rendu (0.5 à 1) : résolution relative à l'écran */
+  setQuality(q) {
+    this.quality = q;
     this.resize();
-  }
-
-  /** Intensité du tramage (0 = aucun) */
-  setDither(v) {
-    this.material.uniforms.uDither.value = v;
   }
 
   /** Ondulation de l'image (0 = aucune) */
@@ -72,11 +88,14 @@ export class PixelRenderer {
   resize() {
     const w = window.innerWidth;
     const h = window.innerHeight;
+    const ratio = Math.min(window.devicePixelRatio || 1, 2) * this.quality;
+    this.renderer.setPixelRatio(ratio);
     this.renderer.setSize(w, h);
-    const lowH = this.pixelHeight;
-    const lowW = Math.max(1, Math.round(lowH * (w / h)));
-    this.target.setSize(lowW, lowH);
-    this.material.uniforms.uResolution.value.set(lowW, lowH);
+    const tw = Math.max(1, Math.round(w * ratio));
+    const th = Math.max(1, Math.round(h * ratio));
+    this.target.setSize(tw, th);
+    // Les particules étaient pensées pour une image de 240 px de haut
+    pointScale.value = th / 240;
     this.onResize?.(w / h);
   }
 

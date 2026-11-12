@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { pointScale } from '../core/renderer.js';
 
 /**
  * Effets spéciaux à la capture d'un objet rare :
@@ -28,8 +29,10 @@ export class CaptureFx {
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
+      uniforms: { uPointScale: pointScale },
       vertexShader: /* glsl */ `
-        attribute float aLife;
+        uniform float uPointScale;
+      attribute float aLife;
         attribute vec3 aColor;
         varying float vLife;
         varying vec3 vColor;
@@ -38,7 +41,7 @@ export class CaptureFx {
           vColor = aColor;
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
           gl_Position = projectionMatrix * mv;
-          gl_PointSize = aLife > 0.0 ? clamp(12.0 / max(-mv.z, 0.1), 1.0, 3.0) : 0.0;
+          gl_PointSize = aLife > 0.0 ? clamp(12.0 / max(-mv.z, 0.1), 1.0, 3.0) * uPointScale * 0.7 : 0.0;
         }
       `,
       fragmentShader: /* glsl */ `

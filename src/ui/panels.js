@@ -227,7 +227,7 @@ function describe(catId, s) {
     case 'hull': return `${s.crushDepth} m max`;
     case 'claw': return `portée ${s.clawRange} m, vitesse ×${s.clawSpeed}`;
     case 'hold': return `${s.holdCapacity} emplacements`;
-    case 'light': return `portée ${s.lightRange} m`;
+    case 'light': return `phare ${s.lightRange} m, sonar ${s.radarRange} m`;
     default: return '';
   }
 }

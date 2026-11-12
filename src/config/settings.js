@@ -3,18 +3,10 @@
  * Tout ce qui est « réglable » sans toucher à la logique est ici.
  */
 
-/* ---------- Rendu pixelisé ---------- */
+/* ---------- Rendu ---------- */
 export const RENDER = {
-  // Hauteur (en pixels) de l'image interne. La largeur suit le ratio de l'écran.
-  // 180 = très gros pixels, 240 = façon PS1, 360 = plus fin.
-  PIXEL_HEIGHT: 240,
-  // Force du dithering (0 = aucun, 0.1 = marqué)
-  DITHER: 0.055,
-  // 1 = palette stricte, 0 = couleurs libres
-  PALETTE_MIX: 1.0,
-  // Désaturation globale avant quantification (1 = couleurs d'origine)
-  SATURATION: 0.85,
   FOV: 62,
+  FIRST_PERSON_FOV: 72,
 };
 
 /* ---------- Monde ---------- */
@@ -46,9 +38,6 @@ export const SEABED = {
 
 export const DECOR = {
   ROCKS: 900,
-  ALGAE_CLUMPS: 140,
-  ALGAE_PER_CLUMP: [5, 14],
-  ALGAE_MAX_DEPTH: 110, // pas d'algues trop profond (plus de lumière)
   MARINE_SNOW: 1800,
   MARINE_SNOW_BOX: 60, // taille du cube de particules autour de la caméra
 };

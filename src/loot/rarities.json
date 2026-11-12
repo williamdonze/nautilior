@@ -1,10 +1,50 @@
 {
-  "_comment": "Raretés. color = couleur d'interface et de lueur ; glow = intensité de la lueur propre ; halo = taille du halo lumineux (m) ; pillar = hauteur de la colonne de lumière (m), 0 = aucune.",
+  "_comment": "Raretés. color = couleur d'interface et des effets de capture. glow / halo / pillar = lueur propre de l'objet posé au fond (0 = aucune : les objets ne se repèrent qu'au radar et au phare).",
   "rarities": [
-    { "id": "commun",     "name": "Commun",     "level": 0, "color": "#9a9a94", "glow": 0,    "halo": 0,   "pillar": 0 },
-    { "id": "peu_commun", "name": "Peu commun", "level": 1, "color": "#7fae6a", "glow": 0.12, "halo": 0,   "pillar": 0 },
-    { "id": "rare",       "name": "Rare",       "level": 2, "color": "#5b8fc0", "glow": 0.3,  "halo": 2.4, "pillar": 0 },
-    { "id": "epique",     "name": "Épique",     "level": 3, "color": "#a070b8", "glow": 0.45, "halo": 3.2, "pillar": 10 },
-    { "id": "legendaire", "name": "Légendaire", "level": 4, "color": "#e0b050", "glow": 0.6,  "halo": 4.2, "pillar": 18 }
+    {
+      "id": "commun",
+      "name": "Commun",
+      "level": 0,
+      "color": "#9a9a94",
+      "glow": 0,
+      "halo": 0,
+      "pillar": 0
+    },
+    {
+      "id": "peu_commun",
+      "name": "Peu commun",
+      "level": 1,
+      "color": "#7fae6a",
+      "glow": 0,
+      "halo": 0,
+      "pillar": 0
+    },
+    {
+      "id": "rare",
+      "name": "Rare",
+      "level": 2,
+      "color": "#5b8fc0",
+      "glow": 0,
+      "halo": 0,
+      "pillar": 0
+    },
+    {
+      "id": "epique",
+      "name": "Épique",
+      "level": 3,
+      "color": "#a070b8",
+      "glow": 0,
+      "halo": 0,
+      "pillar": 0
+    },
+    {
+      "id": "legendaire",
+      "name": "Légendaire",
+      "level": 4,
+      "color": "#e0b050",
+      "glow": 0,
+      "halo": 0,
+      "pillar": 0
+    }
   ]
 }

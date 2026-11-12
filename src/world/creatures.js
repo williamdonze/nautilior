@@ -3,7 +3,7 @@ import creaturesData from '../config/creatures.json';
 import { WORLD } from '../config/settings.js';
 import { damp } from '../core/utils.js';
 import { getFloorHeight } from './seabed.js';
-import { createEel, createLantern, createJelly, createFishGeometry } from './creatureModels.js';
+import { createEel, createLantern, createJelly, createFishGeometry, FISH_SPECIES } from './creatureModels.js';
 
 /**
  * Faune : bancs de poissons ordinaires près de la surface,
@@ -45,10 +45,9 @@ function spawnPoint(sub, out, minY = -1e9, maxY = -3) {
 
 class FishSchools {
   constructor(scene) {
-    this.count = MAX_SCHOOLS * FISH.perSchool;
     const uniforms = (this.uniforms = { uTime: { value: 0 } });
-    const mat = new THREE.MeshLambertMaterial({ color: '#a8bdb2', flatShading: true, side: THREE.DoubleSide });
-    // Battement de queue dans le vertex shader (chaque poisson a sa phase)
+    const mat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide });
+    // Le corps ondule de plus en plus vers la queue (chaque poisson a sa phase)
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uTime = uniforms.uTime;
       shader.vertexShader = shader.vertexShader
@@ -57,28 +56,33 @@ class FishSchools {
           '#include <begin_vertex>',
           `#include <begin_vertex>
           float ph = dot(instanceMatrix[3].xyz, vec3(1.3, 0.7, 1.1));
-          transformed.x += sin(uTime * 11.0 + ph) * max(0.0, -position.z - 0.05) * 0.5;`
+          float back = max(0.0, 0.15 - position.z);
+          transformed.x += sin(uTime * 10.0 + ph - position.z * 4.0) * back * 0.35;`
         );
     };
-    this.mesh = new THREE.InstancedMesh(createFishGeometry(), mat, this.count);
-    this.mesh.frustumCulled = false;
-    const c = new THREE.Color();
-    for (let i = 0; i < this.count; i++) this.mesh.setColorAt(i, c.set(['#a8bdb2', '#83a39a', '#ccd8cc', '#9a9a94'][i % 4]));
-    scene.add(this.mesh);
-
+    // Un banc = une espèce (sardines, maquereaux, bars, vieilles)
+    const species = Object.keys(FISH_SPECIES);
+    const geoCache = {};
     this.schools = [];
     for (let s = 0; s < MAX_SCHOOLS; s++) {
+      const id = species[s % species.length];
+      geoCache[id] ??= createFishGeometry(id);
+      const mesh = new THREE.InstancedMesh(geoCache[id], mat, FISH.perSchool);
+      mesh.frustumCulled = false;
+      mesh.visible = false;
+      const c = new THREE.Color();
+      for (let i = 0; i < FISH.perSchool; i++) mesh.setColorAt(i, c.setScalar(0.85 + Math.random() * 0.3));
+      scene.add(mesh);
       const fish = [];
       for (let i = 0; i < FISH.perSchool; i++) {
         fish.push({ pos: new THREE.Vector3(), vel: new THREE.Vector3(), offset: new THREE.Vector3().randomDirection().multiplyScalar(1 + Math.random() * 3) });
       }
-      this.schools.push({ active: false, center: new THREE.Vector3(), target: new THREE.Vector3(), fish });
+      this.schools.push({ active: false, species: id, mesh, center: new THREE.Vector3(), target: new THREE.Vector3(), fish });
     }
   }
 
   update(dt, time, sub, wanted) {
     this.uniforms.uTime.value = time;
-    let idx = 0;
     for (let s = 0; s < MAX_SCHOOLS; s++) {
       const school = this.schools[s];
       const shouldLive = s < wanted;
@@ -96,7 +100,9 @@ class FishSchools {
         school.active = false;
       }
 
+      school.mesh.visible = school.active;
       if (school.active) {
+        let idx = 0;
         // Le banc erre vers une cible qui change de temps en temps
         if (school.center.distanceTo(school.target) < 3) {
           spawnPoint({ position: school.center }, school.target, -140, -3);
@@ -122,14 +128,11 @@ class FishSchools {
           // Orientation dans le sens de la nage
           if (f.vel.lengthSq() > 0.01) _m.lookAt(f.vel, _v.set(0, 0, 0), UP);
           _m.setPosition(f.pos);
-          this.mesh.setMatrixAt(idx++, _m);
+          school.mesh.setMatrixAt(idx++, _m);
         }
-      } else {
-        _m.makeScale(0, 0, 0);
-        for (let i = 0; i < school.fish.length; i++) this.mesh.setMatrixAt(idx++, _m);
+        school.mesh.instanceMatrix.needsUpdate = true;
       }
     }
-    this.mesh.instanceMatrix.needsUpdate = true;
   }
 }
 
@@ -238,13 +241,17 @@ class Mutant {
     const o = this.object;
     const m = this.model;
     const t = time + this.phase;
+    const charging = this.state === 'charge';
+    const k = Math.min(1, dt * 6);
     if (this.type === 'eel') {
       // La tête mène, les segments suivent en chaîne
       m.head.position.copy(this.pos);
       if (this.vel.lengthSq() > 0.01) m.head.lookAt(_v.copy(this.pos).add(this.vel));
-      // Ondulation latérale
       const side = new THREE.Vector3(this.vel.z, 0, -this.vel.x).normalize().multiplyScalar(Math.sin(t * 6) * 0.25);
       m.head.position.add(side);
+      // La gueule s'ouvre grand quand elle charge
+      const jawTarget = charging ? 0.55 : 0.08 + Math.sin(t * 1.7) * 0.05;
+      m.jaw.rotation.x += (jawTarget - m.jaw.rotation.x) * k;
       let prev = m.head.position;
       for (const seg of m.segments) {
         _v.subVectors(seg.position, prev);
@@ -257,16 +264,21 @@ class Mutant {
       o.position.copy(this.pos);
       if (this.vel.lengthSq() > 0.01) o.lookAt(_v.copy(this.pos).add(this.vel));
       m.body.rotation.z = Math.sin(t * 1.3) * 0.08;
-      m.tail.rotation.y = Math.sin(t * (this.state === 'charge' ? 9 : 3)) * 0.5;
+      m.tail.rotation.y = Math.sin(t * (charging ? 9 : 3)) * 0.5;
+      m.pect.forEach((f, i) => (f.rotation.z = Math.sin(t * 4 + i * Math.PI) * 0.3));
+      const jawTarget = charging ? 0.7 : 0.15 + Math.sin(t * 0.9) * 0.08;
+      m.jaw.rotation.x += (jawTarget - m.jaw.rotation.x) * k;
+      m.stalk.rotation.z = Math.sin(t * 1.1) * 0.25;
       const flick = 0.75 + Math.sin(t * 7) * 0.15 + (Math.random() < 0.02 ? -0.5 : 0);
       m.lureHalo.material.opacity = 0.5 * flick;
     } else {
       o.position.copy(this.pos);
       const pulse = Math.sin(t * 1.6);
       m.bell.scale.set(1 + pulse * 0.12, 1 - pulse * 0.15, 1 + pulse * 0.12);
+      // Filaments : chaque tronçon ondule avec un léger retard → mouvement de vague
       m.tendrils.forEach((p, i) => {
-        p.rotation.x = Math.sin(t * 1.2 + i) * 0.25;
-        p.rotation.z = Math.cos(t * 1.0 + i * 0.7) * 0.25;
+        p.rotation.x = Math.sin(t * 1.2 + i * 0.7) * 0.22;
+        p.rotation.z = Math.cos(t * 1.0 + i * 0.5) * 0.22;
       });
       m.halo.material.opacity = 0.35 + pulse * 0.1;
     }
