@@ -98,7 +98,12 @@ export const CLAW = {
 
 /* ---------- Objets posés au fond (test de la pince, enrichi en phase 3) ---------- */
 export const PICKUPS = {
-  COUNT: 90,
+  COUNT: 140,
   NEAR_SPAWN: 28, // nombre d'objets placés près du point de départ
   NEAR_RADIUS: 60,
+};
+
+/* ---------- Soute ---------- */
+export const HOLD = {
+  CAPACITY: 8, // emplacements (augmentera avec les améliorations en phase 5)
 };

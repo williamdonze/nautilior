@@ -35,10 +35,29 @@
     </div>
 
     <!-- Message de capture -->
-    <div id="toast"><div id="toast-name"></div><div id="toast-desc"></div></div>
+    <div id="toast"><div id="toast-rarity"></div><div id="toast-name"></div><div id="toast-desc"></div></div>
+
+    <!-- Éclat coloré plein écran (captures épiques et légendaires) -->
+    <div id="flash"></div>
+
+    <!-- Inventaire -->
+    <div id="inventory">
+      <div class="inv-panel">
+        <div class="inv-header">
+          <span class="inv-title">SOUTE</span>
+          <span id="inv-summary"></span>
+          <button id="inv-close">✕</button>
+        </div>
+        <div class="inv-body">
+          <div id="inv-grid"></div>
+          <div id="inv-details"></div>
+        </div>
+        <div class="inv-footer">I / TAB : fermer &nbsp;·&nbsp; les prix sont estimés, la marchande décidera</div>
+      </div>
+    </div>
 
     <div id="hint">
-      ZQSD / WASD : piloter &nbsp;·&nbsp; ESPACE : monter &nbsp;·&nbsp; MAJ : descendre &nbsp;·&nbsp; CLIC : pince
+      ZQSD / WASD : piloter &nbsp;·&nbsp; ESPACE : monter &nbsp;·&nbsp; MAJ : descendre &nbsp;·&nbsp; CLIC : pince &nbsp;·&nbsp; I / TAB : soute
     </div>
 
     <!-- Fondu au noir (ouverture) -->

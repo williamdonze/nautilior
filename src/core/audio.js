@@ -152,4 +152,92 @@ export class Sound {
       }
     });
   }
+
+  /**
+   * Capture d'un objet rare : arpège plus long et plus aigu, scintillement,
+   * et pour les légendaires une note grave qui résonne comme une cloche lointaine.
+   * @param {number} level 2 = rare, 3 = épique, 4 = légendaire
+   */
+  captureRare(level) {
+    if (!this.ready) return;
+    const t0 = this.ctx.currentTime + 0.05;
+    const scales = {
+      2: [440, 523.25, 659.25, 880],
+      3: [392, 493.88, 587.33, 739.99, 987.77],
+      4: [329.63, 415.3, 493.88, 659.25, 830.61, 987.77],
+    };
+    const notes = scales[level] || scales[2];
+    notes.forEach((freq, i) => {
+      const t = t0 + i * 0.12;
+      for (const [mul, vol] of [[1, 0.06], [2.76, 0.014], [5.4, 0.005]]) {
+        const o = this.ctx.createOscillator();
+        o.type = 'sine';
+        o.frequency.value = freq * mul;
+        const g = this.ctx.createGain();
+        this.envelope(g, t, vol, 0.01, 1.6);
+        o.connect(g).connect(this.muffle);
+        o.start(t);
+        o.stop(t + 1.7);
+      }
+    });
+    // Scintillement : sinus aigus légèrement désaccordés
+    for (let i = 0; i < level * 2; i++) {
+      const o = this.ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = 1800 + Math.random() * 900;
+      const g = this.ctx.createGain();
+      const t = t0 + 0.1 + Math.random() * 0.6;
+      this.envelope(g, t, 0.012, 0.005, 0.35);
+      o.connect(g).connect(this.muffle);
+      o.start(t);
+      o.stop(t + 0.4);
+    }
+    if (level >= 4) {
+      // Cloche grave et lointaine (partiels inharmoniques)
+      for (const [mul, vol] of [[1, 0.12], [2.0, 0.05], [2.41, 0.04], [3.01, 0.025]]) {
+        const o = this.ctx.createOscillator();
+        o.type = 'sine';
+        o.frequency.value = 110 * mul;
+        const g = this.ctx.createGain();
+        this.envelope(g, t0, vol, 0.02, 3.5);
+        o.connect(g).connect(this.muffle);
+        o.start(t0);
+        o.stop(t0 + 3.6);
+      }
+    }
+  }
+
+  /** Refus (soute pleine) : deux notes graves et sèches */
+  deny() {
+    if (!this.ready) return;
+    const t0 = this.ctx.currentTime;
+    [0, 0.12].forEach((dt) => {
+      const o = this.ctx.createOscillator();
+      o.type = 'square';
+      o.frequency.value = 110;
+      const g = this.ctx.createGain();
+      this.envelope(g, t0 + dt, 0.05, 0.005, 0.09);
+      o.connect(g).connect(this.muffle);
+      o.start(t0 + dt);
+      o.stop(t0 + dt + 0.12);
+    });
+  }
+
+  /** Objet largué : glouglou de bulles */
+  release() {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    for (let i = 0; i < 5; i++) {
+      const o = this.ctx.createOscillator();
+      o.type = 'sine';
+      const ti = t + i * 0.06;
+      o.frequency.setValueAtTime(300 + Math.random() * 200, ti);
+      o.frequency.exponentialRampToValueAtTime(700 + Math.random() * 300, ti + 0.06);
+      const g = this.ctx.createGain();
+      this.envelope(g, ti, 0.05, 0.005, 0.07);
+      o.connect(g).connect(this.muffle);
+      o.start(ti);
+      o.stop(ti + 0.1);
+    }
+  }
 }

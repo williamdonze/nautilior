@@ -1,59 +1,124 @@
 {
-  "_comment": "Objets ramassables. Phase 2 : nom, description, poids (kg), forme 3D, couleur, fréquence d'apparition. La phase 3 ajoutera rareté, prix et profondeur minimale.",
+  "_comment": "Objets ramassables. weight en kg, price en francs, minDepth en mètres. shape = modèle 3D (voir models.js). spawnWeight = fréquence relative au sein d'une même rareté (1 par défaut).",
   "items": [
     {
       "id": "galet_granit",
       "name": "Galet de granit rose",
       "description": "Poli par des siècles de courant. Il est tiède dans la main.",
-      "weight": 4,
-      "shape": "pebble",
-      "color": "#8a6f68",
-      "spawnWeight": 30
+      "rarity": "commun", "weight": 4, "price": 6, "minDepth": 0,
+      "shape": "pebble", "color": "#8a6f68", "spawnWeight": 3
     },
     {
       "id": "bouteille_cidre",
       "name": "Bouteille de cidre",
       "description": "Encore bouchée. Quelque chose roule à l'intérieur.",
-      "weight": 1,
-      "shape": "bottle",
-      "color": "#2f4a33",
-      "spawnWeight": 22
+      "rarity": "commun", "weight": 1, "price": 9, "minDepth": 0,
+      "shape": "bottle", "color": "#2f4a33", "spawnWeight": 2
     },
     {
       "id": "flotteur_filet",
       "name": "Flotteur de filet",
       "description": "Liège et ficelle. Le filet qui le tenait a disparu.",
-      "weight": 1,
-      "shape": "float",
-      "color": "#b07a47",
-      "spawnWeight": 22
+      "rarity": "commun", "weight": 1, "price": 7, "minDepth": 0,
+      "shape": "float", "color": "#b07a47", "spawnWeight": 2
     },
     {
-      "id": "assiette_faience",
-      "name": "Assiette de faïence",
-      "description": "Un motif bleu de Quimper. Personne n'a fini son repas.",
-      "weight": 1,
-      "shape": "plate",
-      "color": "#ccd8cc",
-      "spawnWeight": 14
+      "id": "filet_dechire",
+      "name": "Filet déchiré",
+      "description": "Les mailles ont été coupées. De l'intérieur.",
+      "rarity": "commun", "weight": 3, "price": 5, "minDepth": 0,
+      "shape": "net", "color": "#83a39a", "spawnWeight": 2
     },
     {
       "id": "casier_homard",
       "name": "Casier à homard",
       "description": "La porte est ouverte. Le casier est vide depuis longtemps.",
-      "weight": 14,
-      "shape": "trap",
-      "color": "#63321b",
-      "spawnWeight": 10
+      "rarity": "commun", "weight": 14, "price": 24, "minDepth": 10,
+      "shape": "trap", "color": "#63321b", "spawnWeight": 1
+    },
+    {
+      "id": "assiette_faience",
+      "name": "Assiette de faïence",
+      "description": "Un motif bleu de Quimper. Personne n'a fini son repas.",
+      "rarity": "peu_commun", "weight": 1, "price": 45, "minDepth": 15,
+      "shape": "plate", "color": "#ccd8cc", "spawnWeight": 2
+    },
+    {
+      "id": "bol_prenom",
+      "name": "Bol breton à prénom",
+      "description": "Un bol à oreilles. Le prénom peint a été gratté.",
+      "rarity": "peu_commun", "weight": 1, "price": 55, "minDepth": 15,
+      "shape": "bowl", "color": "#a8bdb2", "spawnWeight": 2
+    },
+    {
+      "id": "lanterne_chalutier",
+      "name": "Lanterne de chalutier",
+      "description": "Le verre est intact. La mèche a brûlé jusqu'au bout.",
+      "rarity": "peu_commun", "weight": 3, "price": 70, "minDepth": 25,
+      "shape": "lantern", "color": "#8a4f28", "spawnWeight": 1
     },
     {
       "id": "ancre_doris",
       "name": "Ancre de doris",
       "description": "Trop lourde pour une si petite barque. La chaîne a été tranchée net.",
-      "weight": 60,
-      "shape": "anchor",
-      "color": "#3f4446",
-      "spawnWeight": 5
+      "rarity": "peu_commun", "weight": 60, "price": 95, "minDepth": 25,
+      "shape": "anchor", "color": "#3f4446", "spawnWeight": 1
+    },
+    {
+      "id": "medaille_sauvetage",
+      "name": "Médaille de sauvetage",
+      "description": "Décernée en 1957. Le nom gravé est illisible, comme effacé.",
+      "rarity": "rare", "weight": 0.2, "price": 260, "minDepth": 50,
+      "shape": "medal", "color": "#b07a47", "spawnWeight": 2
+    },
+    {
+      "id": "montre_gousset",
+      "name": "Montre à gousset",
+      "description": "Arrêtée à 4 h 12. Toutes celles qu'on remonte sont arrêtées à 4 h 12.",
+      "rarity": "rare", "weight": 0.3, "price": 320, "minDepth": 60,
+      "shape": "watch", "color": "#cdb57c", "spawnWeight": 2
+    },
+    {
+      "id": "cloche_marie_morgane",
+      "name": "Cloche de la Marie-Morgane",
+      "description": "Le nom d'un chalutier gravé dans le bronze. Elle tinte parfois, seule.",
+      "rarity": "rare", "weight": 18, "price": 380, "minDepth": 70,
+      "shape": "bell", "color": "#8a4f28", "spawnWeight": 1
+    },
+    {
+      "id": "ciboire_noirci",
+      "name": "Ciboire d'argent noirci",
+      "description": "Il vient d'une chapelle qui n'apparaît sur aucune carte.",
+      "rarity": "epique", "weight": 2, "price": 950, "minDepth": 100,
+      "shape": "chalice", "color": "#878a85", "spawnWeight": 1
+    },
+    {
+      "id": "sextant_capitaine",
+      "name": "Sextant de capitaine",
+      "description": "Ses réglages pointent vers le fond, pas vers les étoiles.",
+      "rarity": "epique", "weight": 1.5, "price": 1100, "minDepth": 110,
+      "shape": "sextant", "color": "#b07a47", "spawnWeight": 1
+    },
+    {
+      "id": "clochette_ys",
+      "name": "Clochette de la cathédrale d'Ys",
+      "description": "Par temps calme, on entend les cloches d'Ys sous la mer. Celle-ci sonne quand on ne la regarde pas.",
+      "rarity": "legendaire", "weight": 6, "price": 4500, "minDepth": 140,
+      "shape": "bell", "color": "#cdb57c", "spawnWeight": 1
+    },
+    {
+      "id": "clef_gradlon",
+      "name": "Clef d'argent du roi Gradlon",
+      "description": "La clef des écluses de la ville. Elle n'aurait jamais dû quitter le fond.",
+      "rarity": "legendaire", "weight": 1, "price": 6000, "minDepth": 160,
+      "shape": "key", "color": "#a8bdb2", "spawnWeight": 1
+    },
+    {
+      "id": "couronne_dahut",
+      "name": "Couronne de Dahut",
+      "description": "Or et algues mêlés. Elle est froide comme une main.",
+      "rarity": "legendaire", "weight": 3, "price": 7500, "minDepth": 175,
+      "shape": "crown", "color": "#e0b050", "spawnWeight": 1
     }
   ]
 }

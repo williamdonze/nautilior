@@ -22,7 +22,7 @@ const STOW_LOCAL = new THREE.Vector3(0, -0.4, 1.4); // trappe de la soute
 
 export class Claw {
   /**
-   * @param {object} deps scene, sub, sound, bubbles, pickups, hold, onShake(amount), onCapture(item)
+   * @param {object} deps scene, sub, sound, bubbles, pickups, hold, onShake(amount), onCapture(pickup, position)
    */
   constructor(deps) {
     Object.assign(this, deps);
@@ -74,6 +74,11 @@ export class Claw {
    */
   fire(aim) {
     if (this.busy) return false;
+    if (aim.pickup && aim.inRange && this.hold.full) {
+      // Soute pleine : la pince refuse de partir
+      this.sound.deny();
+      return 'full';
+    }
     if (aim.pickup && aim.inRange) {
       this.target = aim.pickup;
       this.goal.copy(aim.pickup.object.position);
@@ -156,7 +161,7 @@ export class Claw {
             this.pickups.detach(this.carried);
             this.sound.clank(1);
             this.bubbles.burst(this.grabPoint, 18 + Math.min(this.carried.weight, 40), 2.5);
-            this.onShake?.(0.08 + Math.min(this.carried.weight / 200, 0.3));
+            this.onShake?.(0.08 + Math.min(this.carried.weight / 200, 0.3) + this.carried.rarity.level * 0.04);
           } else {
             this.sound.clank(0.5); // les mâchoires claquent dans le vide
           }
@@ -237,14 +242,21 @@ export class Claw {
     this.carried = null;
     this.state = State.IDLE;
     this.pickups.dispose(pickup);
-    this.hold.add(pickup.item);
+    if (!this.hold.add(pickup.item)) {
+      // Sécurité : soute remplie entre-temps → l'objet retombe
+      this.pickups.drop(pickup.item, hatch);
+      this.sound.deny();
+      return;
+    }
     this.sound.thunk(pickup.weight);
-    this.sound.capture();
+    if (pickup.rarity.level >= 2) this.sound.captureRare(pickup.rarity.level);
+    else this.sound.capture();
     this.bubbles.burst(hatch, 12, 1.5);
     this.flash.position.copy(hatch);
+    this.flash.material.color.set(pickup.rarity.level >= 1 ? pickup.rarity.color : '#efe3bb');
     this.flash.visible = true;
     this.flashTime = 0;
-    this.onCapture?.(pickup.item);
+    this.onCapture?.(pickup, hatch.clone());
   }
 
   updateFlash(dt) {

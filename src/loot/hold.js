@@ -1,16 +1,33 @@
+import { HOLD } from '../config/settings.js';
+
 /**
- * Soute du sous-marin.
- * Phase 2 : simple liste. La capacité limitée et l'inventaire arrivent en phase 3.
+ * Soute du sous-marin : nombre d'emplacements limité.
+ * Chaque emplacement contient la définition d'un objet (voir items.json).
  */
 export class Hold {
-  constructor() {
+  constructor(capacity = HOLD.CAPACITY) {
+    this.capacity = capacity;
     this.items = [];
     this.listeners = new Set();
   }
 
+  get full() {
+    return this.items.length >= this.capacity;
+  }
+
+  /** Ajoute un objet ; renvoie false si la soute est pleine */
   add(item) {
+    if (this.full) return false;
     this.items.push(item);
-    this.listeners.forEach((fn) => fn(this));
+    this.emit();
+    return true;
+  }
+
+  /** Retire l'objet à l'index donné et le renvoie */
+  removeAt(index) {
+    const [item] = this.items.splice(index, 1);
+    this.emit();
+    return item;
   }
 
   get count() {
@@ -18,7 +35,15 @@ export class Hold {
   }
 
   get weight() {
-    return this.items.reduce((sum, it) => sum + it.weight, 0);
+    return Math.round(this.items.reduce((sum, it) => sum + it.weight, 0) * 10) / 10;
+  }
+
+  get value() {
+    return this.items.reduce((sum, it) => sum + it.price, 0);
+  }
+
+  emit() {
+    this.listeners.forEach((fn) => fn(this));
   }
 
   onChange(fn) {

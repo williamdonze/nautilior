@@ -97,6 +97,185 @@ const SHAPES = {
     g.rotation.z = Math.PI / 2 - 0.15; // couchée
     return g;
   },
+
+  net(main) {
+    // Boule de filet emmêlé : sphère déformée affichée en fil de fer
+    const g = new THREE.Group();
+    const geo = new THREE.IcosahedronGeometry(0.45, 1);
+    const pos = geo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const k = 0.75 + Math.abs(Math.sin(i * 12.9898) * 0.4);
+      pos.setXYZ(i, pos.getX(i) * k, pos.getY(i) * k * 0.5, pos.getZ(i) * k);
+    }
+    const wire = main.clone();
+    wire.wireframe = true;
+    g.add(new THREE.Mesh(geo, wire));
+    g.userData.extraMaterials = [wire];
+    return g;
+  },
+
+  bowl(main, dark) {
+    const g = new THREE.Group();
+    const cup = new THREE.SphereGeometry(0.24, 7, 3, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
+    g.add(mesh(cup, Object.assign(main, { side: THREE.DoubleSide })));
+    for (const s of [-1, 1]) {
+      const ear = mesh(new THREE.BoxGeometry(0.1, 0.04, 0.08), dark);
+      ear.position.set(s * 0.27, -0.03, 0);
+      g.add(ear);
+    }
+    const foot = mesh(new THREE.CylinderGeometry(0.09, 0.1, 0.04, 7), dark);
+    foot.position.y = -0.24;
+    g.add(foot);
+    g.rotation.x = 0.4;
+    return g;
+  },
+
+  lantern(main, dark) {
+    const g = new THREE.Group();
+    const glass = mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.34, 6), new THREE.MeshLambertMaterial({ color: '#cdb57c', flatShading: true }));
+    g.add(glass);
+    for (const y of [-0.2, 0.2]) {
+      const plate = mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.05, 6), main);
+      plate.position.y = y;
+      g.add(plate);
+    }
+    const roof = mesh(new THREE.ConeGeometry(0.2, 0.16, 6), main);
+    roof.position.y = 0.3;
+    g.add(roof);
+    const handle = mesh(new THREE.TorusGeometry(0.1, 0.02, 3, 6, Math.PI), dark);
+    handle.position.y = 0.38;
+    g.add(handle);
+    g.userData.extraMaterials = [glass.material];
+    g.rotation.z = 1.3;
+    return g;
+  },
+
+  medal(main, dark) {
+    const g = new THREE.Group();
+    const disk = mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.03, 8), main);
+    disk.rotation.x = Math.PI / 2;
+    g.add(disk);
+    const ribbon = mesh(new THREE.BoxGeometry(0.14, 0.22, 0.02), dark);
+    ribbon.position.y = 0.24;
+    g.add(ribbon);
+    g.rotation.x = -Math.PI / 2 + 0.1; // à plat
+    return g;
+  },
+
+  watch(main, dark) {
+    const g = new THREE.Group();
+    const face = mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.06, 8), main);
+    g.add(face);
+    const crown = mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.06, 4), main);
+    crown.rotation.z = Math.PI / 2;
+    crown.position.x = 0.18;
+    g.add(crown);
+    const chain = mesh(new THREE.TorusGeometry(0.12, 0.012, 3, 8), dark);
+    chain.rotation.x = Math.PI / 2 - 0.3;
+    chain.position.x = 0.32;
+    g.add(chain);
+    return g;
+  },
+
+  bell(main, dark) {
+    const g = new THREE.Group();
+    const body = mesh(new THREE.CylinderGeometry(0.2, 0.42, 0.55, 8, 1, true), Object.assign(main, { side: THREE.DoubleSide }));
+    g.add(body);
+    const dome = mesh(new THREE.SphereGeometry(0.2, 8, 3, 0, Math.PI * 2, 0, Math.PI / 2), main);
+    dome.position.y = 0.27;
+    g.add(dome);
+    const lip = mesh(new THREE.TorusGeometry(0.42, 0.04, 3, 8), main);
+    lip.rotation.x = Math.PI / 2;
+    lip.position.y = -0.27;
+    g.add(lip);
+    const clapper = mesh(new THREE.IcosahedronGeometry(0.08, 0), dark);
+    clapper.position.y = -0.2;
+    g.add(clapper);
+    const yoke = mesh(new THREE.TorusGeometry(0.08, 0.03, 3, 6, Math.PI), dark);
+    yoke.position.y = 0.45;
+    g.add(yoke);
+    g.rotation.z = 1.2; // renversée sur le flanc
+    return g;
+  },
+
+  chalice(main, dark) {
+    const g = new THREE.Group();
+    const cup = mesh(new THREE.CylinderGeometry(0.2, 0.08, 0.25, 7, 1, true), Object.assign(main, { side: THREE.DoubleSide }));
+    cup.position.y = 0.2;
+    g.add(cup);
+    const lid = mesh(new THREE.SphereGeometry(0.2, 7, 2, 0, Math.PI * 2, 0, Math.PI / 2), main);
+    lid.position.y = 0.32;
+    g.add(lid);
+    const cross = mesh(new THREE.BoxGeometry(0.03, 0.12, 0.03), dark);
+    cross.position.y = 0.56;
+    g.add(cross);
+    const stem = mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.2, 5), main);
+    g.add(stem);
+    const base = mesh(new THREE.CylinderGeometry(0.08, 0.16, 0.06, 7), main);
+    base.position.y = -0.12;
+    g.add(base);
+    g.rotation.z = 1.4;
+    return g;
+  },
+
+  sextant(main, dark) {
+    const g = new THREE.Group();
+    const arc = mesh(new THREE.TorusGeometry(0.4, 0.035, 3, 8, Math.PI / 3), main);
+    arc.rotation.z = -Math.PI / 2 - Math.PI / 6;
+    g.add(arc);
+    for (const a of [-Math.PI / 6, Math.PI / 6]) {
+      const bar = mesh(new THREE.BoxGeometry(0.03, 0.42, 0.03), main);
+      bar.position.set(Math.sin(a) * 0.2, -Math.cos(a) * 0.2, 0);
+      bar.rotation.z = a;
+      g.add(bar);
+    }
+    const scope = mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.3, 5), dark);
+    scope.rotation.z = Math.PI / 2;
+    scope.position.y = -0.12;
+    g.add(scope);
+    g.rotation.x = -Math.PI / 2; // à plat
+    return g;
+  },
+
+  key(main, dark) {
+    const g = new THREE.Group();
+    const shaft = mesh(new THREE.BoxGeometry(0.6, 0.05, 0.05), main);
+    g.add(shaft);
+    const bow = mesh(new THREE.TorusGeometry(0.11, 0.035, 3, 7), main);
+    bow.position.x = -0.4;
+    g.add(bow);
+    for (const [x, h] of [[0.22, 0.14], [0.27, 0.1]]) {
+      const bit = mesh(new THREE.BoxGeometry(0.04, h, 0.05), dark);
+      bit.position.set(x, -h / 2, 0);
+      g.add(bit);
+    }
+    g.rotation.x = -Math.PI / 2;
+    return g;
+  },
+
+  crown(main, dark) {
+    const g = new THREE.Group();
+    const band = mesh(new THREE.CylinderGeometry(0.28, 0.26, 0.14, 8, 1, true), Object.assign(main, { side: THREE.DoubleSide }));
+    g.add(band);
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      const spike = mesh(new THREE.ConeGeometry(0.05, 0.16, 4), main);
+      spike.position.set(Math.cos(a) * 0.27, 0.15, Math.sin(a) * 0.27);
+      g.add(spike);
+    }
+    // Algues accrochées
+    const weedMat = new THREE.MeshLambertMaterial({ color: '#2f4a33', flatShading: true });
+    g.userData.extraMaterials = [weedMat];
+    for (let i = 0; i < 3; i++) {
+      const weed = mesh(new THREE.BoxGeometry(0.03, 0.3, 0.02), weedMat);
+      const a = i * 2.1;
+      weed.position.set(Math.cos(a) * 0.29, -0.08, Math.sin(a) * 0.29);
+      weed.rotation.z = 0.4;
+      g.add(weed);
+    }
+    g.rotation.z = 0.35;
+    return g;
+  },
 };
 
 /**
@@ -116,5 +295,7 @@ export function createItemModel(item) {
   // Groupe extérieur neutre : on peut le tourner / déplacer sans perdre l'orientation du modèle
   const object = new THREE.Group();
   object.add(inner);
-  return { object, materials: [main, dark] };
+  // Certains modèles ont leurs propres matériaux (verre, fil de fer…) : on les inclut pour la surbrillance
+  const materials = [main, dark, ...(inner.userData.extraMaterials ?? [])];
+  return { object, materials };
 }

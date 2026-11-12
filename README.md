@@ -23,6 +23,7 @@ npm run preview   # sert le build de production
 | Descendre | Maj | Shift |
 | Viser / pince | Souris + clic gauche | Souris + clic gauche |
 | Zoom caméra | Molette | Molette |
+| Soute (inventaire) | I ou Tab | I ou Tab |
 
 Les flèches du clavier fonctionnent aussi. Les touches sont lues par position physique (`event.code`) : AZERTY et QWERTY marchent sans réglage.
 
@@ -32,7 +33,10 @@ Les flèches du clavier fonctionnent aussi. Les touches sont lues par position p
 - `src/config/palette.json` : palette de couleurs limitée appliquée en post-processing.
 - `src/config/depthAmbience.json` : couleur et densité du brouillard, lumière selon la profondeur.
 - `CLAW` dans `settings.js` : portée, vitesses du bras, effet du poids.
-- `src/loot/items.json` : objets ramassables (nom, description, poids, forme, fréquence).
+- `src/loot/items.json` : objets (nom, description, rareté, poids, prix, profondeur minimale, forme 3D).
+- `src/loot/rarities.json` : les 5 raretés (couleur, lueur, halo, colonne de lumière).
+- `src/loot/lootTable.json` : chances de chaque rareté selon la profondeur.
+- `HOLD.CAPACITY` dans `settings.js` : nombre d'emplacements de la soute.
 
 En console : `nautiliar.pixel.setPixelHeight(180)` change la pixelisation à chaud.
 
@@ -46,8 +50,8 @@ src/
 ├── submarine/     # modèle, pilotage avec inertie, phare, caméra, bulles
 ├── world/         # bruit, fond marin, rochers, algues, neige marine, ambiance
 ├── claw/          # pince : visée (raycast), IK du bras, machine à états, modèle
-├── loot/          # objets (JSON), modèles 3D, soute
-├── ui/            # HUD (HTML/CSS)
+├── loot/          # objets, raretés, table de loot (JSON), modèles 3D, lueurs, effets de capture, soute
+├── ui/            # HUD, inventaire, vignettes des objets (HTML/CSS)
 ├── port/ story/ save/   # phases suivantes
 docs/
 └── LORE.md        # référence narrative
@@ -57,7 +61,7 @@ docs/
 
 - [x] Phase 1 : bases (rendu pixelisé, fond marin, sous-marin pilotable, caméra, HUD profondeur)
 - [x] Phase 2 : la pince
-- [ ] Phase 3 : loot et raretés
+- [x] Phase 3 : loot et raretés
 - [ ] Phase 4 : survie
 - [ ] Phase 5 : le port et les PNJ
 - [ ] Phase 6 : monde, créatures et fragments de mémoire

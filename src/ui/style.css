@@ -198,3 +198,107 @@ html, body, canvas { cursor: none; }
 #toast.visible { opacity: 1; transform: translate(-50%, 0); }
 #toast-name { font-size: 28px; color: var(--hud-warm); }
 #toast-desc { font-size: 20px; color: var(--hud-fg); font-style: italic; margin-top: 2px; }
+
+/* ---------- Message de capture : rareté ---------- */
+#toast-rarity { font-size: 18px; letter-spacing: 4px; color: var(--rarity, var(--hud-dim)); }
+#toast { border-color: var(--rarity, var(--hud-dim)); }
+#toast-name { color: var(--rarity, var(--hud-warm)); }
+
+/* ---------- Éclat plein écran ---------- */
+#flash {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(ellipse at center, var(--flash, #e0b050) 0%, transparent 70%);
+  mix-blend-mode: screen;
+}
+#flash.play { animation: flash 1.4s ease-out; }
+@keyframes flash {
+  0% { opacity: 0; }
+  12% { opacity: 0.55; }
+  100% { opacity: 0; }
+}
+
+/* Soute pleine : le compteur tremble */
+.cargo.deny { animation: deny 0.4s; border-color: #8a4f28; }
+@keyframes deny {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+#reticle.full { --col: #8a4f28; }
+
+/* ---------- Inventaire ---------- */
+#inventory {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(2, 4, 7, 0.6);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  z-index: 10;
+}
+#inventory.open { opacity: 1; pointer-events: auto; }
+#inventory, #inventory * { cursor: default; }
+body.inventory-open #reticle { display: none; }
+
+.inv-panel {
+  width: min(760px, 94vw);
+  background: #05090d;
+  border: 2px solid var(--hud-dim);
+  box-shadow: 6px 6px 0 #020407;
+}
+.inv-header {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  padding: 10px 16px;
+  border-bottom: 2px solid #11252e;
+}
+.inv-title { font-size: 30px; letter-spacing: 6px; }
+#inv-summary { flex: 1; font-size: 22px; color: var(--hud-dim); }
+.inv-panel button {
+  font-family: inherit;
+  font-size: 22px;
+  color: var(--hud-fg);
+  background: #0c1a22;
+  border: 2px solid var(--hud-dim);
+  padding: 2px 12px;
+}
+.inv-panel button:hover { color: #020407; background: var(--hud-warm); border-color: var(--hud-warm); }
+
+.inv-body { display: flex; gap: 18px; padding: 16px; flex-wrap: wrap; }
+#inv-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 80px);
+  gap: 8px;
+  align-content: start;
+}
+.slot {
+  width: 80px;
+  height: 80px;
+  background: #0c1a22;
+  border: 2px solid var(--rarity, #11252e);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.slot.empty { background: #070d12; border-style: dashed; border-color: #11252e; }
+.slot img { width: 76px; height: 76px; image-rendering: pixelated; }
+.slot:not(.empty):hover { transform: translateY(-2px); }
+.slot.selected { outline: 2px solid var(--hud-warm); outline-offset: 2px; }
+
+#inv-details { flex: 1; min-width: 220px; font-size: 22px; }
+.inv-name { font-size: 30px; line-height: 1; }
+.inv-rarity { font-size: 18px; letter-spacing: 4px; margin: 4px 0 10px; }
+.inv-desc { margin: 0 0 12px; font-style: italic; color: var(--hud-fg); }
+.inv-stats { display: flex; gap: 22px; color: var(--hud-dim); margin-bottom: 14px; }
+.inv-empty { color: var(--hud-dim); }
+.inv-footer { padding: 8px 16px; font-size: 18px; color: var(--hud-dim); border-top: 2px solid #11252e; }

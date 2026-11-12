@@ -15,6 +15,8 @@ export class Hud {
     this.reticleLabel = document.getElementById('reticle-label');
     this.toastEl = document.getElementById('toast');
     this.toastName = document.getElementById('toast-name');
+    this.toastRarity = document.getElementById('toast-rarity');
+    this.flashEl = document.getElementById('flash');
     this.toastDesc = document.getElementById('toast-desc');
     this.hint = document.getElementById('hint');
     this.fade = document.getElementById('fade');
@@ -49,12 +51,15 @@ export class Hud {
    *  - « far »    : objet trop loin
    *  - « busy »   : la pince travaille
    */
-  updateReticle(pointer, aim, busy) {
+  updateReticle(pointer, aim, busy, holdFull) {
     this.reticle.style.transform = `translate(${pointer.x}px, ${pointer.y}px)`;
     let state = '';
     let label = '';
     if (busy) state = 'busy';
-    else if (aim.pickup && aim.inRange) {
+    else if (aim.pickup && aim.inRange && holdFull) {
+      state = 'full';
+      label = 'SOUTE PLEINE';
+    } else if (aim.pickup && aim.inRange) {
       state = 'target';
       label = 'SAISIR';
     } else if (aim.pickup) {
@@ -69,7 +74,7 @@ export class Hud {
   }
 
   updateCargo(hold) {
-    this.cargoCount.textContent = String(hold.count).padStart(2, '0');
+    this.cargoCount.textContent = `${String(hold.count).padStart(2, '0')}/${String(hold.capacity).padStart(2, '0')}`;
     this.cargoWeight.textContent = `${hold.weight} kg`;
     // Petit « pouls » visuel
     this.cargoBox.classList.remove('pulse');
@@ -77,8 +82,25 @@ export class Hud {
     this.cargoBox.classList.add('pulse');
   }
 
-  /** Affiche le nom et la description de l'objet récupéré */
-  toast(item) {
+  /** Refus : la soute est pleine */
+  denyCargo() {
+    this.cargoBox.classList.remove('deny');
+    void this.cargoBox.offsetWidth;
+    this.cargoBox.classList.add('deny');
+  }
+
+  /** Éclat coloré plein écran */
+  flash(color) {
+    this.flashEl.style.setProperty('--flash', color);
+    this.flashEl.classList.remove('play');
+    void this.flashEl.offsetWidth;
+    this.flashEl.classList.add('play');
+  }
+
+  /** Affiche le nom, la rareté et la description de l'objet récupéré */
+  toast(item, rarity) {
+    this.toastEl.style.setProperty('--rarity', rarity.level > 0 ? rarity.color : '');
+    this.toastRarity.textContent = rarity.name.toUpperCase();
     this.toastName.textContent = item.name;
     this.toastDesc.textContent = item.description;
     this.toastEl.classList.add('visible');
