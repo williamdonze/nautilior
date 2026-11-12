@@ -4,6 +4,8 @@ import { createRandom, paintFaces } from '../core/utils.js';
 import { createNoise2D } from './noise.js';
 import { getFloorHeight } from './seabed.js';
 import { createLandmarks } from './landmarks.js';
+import { createFlora } from './flora.js';
+import { createBottomFauna } from './bottomFauna.js';
 
 const rand = createRandom(WORLD.SEED + 7);
 const noise = createNoise2D(WORLD.SEED + 3);
@@ -70,68 +72,6 @@ function createRocks(colliders) {
   return group;
 }
 
-/* ---------------------------------------------------------------- Algues */
-
-const ALGAE_COLORS = ['#2f4a33', '#46613f', '#3b4f2a', '#5a5a2e', '#2c4430'].map((h) => new THREE.Color(h));
-
-function createAlgae(uniforms) {
-  // Lame : cylindre très effilé à 3 faces, base à y = 0, hauteur 1
-  const geo = new THREE.CylinderGeometry(0.03, 0.22, 1, 3, 5, true);
-  geo.translate(0, 0.5, 0);
-
-  const material = new THREE.MeshLambertMaterial({ flatShading: true, side: THREE.DoubleSide });
-  // Ondulation dans le vertex shader : plus on monte sur la lame, plus elle bouge
-  material.onBeforeCompile = (shader) => {
-    shader.uniforms.uTime = uniforms.uTime;
-    shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nuniform float uTime;')
-      .replace(
-        '#include <begin_vertex>',
-        `#include <begin_vertex>
-        vec4 rootW = instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
-        float h = position.y;
-        float phase = uTime * 1.1 + rootW.x * 0.21 + rootW.z * 0.17;
-        transformed.x += sin(phase) * h * h * 0.35;
-        transformed.z += cos(phase * 0.8 + 1.3) * h * h * 0.25;`
-      );
-  };
-
-  // Compte total
-  const clumps = [];
-  let total = 0;
-  for (let c = 0; c < DECOR.ALGAE_CLUMPS * 3 && clumps.length < DECOR.ALGAE_CLUMPS; c++) {
-    const pt = randomFloorPoint();
-    if (-pt.y > DECOR.ALGAE_MAX_DEPTH) continue;
-    if (noise(pt.x * 0.02, pt.z * 0.02) < -0.2) continue; // regroupe les champs d'algues
-    const count = rand.int(DECOR.ALGAE_PER_CLUMP[0], DECOR.ALGAE_PER_CLUMP[1]);
-    clumps.push({ ...pt, count });
-    total += count;
-  }
-
-  const mesh = new THREE.InstancedMesh(geo, material, total);
-  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3();
-  const e = new THREE.Euler();
-  let idx = 0;
-  for (const clump of clumps) {
-    const color = rand.pick(ALGAE_COLORS);
-    for (let i = 0; i < clump.count; i++) {
-      const x = clump.x + rand.range(-3, 3);
-      const z = clump.z + rand.range(-3, 3);
-      p.set(x, getFloorHeight(x, z) - 0.2, z);
-      const h = rand.range(1.5, 6.5) * (1 - (-p.y / DECOR.ALGAE_MAX_DEPTH) * 0.5);
-      const w = rand.range(0.7, 1.4);
-      s.set(w, h, w);
-      e.set(rand.range(-0.15, 0.15), rand() * Math.PI * 2, rand.range(-0.15, 0.15));
-      q.setFromEuler(e);
-      m.compose(p, q, s);
-      mesh.setMatrixAt(idx, m);
-      mesh.setColorAt(idx, color.clone().multiplyScalar(rand.range(0.8, 1.2)));
-      idx++;
-    }
-  }
-  return mesh;
-}
-
 /**
  * Crée tout le décor statique.
  * `colliders` reçoit les gros rochers (sphères) pour les collisions du sous-marin.
@@ -141,9 +81,10 @@ export function createDecor() {
   const colliders = [];
   const group = new THREE.Group();
   group.add(createRocks(colliders));
-  group.add(createAlgae(uniforms));
   const landmarks = createLandmarks(colliders, uniforms);
   group.add(landmarks);
+  group.add(createFlora());
+  group.add(createBottomFauna());
   return {
     group,
     colliders,

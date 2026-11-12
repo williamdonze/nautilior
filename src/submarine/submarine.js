@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { SUBMARINE, WORLD } from '../config/settings.js';
 import { clamp, damp, lerp } from '../core/utils.js';
 import { getFloorHeight } from '../world/seabed.js';
-import { createSubmarineModel } from './subModel.js';
+import { createSubmarineModel, spinPropellers } from './subModel.js';
+import { CLAW } from '../config/settings.js';
 import { createBeam } from './beam.js';
 
 /**
@@ -12,12 +13,20 @@ import { createBeam } from './beam.js';
  */
 export class Submarine {
   constructor(scene, colliders = []) {
-    const model = createSubmarineModel();
-    this.object = model.root;
-    this.body = model.body;
-    this.propeller = model.propeller;
+    // root : position et cap ; body : tangage et roulis ; hull : le modèle (change avec la coque)
+    this.object = new THREE.Group();
+    this.body = new THREE.Group();
+    this.hull = new THREE.Group();
+    this.object.add(this.body);
+    this.body.add(this.hull);
     this.colliders = colliders;
     scene.add(this.object);
+    this.clawRoot = new THREE.Vector3();
+    this.clawRest = new THREE.Vector3();
+    this.cockpit = new THREE.Vector3();
+    this.tailPoint = new THREE.Object3D(); // sortie des bulles
+    this.body.add(this.tailPoint);
+    this.lift = 0; // commande de montée/descente lissée (rotors verticaux)
 
     // État physique
     this.position = this.object.position;
@@ -33,17 +42,13 @@ export class Submarine {
 
     // --- Phare : principale source de lumière en profondeur
     this.spot = new THREE.SpotLight('#efe3bb', 55, 90, 0.5, 0.5, 0.8);
-    this.spot.position.copy(model.lampPosition);
     this.spotTarget = new THREE.Object3D();
-    this.spotTarget.position.set(0, -9, 24); // incliné vers le fond
+    this.spotBase = new THREE.Vector3(0, -9, 24); // incliné vers le fond
+    this.spotTarget.position.copy(this.spotBase);
     this.body.add(this.spot, this.spotTarget);
     this.spot.target = this.spotTarget;
 
     this.beam = createBeam();
-    this.beam.mesh.position.copy(model.lampPosition);
-    // Aligne le cône (+Z local) sur l'axe phare → cible
-    const beamDir = this.spotTarget.position.clone().sub(model.lampPosition).normalize();
-    this.beam.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), beamDir);
     this.body.add(this.beam.mesh);
 
     // Petite lueur de cabine pour qu'on devine la coque dans le noir
@@ -56,6 +61,46 @@ export class Submarine {
     this._side = new THREE.Vector3();
     this._tmp = new THREE.Vector3();
     this._prev = new THREE.Vector3();
+
+    this.setModel(0);
+  }
+
+  /** Remplace le modèle 3D (niveau de coque) ; le phare, le bras et le poste suivent */
+  setModel(level) {
+    if (this.model?.level === level) return;
+    this.hull.clear();
+    const model = createSubmarineModel(level);
+    this.model = model;
+    this.hull.add(model.group);
+    this.spot.position.copy(model.lampPosition);
+    this.beam.mesh.position.copy(model.lampPosition);
+    this.aimLight(0, 0);
+    this.cockpit.copy(model.cockpit);
+    this.clawRoot.copy(model.clawRoot ?? new THREE.Vector3(CLAW.ROOT.x, CLAW.ROOT.y, CLAW.ROOT.z));
+    this.clawRest.copy(model.clawRest ?? new THREE.Vector3(CLAW.REST.x, CLAW.REST.y, CLAW.REST.z));
+    this.tailPoint.position.copy(model.tail);
+    this.setHullVisible(this.hullVisible ?? true);
+  }
+
+  /** Coque visible ou non (masquée en vue à la 1re personne ; les lumières restent allumées) */
+  setHullVisible(v) {
+    this.hullVisible = v;
+    this.hull.traverse((o) => {
+      if (o.isMesh) o.visible = v;
+    });
+    this.beam.mesh.visible = v && this.beam.mesh.visible;
+  }
+
+  /**
+   * Oriente le phare (et son faisceau) : il suit le regard en vue à la 1re personne.
+   * @param {number} yaw décalage horizontal (rad), @param {number} pitch décalage vertical (rad)
+   */
+  aimLight(yaw, pitch) {
+    const t = this.spotTarget.position.copy(this.spotBase).sub(this.spot.position);
+    t.applyAxisAngle(new THREE.Vector3(1, 0, 0), -pitch).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
+    t.add(this.spot.position);
+    const dir = this._tmp.copy(t).sub(this.spot.position).normalize();
+    this.beam.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir);
   }
 
   /** Direction avant dans le plan horizontal */
@@ -124,9 +169,10 @@ export class Submarine {
     this.body.rotation.set(this.pitch, 0, this.roll, 'YXZ');
     this.body.position.y = Math.sin(time * 1.1) * 0.06;
 
-    // --- Hélice
+    // --- Hélices et rotors
     this.throttle = lerp(this.throttle, thrustInput, damp(2.5, dt));
-    this.propeller.rotation.z += (this.throttle * 14 + 0.6) * dt;
+    this.lift = lerp(this.lift, liftInput, damp(3, dt));
+    spinPropellers(this.model, dt, this.throttle, this.lift);
   }
 
   /** Collisions : fond marin, surface, limites du monde, gros rochers */
@@ -209,9 +255,9 @@ export class Submarine {
     outDir.sub(outPos).normalize();
   }
 
-  /** Position monde de l'hélice (pour les bulles) */
+  /** Position monde de l'arrière du sous-marin (pour les bulles) */
   getPropellerPosition(out) {
-    return this.propeller.getWorldPosition(out);
+    return this.tailPoint.getWorldPosition(out);
   }
 
   /** Réglages du phare selon les améliorations */
@@ -223,6 +269,6 @@ export class Submarine {
 
   /** Ajuste l'intensité visuelle du faisceau selon la profondeur */
   setBeamVisibility(v) {
-    this.beam.setOpacity(v * 0.08);
+    this.beam.setOpacity(this.hullVisible ? v * 0.08 : 0);
   }
 }

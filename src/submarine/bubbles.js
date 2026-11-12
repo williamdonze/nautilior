@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { pointScale } from '../core/renderer.js';
 import { WORLD } from '../config/settings.js';
 
 /**
@@ -17,8 +18,9 @@ export function createBubbles(max = 220) {
     fog: true,
     transparent: true,
     depthWrite: false,
-    uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uColor: { value: new THREE.Color('#ccd8cc') } }]),
+    uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uColor: { value: new THREE.Color('#ccd8cc') }, uPointScale: pointScale }]),
     vertexShader: /* glsl */ `
+      uniform float uPointScale;
       attribute float aLife;
       varying float vLife;
       #include <fog_pars_vertex>
@@ -26,7 +28,7 @@ export function createBubbles(max = 220) {
         vLife = aLife;
         vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
         gl_Position = projectionMatrix * mvPosition;
-        gl_PointSize = aLife > 0.0 ? clamp(9.0 / max(-mvPosition.z, 0.1), 1.0, 3.0) : 0.0;
+        gl_PointSize = aLife > 0.0 ? clamp(9.0 / max(-mvPosition.z, 0.1), 1.0, 3.0) * uPointScale * 0.7 : 0.0;
         #include <fog_vertex>
       }
     `,
@@ -36,12 +38,16 @@ export function createBubbles(max = 220) {
       #include <fog_pars_fragment>
       void main() {
         if (vLife <= 0.0) discard;
-        gl_FragColor = vec4(uColor, min(1.0, vLife * 2.0) * 0.8);
+        // Bulle ronde : bord clair, centre transparent
+        float r = length(gl_PointCoord - 0.5) * 2.0;
+        if (r > 1.0) discard;
+        gl_FragColor = vec4(uColor, min(1.0, vLife * 2.0) * (0.25 + 0.65 * smoothstep(0.4, 0.95, r)));
         #include <fog_fragment>
       }
     `,
   });
 
+  material.uniforms.uPointScale = pointScale; // référence partagée (merge l'aurait copiée)
   const points = new THREE.Points(geo, material);
   points.frustumCulled = false;
   let cursor = 0;

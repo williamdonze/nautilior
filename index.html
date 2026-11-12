@@ -13,6 +13,9 @@
   <body>
     <div id="game"></div>
 
+    <!-- Cadre du poste de pilotage (vue à la 1re personne), différent pour chaque sous-marin -->
+    <div id="cockpit"><div class="frame"></div><div class="glass"></div></div>
+
     <!-- Voile et vignette par-dessus le rendu 3D -->
     <div id="vignette"></div>
 
@@ -74,7 +77,7 @@
     </div>
 
     <div id="hint" class="dive-only">
-      ZQSD / WASD : piloter &nbsp;·&nbsp; ESPACE : monter &nbsp;·&nbsp; MAJ : descendre &nbsp;·&nbsp; CLIC : pince &nbsp;·&nbsp; I / TAB : soute
+      ZQSD / WASD : piloter &nbsp;·&nbsp; ESPACE : monter &nbsp;·&nbsp; MAJ : descendre &nbsp;·&nbsp; SOURIS : regarder &nbsp;·&nbsp; CLIC : pince &nbsp;·&nbsp; ÉCHAP : pause &nbsp;·&nbsp; I / TAB : soute &nbsp;·&nbsp; V : vue
     </div>
 
     <!-- HUD du port -->
@@ -114,6 +117,15 @@
 
     <!-- Transition au noir -->
     <div id="transition"><p></p></div>
+
+    <!-- Invitation à capturer la souris (vue cockpit) -->
+    <div id="lock-hint">CLIC : prendre les commandes</div>
+
+    <!-- Radar / sonar -->
+    <div id="radar" class="dive-only">
+      <canvas id="radar-canvas"></canvas>
+      <div class="radar-label"><span>SONAR</span><span id="radar-range">45 m</span></div>
+    </div>
 
     <!-- Bandeau d'entrée de zone -->
     <div id="zone-banner" class="dive-only"><div class="zb-name"></div><div class="zb-depth"></div></div>

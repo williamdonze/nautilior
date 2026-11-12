@@ -2,7 +2,7 @@
 
 Jeu web 3D d'exploration sous-marine narratif. Bretagne, 1984 : à bord d'un vieux sous-marin rouillé, le **Nautiliar**, vous explorez les fonds au large de Port-Kerys.
 
-Rendu low-poly pixelisé façon rétro / PS1 (Three.js + Vite).
+Rendu 3D low-poly en flat shading, net et antialiasé (Three.js + Vite).
 
 ## Commandes
 
@@ -27,20 +27,22 @@ L'adresse sera alors `https://<utilisateur>.github.io/<dépôt>/`.
 | Tourner | Q / D | A / D |
 | Monter | Espace | Espace |
 | Descendre | Maj | Shift |
-| Viser / pince | Souris + clic gauche | Souris + clic gauche |
-| Zoom caméra | Molette | Molette |
+| Regarder (vue cockpit) | Souris (capturée au premier clic) | Souris (capturée au premier clic) |
+| Pince | Clic gauche (vise au centre en cockpit, sous le curseur en vue extérieure) | idem |
+| Vue cockpit / vue extérieure | V | V |
+| Zoom (vue extérieure) | Molette | Molette |
 | Soute (inventaire) | I ou Tab | I ou Tab |
 | Au port : marcher | ZQSD | WASD |
 | Parler / interagir / rentrer au port (en surface) | E | E |
 | Dialogue : avancer / choisir | E, Espace, clic / 1-4 | E, Espace, clic / 1-4 |
-| Pause | Échap ou P | Échap ou P |
+| Pause (libère la souris) | Échap ou P | Échap ou P |
 
 Les flèches du clavier fonctionnent aussi. Les touches sont lues par position physique (`event.code`) : AZERTY et QWERTY marchent sans réglage.
 
 ## Réglages rapides
 
-- `src/config/settings.js` : résolution de la pixelisation (`RENDER.PIXEL_HEIGHT`), dithering, physique du sous-marin, caméra, relief, densité du décor.
-- `src/config/palette.json` : palette de couleurs limitée appliquée en post-processing.
+- `src/config/settings.js` : champ de vision, physique du sous-marin, caméra, relief, densité du décor.
+- `src/config/flora.json` : flore marine (laminaires, herbiers, fucus, gorgones, éponges : nombre, profondeurs, tailles, couleurs, réaction au passage du sous-marin).
 - `src/config/depthAmbience.json` : couleur et densité du brouillard, lumière selon la profondeur.
 - `CLAW` dans `settings.js` : portée, vitesses du bras, effet du poids.
 - `src/loot/items.json` : objets (nom, description, rareté, poids, prix, profondeur minimale, forme 3D).
@@ -62,13 +64,22 @@ Les flèches du clavier fonctionnent aussi. Les touches sont lues par position p
 
 Sauvegarde automatique dans le `localStorage` (retour au port, ventes, achats, dialogues, réveil).
 « Nouvelle partie » depuis l'écran titre efface la partie en cours.
-Les réglages (volumes, pixelisation, tramage, compteur d'images/s) sont dans le menu Réglages
+Les réglages (volumes, qualité graphique, compteur d'images/s) sont dans le menu Réglages
 (écran titre ou pause) et conservés à part.
 
 Juste avant le choix final, une sauvegarde à part est créée : depuis l'écran de fin,
 « Revenir devant le portail » permet de voir l'autre fin.
 
-En console : `nautiliar.pixel.setPixelHeight(180)` change la pixelisation à chaud.
+## Sous l'eau
+
+- **Visibilité réduite** : l'eau est trouble, les objets ne brillent pas. Le **phare** (qui suit le regard)
+  et le **sonar** (écran rond en bas à droite) servent à les trouver : objets (points dorés),
+  souvenirs (anneau blanc), créatures (triangle rouge), bancs de poissons, épaves.
+  Sa portée augmente avec l'amélioration « Phare et sonar ».
+- **Flore** : forêts de laminaires, herbiers, fucus, gorgones et éponges ; les algues s'écartent
+  au passage du sous-marin puis se redressent en ondulant.
+- **Sept sous-marins** : le modèle change à chaque amélioration de coque, du vieux cigare rouillé
+  au sous-marin abyssal anguleux à quatre rotors verticaux. Chacun a son propre hublot en vue cockpit.
 
 ## Le monde
 
@@ -85,12 +96,12 @@ En console : `nautiliar.pixel.setPixelHeight(180)` change la pixelisation à cha
 src/
 ├── main.js        # point d'entrée : renderer, entrées, son, HUD, boucle
 ├── config/        # réglages et données (JSON)
-├── core/          # jeu (modes, pause), renderer pixelisé, shader, entrées, sons, ambiance, musique
-├── submarine/     # modèle, pilotage avec inertie, phare, caméra, bulles, survie (oxygène, coque)
-├── world/         # plongée : fond par zones, épaves, canyon, créatures, portail, objets, ambiance, radiation
+├── core/          # jeu (modes, pause), rendu, entrées (souris capturée), sons, ambiance, musique
+├── submarine/     # 7 modèles, pilotage avec inertie, phare, caméras (cockpit / extérieure), survie
+├── world/         # plongée : fond par zones, flore, faune, épaves, créatures, portail, objets, ambiance
 ├── claw/          # pince : visée (raycast), IK du bras, machine à états, modèle
 ├── loot/          # objets, raretés, table de loot (JSON), modèles 3D, lueurs, effets de capture, soute
-├── ui/            # HUD, menus, inventaire, dialogues, panneaux, souvenirs (images pixel), vignettes
+├── ui/            # HUD, sonar, menus, inventaire, dialogues, panneaux, souvenirs, vignettes
 ├── port/          # port : décor, joueur à pied, personnages, prix de la marchande
 ├── story/         # état narratif, dialogues, fragments de mémoire, réveil, fins (JSON + scripts)
 ├── save/          # état de la partie, sauvegarde et réglages (localStorage)

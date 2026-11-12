@@ -3,21 +3,18 @@
  */
 const KEY = 'nautiliar-settings';
 
-export const PIXEL_LEVELS = [
-  { height: 160, label: 'Très gros' },
-  { height: 200, label: 'Gros' },
-  { height: 240, label: 'PS1' },
-  { height: 300, label: 'Moyen' },
-  { height: 360, label: 'Fin' },
-  { height: 480, label: 'Très fin' },
+/** Qualité graphique : résolution de rendu relative à l'écran */
+export const QUALITY_LEVELS = [
+  { scale: 0.5, label: 'Basse' },
+  { scale: 0.75, label: 'Moyenne' },
+  { scale: 1, label: 'Haute' },
 ];
 
 export const preferences = {
   master: 0.8,
   music: 0.6,
   sfx: 0.8,
-  pixelLevel: 2, // index dans PIXEL_LEVELS
-  dither: 0.055,
+  qualityLevel: 2, // index dans QUALITY_LEVELS
   showFps: false,
 };
 

@@ -606,4 +606,22 @@ export class Sound {
       o.stop(ti + 0.4);
     }
   }
+
+  /** Écho de sonar inquiétant : une créature vient d'apparaître au radar */
+  radarAlert() {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    for (const [f, dt] of [[660, 0], [622, 0.18]]) {
+      const o = this.ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = f;
+      const g = this.ctx.createGain();
+      this.envelope(g, t + dt, 0.05, 0.005, 0.3);
+      o.connect(g);
+      g.connect(this.master);
+      g.connect(this.echo);
+      o.start(t + dt);
+      o.stop(t + dt + 0.35);
+    }
+  }
 }

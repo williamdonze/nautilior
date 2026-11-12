@@ -1,4 +1,4 @@
-import { preferences, savePreferences, PIXEL_LEVELS } from '../save/preferences.js';
+import { preferences, savePreferences, QUALITY_LEVELS } from '../save/preferences.js';
 
 /**
  * Menus : écran titre, pause et réglages (dans #menu).
@@ -23,7 +23,7 @@ export class Menu {
       const el = e.target;
       if (!el.dataset.pref) return;
       const v = Number(el.value);
-      preferences[el.dataset.pref] = el.dataset.pref === 'pixelLevel' ? v : v / 100;
+      preferences[el.dataset.pref] = el.dataset.pref === 'qualityLevel' ? v : v / 100;
       savePreferences();
       this.applySettings();
       this.updateLabels();
@@ -117,10 +117,9 @@ export class Menu {
         ${slider('master', 'Volume général')}
         ${slider('music', 'Musique')}
         ${slider('sfx', 'Effets')}
-        <label class="setting"><span>Pixelisation</span>
-          <input type="range" min="0" max="${PIXEL_LEVELS.length - 1}" value="${preferences.pixelLevel}" data-pref="pixelLevel">
-          <em data-label="pixelLevel"></em></label>
-        ${slider('dither', 'Tramage', 12)}
+        <label class="setting"><span>Qualité graphique</span>
+          <input type="range" min="0" max="${QUALITY_LEVELS.length - 1}" value="${preferences.qualityLevel}" data-pref="qualityLevel">
+          <em data-label="qualityLevel"></em></label>
         <label class="setting toggle"><span>Afficher les images/s</span>
           <input type="checkbox" data-toggle="showFps" ${preferences.showFps ? 'checked' : ''}><em></em></label>
       </div>
@@ -131,11 +130,10 @@ export class Menu {
   updateLabels() {
     for (const el of this.root.querySelectorAll('[data-label]')) {
       const k = el.dataset.label;
-      if (k === 'pixelLevel') {
-        const lvl = PIXEL_LEVELS[preferences.pixelLevel];
-        el.textContent = `${lvl.label} (${lvl.height} px)`;
-      } else if (k === 'dither') el.textContent = preferences.dither < 0.005 ? 'aucun' : `${Math.round(preferences.dither * 100)}`;
-      else el.textContent = `${Math.round(preferences[k] * 100)} %`;
+      if (k === 'qualityLevel') {
+        const lvl = QUALITY_LEVELS[preferences.qualityLevel] ?? QUALITY_LEVELS[2];
+        el.textContent = `${lvl.label} (${Math.round(lvl.scale * 100)} %)`;
+      } else el.textContent = `${Math.round(preferences[k] * 100)} %`;
     }
   }
 }

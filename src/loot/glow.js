@@ -7,10 +7,10 @@ import * as THREE from 'three';
 
 let haloTexture = null;
 
-/** Texture de halo : dégradé radial blanc, en escalier pour rester « pixel » */
+/** Texture de halo : dégradé radial blanc, doux */
 function getHaloTexture() {
   if (haloTexture) return haloTexture;
-  const size = 32;
+  const size = 64;
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = size;
   const ctx = canvas.getContext('2d');
@@ -19,16 +19,14 @@ function getHaloTexture() {
     for (let x = 0; x < size; x++) {
       const d = Math.hypot(x - size / 2 + 0.5, y - size / 2 + 0.5) / (size / 2);
       const v = Math.max(0, 1 - d);
-      const stepped = Math.round(v * v * 5) / 5; // paliers
       const i = (y * size + x) * 4;
       img.data[i] = img.data[i + 1] = img.data[i + 2] = 255;
-      img.data[i + 3] = stepped * 255;
+      img.data[i + 3] = v * v * 255;
     }
   }
   ctx.putImageData(img, 0, 0);
   haloTexture = new THREE.CanvasTexture(canvas);
-  haloTexture.magFilter = THREE.NearestFilter;
-  haloTexture.minFilter = THREE.NearestFilter;
+
   return haloTexture;
 }
 

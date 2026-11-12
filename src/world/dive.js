@@ -7,6 +7,7 @@ import { createRadiationSource } from './radiation.js';
 import { Pickups } from './pickups.js';
 import { Submarine } from '../submarine/submarine.js';
 import { FollowCamera } from '../submarine/followCamera.js';
+import { CockpitCamera } from '../submarine/cockpitCamera.js';
 import { createBubbles } from '../submarine/bubbles.js';
 import { Survival } from '../submarine/survival.js';
 import { stats } from '../submarine/stats.js';
@@ -18,6 +19,11 @@ import { SURVIVAL, SUBMARINE, RADIATION } from '../config/settings.js';
 import { Creatures } from './creatures.js';
 import { zoneAtDepth } from './zones.js';
 import { createPortal } from './portal.js';
+import { Radar } from '../ui/radar.js';
+import { CENTER_POINTER } from '../core/pointer.js';
+import { WRECK_SPOTS } from './landmarks.js';
+import { getFloorHeight } from './seabed.js';
+import { Wake } from './flora.js';
 
 /**
  * La plongée : monde sous-marin, sous-marin, pince, survie et leurs effets.
@@ -39,6 +45,14 @@ export class Dive {
     scene.add(this.snow.object);
     this.radiationSource = createRadiationSource(scene);
     this.portal = createPortal(scene);
+    this.radar = new Radar(sound);
+    this.wake = new Wake();
+    this._contacts = [];
+    // Repères fixes visibles au sonar : épaves et portail
+    this.landmarkContacts = [
+      ...WRECK_SPOTS.map(([x, z], i) => ({ id: `wreck${i}`, kind: 'wreck', x, y: getFloorHeight(x, z), z })),
+      { id: 'portal', kind: 'wreck', x: this.portal.center.x, y: this.portal.center.y, z: this.portal.center.z },
+    ];
     this.nearPortal = false;
     this.autopilot = null; // cinématique : le sous-marin est piloté par le script
 
@@ -48,6 +62,9 @@ export class Dive {
     scene.add(this.bubbles.object);
     this.follow = new FollowCamera(pixel.aspect);
     this.follow.snap(this.sub);
+    this.cockpitCam = new CockpitCamera(pixel.aspect);
+    this.view = 'first'; // 'first' (poste de pilotage) ou 'third' (vue extérieure, touche V)
+    this.cockpitEl = document.getElementById('cockpit');
 
     // --- Objets et pince
     this.pickups = new Pickups(scene);
@@ -59,7 +76,7 @@ export class Dive {
       bubbles: this.bubbles,
       pickups: this.pickups,
       hold,
-      onShake: (a) => this.follow.shake(a),
+      onShake: (a) => this.shake(a),
       onCapture: (pickup, position) => this.captured(pickup, position),
     });
     this.aim = new Aim(this.follow.camera, this.pickups, this.seabed);
@@ -80,7 +97,7 @@ export class Dive {
       growl: () => sound.growl(),
       bite: (mutant, dir) => {
         sound.bite();
-        this.follow.shake(0.6);
+        this.shake(0.6);
         hud.damageFlash(1);
         this.bubbles.burst(this.sub.position, 30, 4);
         this.sub.velocity.addScaledVector(dir, 6); // le choc repousse le sous-marin
@@ -106,17 +123,48 @@ export class Dive {
     this._lightPos = new THREE.Vector3();
     this._lightDir = new THREE.Vector3();
     this._propPos = new THREE.Vector3();
+    this._nose = new THREE.Vector3();
     this.radGreen = new THREE.Color(RADIATION.COLOR).multiplyScalar(0.35);
     this.timers = { alarm: 0, heart: 0, creak: 1, flash: 0 };
     this.noInput = { axis: () => 0, is: () => false, anyMovement: false };
   }
 
   get camera() {
-    return this.follow.camera;
+    return this.view === 'first' ? this.cockpitCam.camera : this.follow.camera;
+  }
+
+  get cameraDepth() {
+    return this.view === 'first' ? this.cockpitCam.depth : this.follow.depth;
   }
 
   setAspect(aspect) {
     this.follow.setAspect(aspect);
+    this.cockpitCam.setAspect(aspect);
+  }
+
+  /** Secousse de caméra (quelle que soit la vue) */
+  shake(amount) {
+    this.follow.shake(amount);
+    this.cockpitCam.shake(amount);
+  }
+
+  /** Vue à la 1re personne (poste de pilotage) ou vue extérieure */
+  setView(view) {
+    this.view = view;
+    if (view === 'third') this.pointer.unlock();
+    this.sub.setHullVisible(view === 'third');
+    this.aim.camera = this.camera;
+    this.cockpitEl.className = view === 'first' ? `on hull-${this.sub.model.level}` : '';
+    if (view === 'third') {
+      this.follow.snap(this.sub);
+      this.sub.aimLight(0, 0);
+    } else this.cockpitCam.reset();
+  }
+
+  /** Modèle de sous-marin selon le niveau de coque */
+  setHullLevel(level) {
+    this.sub.setModel(level);
+    this.setView(this.view);
   }
 
   /** Début d'une plongée : on part du quai, juste sous la surface */
@@ -130,11 +178,13 @@ export class Dive {
     const S = SUBMARINE.SPAWN;
     this.sub.teleport(S.x, -2.5, S.z, S.yaw);
     this.follow.snap(this.sub);
+    this.setView(this.view);
     this.hud.updateCargo(this.hold);
   }
 
   leave() {
     this.sound.setDrone(0);
+    this.cockpitEl.className = '';
     this.inventory.close();
     this.claw.reset();
     this.sound.motorStop();
@@ -148,7 +198,7 @@ export class Dive {
     const isNew = this.onCapture(pickup);
     this.hud.toast(item, rarity, isNew);
     this.captureFx.play(position, rarity);
-    if (rarity.level >= 2) this.follow.shake(0.1 + rarity.level * 0.06);
+    if (rarity.level >= 2) this.shake(0.1 + rarity.level * 0.06);
     if (rarity.level >= 3) this.hud.flash(rarity.color);
   }
 
@@ -157,14 +207,40 @@ export class Dive {
     const strength = Math.min(1.5, (speed - SURVIVAL.IMPACT_THRESHOLD) / 3);
     this.survival.impact(speed);
     this.sound.impact(strength);
-    this.follow.shake(0.15 + strength * 0.35);
+    this.shake(0.15 + strength * 0.35);
     this.hud.damageFlash(strength);
     this.bubbles.burst(this.sub.position, 20, 3);
   }
 
-  /** Clic gauche : la pince */
+  /** Tout ce que le sonar peut détecter (seulement ce qui est à portée, pour rester léger) */
+  gatherContacts() {
+    const C = this._contacts;
+    C.length = 0;
+    const p = this.sub.position;
+    const r2 = (stats.radarRange + 5) ** 2;
+    const near = (x, z) => (x - p.x) ** 2 + (z - p.z) ** 2 < r2;
+    for (const k of this.pickups.list) {
+      const o = k.object.position;
+      if (near(o.x, o.z)) C.push({ id: k.object.id, kind: k.item.fragment ? 'fragment' : 'item', x: o.x, y: o.y, z: o.z });
+    }
+    for (const m of this.creatures.mutants) {
+      if (near(m.pos.x, m.pos.z)) C.push({ id: m.object.id, kind: 'creature', x: m.pos.x, y: m.pos.y, z: m.pos.z });
+    }
+    this.creatures.fish.schools.forEach((s, i) => {
+      if (s.active && near(s.center.x, s.center.z)) C.push({ id: `school${i}`, kind: 'fish', x: s.center.x, y: s.center.y, z: s.center.z });
+    });
+    for (const l of this.landmarkContacts) if (near(l.x, l.z)) C.push(l);
+    return C;
+  }
+
+  /** Clic gauche : la pince (en vue cockpit, le premier clic capture la souris) */
   click() {
-    if (this.inventory.isOpen || this.claw.busy || this.survival.dead) return;
+    if (this.inventory.isOpen || this.survival.dead) return;
+    if (this.view === 'first' && !this.pointer.locked) {
+      this.pointer.lock();
+      return;
+    }
+    if (this.claw.busy) return;
     if (this.claw.fire(this.aim.resolvePoint(this.claw.root)) === 'full') this.hud.denyCargo();
   }
 
@@ -172,6 +248,7 @@ export class Dive {
     if (this.survival.dead) return;
     if (code === 'KeyI' || code === 'Tab') this.inventory.toggle();
     else if (code === 'Escape') this.inventory.close();
+    else if (code === 'KeyV') this.setView(this.view === 'first' ? 'third' : 'first');
     else if (code === 'KeyE' && this.survival.atSurface && !this.claw.busy) this.onReturn();
     else if (code === 'KeyE' && this.nearPortal && !this.claw.busy) this.onPortal();
   }
@@ -199,7 +276,7 @@ export class Dive {
     const stress = Math.min(1, S.overDepth / 40) + (S.hullRatio < 0.3 ? 0.3 : 0);
     if (stress > 0 && timers.creak <= 0) {
       sound.creak(0.6 + stress * 0.6);
-      this.follow.shake(0.05 + stress * 0.15);
+      this.shake(0.05 + stress * 0.15);
       timers.creak = 0.5 + Math.random() * (3 - stress * 2);
     }
 
@@ -220,15 +297,19 @@ export class Dive {
     sub.update(dt, time, survival.dead || this.autopilot ? this.noInput : this.input);
     if (this.autopilot) this.autopilot(dt);
     this.claw.update(dt, time);
-    follow.update(dt, sub);
+    if (this.view === 'first') this.cockpitCam.update(dt, sub, this.pointer);
+    else follow.update(dt, sub);
+    const camera = this.camera;
 
-    this.aim.update(this.pointer, this.claw.root);
+    // Vue cockpit : on vise au centre de l'écran ; vue extérieure : sous le curseur
+    const aimPointer = this.view === 'first' ? CENTER_POINTER : this.pointer;
+    this.aim.update(aimPointer, this.claw.root);
     this.pickups.setHighlighted(!this.claw.busy && this.aim.inRange ? this.aim.pickup : null);
-    this.pickups.update(time, follow.camera.position);
-    hud.updateReticle(this.pointer, this.aim, this.claw.busy, this.hold.full);
-    this.captureFx.update(dt, follow.camera);
+    this.pickups.update(time, camera.position);
+    hud.updateReticle(aimPointer, this.aim, this.claw.busy, this.hold.full);
+    this.captureFx.update(dt, camera);
 
-    this.ambience.update(follow.depth, sub.position, time);
+    this.ambience.update(this.cameraDepth, sub.position, time);
     // Plus on approche de la source, plus l'eau verdit et l'image ondule
     const rad = survival.radiation;
     if (rad > 0) {
@@ -236,14 +317,16 @@ export class Dive {
       scene.background.copy(scene.fog.color);
     }
     this.pixel.setDistortion(rad * 1.2, time);
-    this.radiationSource.update(time, follow.camera.position);
+    this.radiationSource.update(time, camera.position);
     this.survivalEffects(dt);
     hud.updateSurvival(survival, sub.depth);
     sub.setBeamVisibility(this.ambience.state.beam);
 
     this.decor.update(time);
+    this._nose.copy(sub.forward).multiplyScalar(5).add(sub.position);
+    this.wake.update(dt, time, sub.position, sub.speed, this._nose);
     sub.getLightRay(this._lightPos, this._lightDir);
-    this.snow.update(time, follow.camera.position, this._lightPos, this._lightDir, this.ambience.state.ambient, rad);
+    this.snow.update(time, camera.position, this._lightPos, this._lightDir, this.ambience.state.ambient, rad);
 
     sub.getPropellerPosition(this._propPos);
     this.bubbles.update(dt, this._propPos, Math.abs(sub.throttle) * 22 + 0.5);
@@ -268,6 +351,9 @@ export class Dive {
       const damage = this.creatures.update(dt, time, sub, zone);
       if (damage > 0 && !this.autopilot) survival.damage(damage, 'creature');
     }
+
+    // --- Radar : objets, fragments, créatures, bancs, épaves dans le rayon du sonar
+    if (!survival.dead) this.radar.update(dt, sub, this.gatherContacts());
 
     // --- Un fragment de mémoire tout proche « appelle »
     this.whisperTimer -= dt;

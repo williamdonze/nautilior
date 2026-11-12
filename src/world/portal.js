@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { pointScale } from '../core/renderer.js';
 import { RADIATION, WORLD } from '../config/settings.js';
 import { createRandom, paintFaces } from '../core/utils.js';
 import { getFloorHeight } from './seabed.js';
@@ -138,9 +139,10 @@ export function createPortal(scene) {
     transparent: true,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
-    uniforms: { uTime: { value: 0 }, uOpen: { value: 1 } },
+    uniforms: { uTime: { value: 0 }, uOpen: { value: 1 }, uPointScale: pointScale },
     vertexShader: /* glsl */ `
       uniform float uTime;
+      uniform float uPointScale;
       attribute float aSeed;
       varying float vA;
       void main() {
@@ -150,7 +152,7 @@ export function createPortal(scene) {
         vA = 1.0 - p.y / 40.0;
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
         gl_Position = projectionMatrix * mv;
-        gl_PointSize = clamp(30.0 / -mv.z, 1.0, 3.0);
+        gl_PointSize = clamp(30.0 / -mv.z, 1.0, 3.0) * uPointScale * 0.7;
       }
     `,
     fragmentShader: /* glsl */ `

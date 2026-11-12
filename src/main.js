@@ -3,7 +3,7 @@
  * Crée le renderer pixelisé, les entrées, le son et le HUD, puis lance le jeu.
  */
 import './ui/style.css';
-import { PixelRenderer } from './core/renderer.js';
+import { GameRenderer } from './core/renderer.js';
 import { Input } from './core/input.js';
 import { Pointer } from './core/pointer.js';
 import { Sound } from './core/audio.js';
@@ -11,9 +11,9 @@ import { startLoop } from './core/loop.js';
 import { Hud } from './ui/hud.js';
 import { Game } from './core/game.js';
 import { getFloorHeight } from './world/seabed.js';
-import { loadPreferences, preferences, PIXEL_LEVELS } from './save/preferences.js';
+import { loadPreferences, preferences, QUALITY_LEVELS } from './save/preferences.js';
 
-const pixel = new PixelRenderer(document.getElementById('game'));
+const pixel = new GameRenderer(document.getElementById('game'));
 const input = new Input();
 const pointer = new Pointer();
 const sound = new Sound();
@@ -29,9 +29,8 @@ const game = new Game({ pixel, input, pointer, sound, hud });
 const fpsEl = document.getElementById('fps');
 function applySettings() {
   sound.setVolumes(preferences);
-  const h = PIXEL_LEVELS[preferences.pixelLevel]?.height ?? 240;
-  if (pixel.pixelHeight !== h) pixel.setPixelHeight(h);
-  pixel.setDither(preferences.dither);
+  const q = (QUALITY_LEVELS[preferences.qualityLevel] ?? QUALITY_LEVELS[2]).scale;
+  if (pixel.quality !== q) pixel.setQuality(q);
   fpsEl.style.display = preferences.showFps ? 'block' : 'none';
 }
 loadPreferences();
@@ -65,5 +64,5 @@ startLoop(
   () => game.render()
 );
 
-// Accès console pour le débogage (ex. : nautiliar.pixel.setPixelHeight(180), nautiliar.game.newGame())
+// Accès console pour le débogage (ex. : nautiliar.game.newGame())
 window.nautiliar = { game, pixel, getFloorHeight, get dive() { return game.dive; }, get port() { return game.port; } };
