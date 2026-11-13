@@ -237,21 +237,6 @@ const SHAPES = {
     return g;
   },
 
-  key(main, dark) {
-    const g = new THREE.Group();
-    const shaft = mesh(new THREE.BoxGeometry(0.6, 0.05, 0.05), main);
-    g.add(shaft);
-    const bow = mesh(new THREE.TorusGeometry(0.11, 0.035, 3, 7), main);
-    bow.position.x = -0.4;
-    g.add(bow);
-    for (const [x, h] of [[0.22, 0.14], [0.27, 0.1]]) {
-      const bit = mesh(new THREE.BoxGeometry(0.04, h, 0.05), dark);
-      bit.position.set(x, -h / 2, 0);
-      g.add(bit);
-    }
-    g.rotation.x = -Math.PI / 2;
-    return g;
-  },
 
   crown(main, dark) {
     const g = new THREE.Group();
@@ -294,11 +279,6 @@ const SHAPES = {
     return g;
   },
 
-  tile(main) {
-    const g = new THREE.Group();
-    g.add(mesh(new THREE.BoxGeometry(0.22, 0.06, 0.22), main));
-    return g;
-  },
 
   wheel(main, dark) {
     const g = new THREE.Group();
@@ -315,34 +295,91 @@ const SHAPES = {
     return g;
   },
 
-  statue(main, dark) {
+
+
+  /** Tôle de coque rivetée, gravée d'un numéro */
+  hullplate(main, dark) {
     const g = new THREE.Group();
-    const base = mesh(new THREE.BoxGeometry(0.3, 0.1, 0.3), dark);
-    g.add(base);
-    const body = mesh(new THREE.CylinderGeometry(0.1, 0.16, 0.55, 6), main);
-    body.position.y = 0.32;
-    g.add(body);
-    const head = mesh(new THREE.IcosahedronGeometry(0.09, 0), main);
-    head.position.y = 0.67;
-    g.add(head);
-    for (const s of [-1, 1]) {
-      const arm = mesh(new THREE.BoxGeometry(0.05, 0.25, 0.06), main);
-      arm.position.set(s * 0.1, 0.62, 0.02);
-      arm.rotation.z = s * 0.5;
-      g.add(arm);
+    const plate = new THREE.BoxGeometry(0.9, 0.05, 0.6);
+    const p = plate.attributes.position;
+    for (let i = 0; i < p.count; i++) p.setY(i, p.getY(i) + Math.sin(p.getX(i) * 3) * 0.04); // tôle cintrée
+    g.add(mesh(plate, main));
+    for (let i = 0; i < 8; i++) {
+      const r = mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.03, 5), dark);
+      const edge = i < 4;
+      r.position.set(edge ? -0.38 + (i % 4) * 0.25 : -0.38 + (i % 4) * 0.25, 0.04, edge ? 0.25 : -0.25);
+      g.add(r);
     }
-    g.rotation.z = 1.3;
+    for (let i = 0; i < 3; i++) {
+      const groove = mesh(new THREE.BoxGeometry(0.12, 0.012, 0.03), dark);
+      groove.position.set(-0.15 + i * 0.15, 0.035, 0);
+      g.add(groove);
+    }
+    g.rotation.z = 0.15;
     return g;
   },
 
-  tear(main) {
+  /** Petit voilier d'enfant en bois */
+  toyboat(main, dark) {
     const g = new THREE.Group();
-    const drop = mesh(new THREE.ConeGeometry(0.12, 0.3, 6), main);
-    drop.position.y = 0.15;
-    g.add(drop);
-    const bottom = mesh(new THREE.SphereGeometry(0.12, 6, 4), main);
-    g.add(bottom);
-    g.rotation.z = 1.2;
+    const hull = new THREE.CylinderGeometry(0.16, 0.08, 0.6, 6, 1, false, 0, Math.PI);
+    hull.rotateZ(Math.PI / 2);
+    hull.rotateY(Math.PI / 2);
+    hull.rotateZ(Math.PI);
+    g.add(mesh(hull, main));
+    const mast = mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.5, 4), dark);
+    mast.position.y = 0.25;
+    g.add(mast);
+    const sail = new THREE.BufferGeometry();
+    sail.setAttribute('position', new THREE.Float32BufferAttribute([0, 0.05, -0.02, 0, 0.45, 0, 0, 0.05, 0.22], 3));
+    sail.computeVertexNormals();
+    const sailMat = new THREE.MeshLambertMaterial({ color: '#ccd8cc', flatShading: true, side: THREE.DoubleSide });
+    g.add(mesh(sail, sailMat));
+    g.userData.extraMaterials = [sailMat];
+    g.rotation.z = 1.1; // couché sur le flanc
+    return g;
+  },
+
+  /** Figure de proue : une femme de bois qui se bouche les oreilles */
+  figurehead(main, dark) {
+    const g = new THREE.Group();
+    const body = new THREE.CylinderGeometry(0.12, 0.22, 0.9, 7);
+    body.translate(0, 0.45, 0);
+    g.add(mesh(body, main));
+    const head = mesh(new THREE.IcosahedronGeometry(0.13, 1), main);
+    head.position.y = 1.0;
+    g.add(head);
+    for (const s of [-1, 1]) {
+      const arm = mesh(new THREE.BoxGeometry(0.06, 0.38, 0.07), main);
+      arm.position.set(s * 0.15, 0.88, 0.02);
+      arm.rotation.z = s * 0.35;
+      g.add(arm);
+      const hand = mesh(new THREE.BoxGeometry(0.06, 0.08, 0.08), dark);
+      hand.position.set(s * 0.13, 1.02, 0);
+      g.add(hand);
+    }
+    const hair = mesh(new THREE.ConeGeometry(0.14, 0.5, 6), dark);
+    hair.position.set(0, 0.85, -0.1);
+    hair.rotation.x = -0.25;
+    g.add(hair);
+    g.rotation.z = Math.PI / 2 - 0.1; // couchée
+    return g;
+  },
+
+  /** Éclat vert : cristal de lumière solide */
+  shard(main) {
+    const g = new THREE.Group();
+    const core = new THREE.OctahedronGeometry(0.22, 0);
+    core.scale(0.7, 1.6, 0.7);
+    g.add(mesh(core, main));
+    for (let i = 0; i < 3; i++) {
+      const spike = mesh(new THREE.OctahedronGeometry(0.09, 0).scale(0.6, 1.8, 0.6), main);
+      const a = (i / 3) * Math.PI * 2;
+      spike.position.set(Math.cos(a) * 0.13, -0.1, Math.sin(a) * 0.13);
+      spike.rotation.set(Math.sin(a) * 0.6, 0, Math.cos(a) * 0.6);
+      g.add(spike);
+    }
+    g.rotation.z = 0.4;
     return g;
   },
 

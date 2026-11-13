@@ -1,5 +1,5 @@
 {
-  "_comment": "Disposition du port de Port-Kerys. Le quai longe l'axe X, la mer est côté +Z, le village côté -Z. Tailles en mètres (w = largeur X, d = profondeur Z, h = hauteur des murs).",
+  "_comment": "Disposition du port de Port-Kermor. Le quai longe l'axe X, la mer est côté +Z, le village côté -Z. Tailles en mètres (w = largeur X, d = profondeur Z, h = hauteur des murs).",
   "bounds": {
     "minX": -36,
     "maxX": 36,

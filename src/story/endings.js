@@ -10,7 +10,7 @@ import fragmentsData from './fragments.json';
 /**
  * Les deux fins, jouées comme de courtes cinématiques en jeu :
  *  - « close »  : le joueur ferme le portail et reste à jamais dans l'Envers ;
- *  - « cross »  : il traverse, l'Envers se dissout, il émerge dans le vrai Port-Kerys.
+ *  - « cross »  : il traverse, l'Envers se dissout, il émerge dans le vrai Port-Kermor.
  */
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -119,7 +119,7 @@ export async function playEnding(game, kind) {
     await dissolving;
     await fadeOut('#e8ece2', 1.5);
 
-    // Le vrai Port-Kerys
+    // Le vrai Port-Kermor
     port.dissolve(0);
     port.makeAlive();
     port.player.object.visible = true;

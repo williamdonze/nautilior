@@ -87,7 +87,7 @@
               "next": "b"
             },
             "b": {
-              "text": "Tu es à l'hôpital de Port-Kerys. Tu as dormi longtemps.",
+              "text": "Tu es à l'hôpital de Port-Kermor. Tu as dormi longtemps.",
               "next": "c"
             },
             "c": {

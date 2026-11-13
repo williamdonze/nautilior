@@ -93,7 +93,7 @@ export class Port {
     }
   }
 
-  /** Le vrai Port-Kerys : volets ouverts, fenêtres éclairées, ciel plus clair, foule sur le quai */
+  /** Le vrai Port-Kermor : volets ouverts, fenêtres éclairées, ciel plus clair, foule sur le quai */
   makeAlive() {
     const T = this.world.tagged;
     // Volets ouverts, rabattus contre les murs

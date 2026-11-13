@@ -241,12 +241,12 @@ export class Game {
     }
     if (this.loaded && storyState.flags.introDone) {
       this.enterPort('quay', false);
-      this.hud.intro('Port-Kerys, 1984.');
+      this.hud.intro('Port-Kermor, 1984.');
     } else {
       // Nouvelle partie : réveil à l'hôpital, le médecin parle le premier
       this.enterPort('hospital', false);
       this.busy = true;
-      this.hud.intro('Port-Kerys, 1984.');
+      this.hud.intro('Port-Kermor, 1984.');
       wait(4200).then(async () => {
         this.busy = false;
         if (this.mode === 'port') await this.talk('doctor');

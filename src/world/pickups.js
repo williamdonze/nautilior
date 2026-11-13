@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { PICKUPS, SUBMARINE, WORLD } from '../config/settings.js';
 import { createRandom } from '../core/utils.js';
-import { rollItem, getRarity } from '../loot/loot.js';
+import { rollItem, getRarity, UNIQUE_ITEMS } from '../loot/loot.js';
 import zonesData from '../config/zones.json';
 import fragmentsData from '../story/fragments.json';
 import { WRECK_SPOTS } from './landmarks.js';
@@ -30,7 +30,7 @@ export class Pickups {
    * Nouvelle plongée : le fond est repeuplé (tirage différent selon le jour),
    * et les fragments de mémoire pas encore trouvés sont reposés à leur place.
    */
-  reset(seed, foundFragments = []) {
+  reset(seed, foundFragments = [], ownedIds = []) {
     for (const p of [...this.list]) this.dispose(p);
     this.list = [];
     this.highlighted = null;
@@ -38,6 +38,10 @@ export class Pickups {
     this.spawnAll();
     for (const f of fragmentsData.fragments) {
       if (!foundFragments.includes(f.id)) this.spawnFragment(f);
+    }
+    // Objets uniques (cloche du Marie-Morgane, éclat vert) : toujours à leur place, sauf s'ils sont en soute
+    for (const it of UNIQUE_ITEMS) {
+      if (!ownedIds.includes(it.id)) this.spawn(it, it.spawn.x, it.spawn.z);
     }
   }
 
@@ -208,6 +212,11 @@ export class Pickups {
         // Surbrillance chaude de l'objet visé
         const k = 0.35 + Math.sin(time * 7) * 0.15;
         for (const m of p.materials) m.emissive.copy(HIGHLIGHT).multiplyScalar(k);
+      } else if (p.item.selfGlow) {
+        // Objet qui luit de lui-même (l'éclat vert bat comme un cœur)
+        const beat = Math.pow(Math.max(0, Math.sin(time * 3.4)), 8);
+        const k = p.item.selfGlow * (0.55 + beat * 0.45);
+        for (const m of p.materials) m.emissive.copy(p.glowColor).multiplyScalar(k);
       } else if (p.rarity.glow > 0) {
         this.applyBaseGlow(p, time);
       } else {

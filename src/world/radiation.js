@@ -2,15 +2,15 @@ import * as THREE from 'three';
 import { RADIATION } from '../config/settings.js';
 import { clamp } from '../core/utils.js';
 import { getFloorHeight } from './seabed.js';
-import { createHalo } from '../loot/glow.js';
 
 /**
- * Zone de radiation : une énergie surnaturelle qui suinte du point le plus profond.
- * (Provisoire : en phase 6, la source sera le portail au fond des abysses.)
+ * « Radiation » : la vie brute qui fuit par la déchirure du portail.
+ * Pour un monde de morts, elle brûle (règle 4 de l'Envers) : elle use la coque
+ * et a transformé les bêtes des abysses. Sa source est le centre de la déchirure.
  */
 const source = new THREE.Vector3(
   RADIATION.SOURCE.x,
-  getFloorHeight(RADIATION.SOURCE.x, RADIATION.SOURCE.z) + 4,
+  getFloorHeight(RADIATION.SOURCE.x, RADIATION.SOURCE.z) + 22,
   RADIATION.SOURCE.z
 );
 
@@ -26,34 +26,22 @@ export function getRadiation(position) {
   return t * Math.sqrt(t) * scale; // monte doucement en bordure, fort au centre
 }
 
-/** Lueur verdâtre au fond : halo + lumière qui teinte les rochers alentour */
+/** Lumière verte qui teinte la plaine autour de la déchirure (le halo est porté par le portail) */
 export function createRadiationSource(scene) {
   const group = new THREE.Group();
   group.position.copy(source);
 
-  const light = new THREE.PointLight(RADIATION.COLOR, 40, 70, 1.2);
+  const light = new THREE.PointLight(RADIATION.COLOR, 40, 90, 1.2);
   group.add(light);
 
-  const halo = createHalo(RADIATION.COLOR, 26);
-  halo.raycast = () => {};
-  group.add(halo);
-  const core = createHalo('#e8ece2', 5);
-  core.raycast = () => {};
-  group.add(core);
 
   scene.add(group);
   return {
     position: source,
-    update(time, viewer) {
+    update(time) {
       // Respiration lente et irrégulière
       const pulse = (0.75 + Math.sin(time * 0.9) * 0.15 + Math.sin(time * 2.3) * 0.1) * scale;
       light.intensity = 40 * pulse;
-      // Le halo n'est perceptible qu'en approchant (il n'est pas soumis au brouillard)
-      const d = viewer.distanceTo(source);
-      const near = clamp(1 - (d - 30) / 120, 0, 1);
-      halo.material.opacity = 0.35 * near * pulse;
-      core.material.opacity = 0.6 * near * pulse;
-      halo.scale.setScalar(26 * (0.9 + pulse * 0.15));
     },
   };
 }

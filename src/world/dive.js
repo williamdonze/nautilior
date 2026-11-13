@@ -19,6 +19,7 @@ import { SURVIVAL, SUBMARINE, RADIATION } from '../config/settings.js';
 import { Creatures } from './creatures.js';
 import { zoneAtDepth } from './zones.js';
 import { createPortal } from './portal.js';
+import { pointScale } from '../core/renderer.js';
 import { Radar } from '../ui/radar.js';
 import { CENTER_POINTER } from '../core/pointer.js';
 import { WRECK_SPOTS } from './landmarks.js';
@@ -170,7 +171,7 @@ export class Dive {
 
   /** Début d'une plongée : on part du quai, juste sous la surface */
   enter(seed, foundFragments = []) {
-    this.pickups.reset(seed, foundFragments);
+    this.pickups.reset(seed, foundFragments, this.hold.toIds());
     this.creatures.clear();
     this.zoneId = null;
     this.claw.reset();
@@ -351,7 +352,7 @@ export class Dive {
     hud.update(sub.depth, this.input);
     // Le portail : bourdonnement qui monte à l'approche, et invite quand on est devant
     const portalDist = sub.position.distanceTo(this.portal.center);
-    this.portal.update(time);
+    this.portal.update(time, this.camera.position, pointScale.value);
     sound.setDrone(Math.max(0, 1 - portalDist / 160) * this.portal.open);
     this.nearPortal = portalDist < 32 && this.portal.open > 0.5 && !survival.dead && !this.autopilot && this.canFacePortal();
     hud.setPrompt(

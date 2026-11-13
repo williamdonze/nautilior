@@ -43,7 +43,7 @@ function box(w, h, d, material, x, y, z, parent) {
   return m;
 }
 
-// Éléments que la fin « Traverser » transforme (le vrai Port-Kerys, vivant)
+// Éléments que la fin « Traverser » transforme (le vrai Port-Kermor, vivant)
 const tagged = { shutters: [], darkWindows: [], boats: [] };
 
 /** Coque de barque en train de pourrir */

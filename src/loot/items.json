@@ -1,5 +1,5 @@
 {
-  "_comment": "Objets ramassables. weight en kg, price en francs, minDepth en mètres. shape = modèle 3D (voir models.js). spawnWeight = fréquence relative au sein d'une même rareté (1 par défaut).",
+  "_comment": "Objets ramassables. weight en kg, price en francs, minDepth / maxDepth (optionnel) en mètres. shape = modèle 3D (voir models.js). spawnWeight = fréquence relative au sein d'une même rareté (1 par défaut). unique = objet unique, jamais tiré au sort : il est posé à une place fixe (spawn) à chaque plongée tant que le joueur ne l'a pas en soute. noSale = la marchande refuse de l'acheter. selfGlow = l'objet luit de lui-même au fond (0..1).",
   "items": [
     {
       "id": "galet_granit",
@@ -74,18 +74,6 @@
       "spawnWeight": 2
     },
     {
-      "id": "bol_prenom",
-      "name": "Bol breton à prénom",
-      "description": "Un bol à oreilles. Le prénom peint a été gratté.",
-      "rarity": "peu_commun",
-      "weight": 1,
-      "price": 55,
-      "minDepth": 15,
-      "shape": "bowl",
-      "color": "#a8bdb2",
-      "spawnWeight": 2
-    },
-    {
       "id": "lanterne_chalutier",
       "name": "Lanterne de chalutier",
       "description": "Le verre est intact. La mèche a brûlé jusqu'au bout.",
@@ -108,6 +96,31 @@
       "shape": "anchor",
       "color": "#3f4446",
       "spawnWeight": 1
+    },
+    {
+      "id": "tole_gravee",
+      "name": "Tôle rivetée gravée",
+      "description": "« NAUTILIAR — n° 1. » Le numéro a été repeint par-dessus une dizaine d'autres.",
+      "rarity": "peu_commun",
+      "weight": 12,
+      "price": 80,
+      "minDepth": 160,
+      "shape": "hullplate",
+      "color": "#56645a",
+      "spawnWeight": 1
+    },
+    {
+      "id": "bol_prenom",
+      "name": "Bol breton à prénom",
+      "description": "Le prénom peint a été gratté. Par-dessus, quelqu'un a repeint YANN. Dessous, on devine une autre lettre, peut-être un L.",
+      "rarity": "peu_commun",
+      "weight": 1,
+      "price": 55,
+      "minDepth": 500,
+      "shape": "bowl",
+      "color": "#a8bdb2",
+      "spawnWeight": 2,
+      "maxDepth": 1000
     },
     {
       "id": "medaille_sauvetage",
@@ -134,16 +147,46 @@
       "spawnWeight": 2
     },
     {
-      "id": "cloche_marie_morgane",
-      "name": "Cloche de la Marie-Morgane",
-      "description": "Le nom d'un chalutier gravé dans le bronze. Elle tinte parfois, seule.",
+      "id": "hublot_cargo",
+      "name": "Hublot de cargo",
+      "description": "Le verre a tenu. Derrière, il fait toujours nuit.",
       "rarity": "rare",
-      "weight": 18,
-      "price": 380,
-      "minDepth": 70,
-      "shape": "bell",
+      "weight": 6,
+      "price": 420,
+      "minDepth": 180,
+      "shape": "porthole",
+      "color": "#8a4f28",
+      "spawnWeight": 2
+    },
+    {
+      "id": "voilier_bois",
+      "name": "Petit voilier en bois",
+      "description": "Un jouet d'enfant. Sur la coque, au couteau : YANN.",
+      "rarity": "rare",
+      "weight": 0.5,
+      "price": 300,
+      "minDepth": 200,
+      "shape": "toyboat",
       "color": "#8a4f28",
       "spawnWeight": 1
+    },
+    {
+      "id": "cloche_marie_morgane",
+      "name": "Cloche de la Marie-Morgane",
+      "description": "Le nom du canot de sauvetage gravé dans le bronze. Elle tinte parfois, seule.",
+      "rarity": "epique",
+      "weight": 18,
+      "price": 0,
+      "minDepth": 0,
+      "shape": "bell",
+      "color": "#8a4f28",
+      "spawnWeight": 1,
+      "unique": true,
+      "noSale": true,
+      "spawn": {
+        "x": -40,
+        "z": -236
+      }
     },
     {
       "id": "ciboire_noirci",
@@ -170,66 +213,6 @@
       "spawnWeight": 1
     },
     {
-      "id": "clochette_ys",
-      "name": "Clochette de la cathédrale d'Ys",
-      "description": "Par temps calme, on entend les cloches d'Ys sous la mer. Celle-ci sonne quand on ne la regarde pas.",
-      "rarity": "legendaire",
-      "weight": 6,
-      "price": 4500,
-      "minDepth": 140,
-      "shape": "bell",
-      "color": "#cdb57c",
-      "spawnWeight": 1
-    },
-    {
-      "id": "clef_gradlon",
-      "name": "Clef d'argent du roi Gradlon",
-      "description": "La clef des écluses de la ville. Elle n'aurait jamais dû quitter le fond.",
-      "rarity": "legendaire",
-      "weight": 1,
-      "price": 6000,
-      "minDepth": 160,
-      "shape": "key",
-      "color": "#a8bdb2",
-      "spawnWeight": 1
-    },
-    {
-      "id": "couronne_dahut",
-      "name": "Couronne de Dahut",
-      "description": "Or et algues mêlés. Elle est froide comme une main.",
-      "rarity": "legendaire",
-      "weight": 3,
-      "price": 7500,
-      "minDepth": 175,
-      "shape": "crown",
-      "color": "#e0b050",
-      "spawnWeight": 1
-    },
-    {
-      "id": "hublot_cargo",
-      "name": "Hublot de cargo",
-      "description": "Le verre a tenu. Derrière, il fait toujours nuit.",
-      "rarity": "rare",
-      "weight": 6,
-      "price": 420,
-      "minDepth": 180,
-      "shape": "porthole",
-      "color": "#8a4f28",
-      "spawnWeight": 2
-    },
-    {
-      "id": "tesselle_ys",
-      "name": "Tesselle d'or d'Ys",
-      "description": "Un petit carré d'or, détaché d'une mosaïque. Il en manque des milliers.",
-      "rarity": "rare",
-      "weight": 0.2,
-      "price": 640,
-      "minDepth": 480,
-      "shape": "tile",
-      "color": "#e0b050",
-      "spawnWeight": 2
-    },
-    {
       "id": "roue_gouvernail",
       "name": "Roue de gouvernail",
       "description": "Quelqu'un l'a bloquée avec une corde. Cap sur le large, pour toujours.",
@@ -242,28 +225,58 @@
       "spawnWeight": 1
     },
     {
-      "id": "statuette_ys",
-      "name": "Statuette de granit d'Ys",
-      "description": "Une femme qui se bouche les oreilles. Le sculpteur ne voulait pas qu'elle entende quelque chose.",
+      "id": "figure_proue",
+      "name": "Figure de proue",
+      "description": "Une femme de bois qui se bouche les oreilles.",
       "rarity": "epique",
-      "weight": 9,
+      "weight": 16,
       "price": 2100,
       "minDepth": 520,
-      "shape": "statue",
-      "color": "#6b6e6c",
+      "shape": "figurehead",
+      "color": "#7d6f48",
       "spawnWeight": 1
     },
     {
-      "id": "larme_dahut",
-      "name": "Larme de Dahut",
-      "description": "Une goutte de verre vert, plus froide que l'eau qui l'entoure. Elle bat, très doucement.",
+      "id": "clochette_chapelle",
+      "name": "Clochette de chapelle",
+      "description": "Celle-ci sonne quand on ne la regarde pas.",
+      "rarity": "legendaire",
+      "weight": 4,
+      "price": 4500,
+      "minDepth": 140,
+      "shape": "bell",
+      "color": "#cdb57c",
+      "spawnWeight": 1
+    },
+    {
+      "id": "couronne_mariee",
+      "name": "Couronne de mariée",
+      "description": "Or et algues mêlés. Elle est froide comme une main.",
+      "rarity": "legendaire",
+      "weight": 1,
+      "price": 7500,
+      "minDepth": 175,
+      "shape": "crown",
+      "color": "#e0b050",
+      "spawnWeight": 1
+    },
+    {
+      "id": "eclat_vert",
+      "name": "Éclat vert",
+      "description": "Un morceau de lumière solide, plus froid que l'eau. Il bat, très doucement.",
       "rarity": "legendaire",
       "weight": 0.5,
-      "price": 12500,
-      "minDepth": 1000,
-      "shape": "tear",
+      "price": 0,
+      "minDepth": 0,
+      "shape": "shard",
       "color": "#7fbf7a",
-      "spawnWeight": 1
+      "unique": true,
+      "noSale": true,
+      "spawn": {
+        "x": 22,
+        "z": -1030
+      },
+      "selfGlow": 0.9
     }
   ]
 }
