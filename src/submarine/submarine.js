@@ -3,7 +3,7 @@ import { SUBMARINE, WORLD } from '../config/settings.js';
 import { clamp, damp, lerp } from '../core/utils.js';
 import { getFloorHeight } from '../world/seabed.js';
 import { createSubmarineModel, spinPropellers } from './subModel.js';
-import { CLAW } from '../config/settings.js';
+import { createCockpit } from './cockpit.js';
 import { createBeam } from './beam.js';
 
 /**
@@ -51,10 +51,11 @@ export class Submarine {
     this.beam = createBeam();
     this.body.add(this.beam.mesh);
 
-    // Petite lueur de cabine pour qu'on devine la coque dans le noir
-    const cabin = new THREE.PointLight('#cdb57c', 3, 9, 1.5);
-    cabin.position.set(0, 1.2, 0);
-    this.body.add(cabin);
+    // Lueur de cabine : éclaire le poste de pilotage (et laisse deviner la coque dans le noir)
+    this.cabinLight = new THREE.PointLight('#e8d8b0', 5, 4, 1.2);
+    this.body.add(this.cabinLight);
+    this.cockpitGroup = new THREE.Group(); // poste de pilotage 3D (vue à la 1re personne)
+    this.body.add(this.cockpitGroup);
 
     // Vecteurs de travail
     this._forward = new THREE.Vector3();
@@ -76,18 +77,26 @@ export class Submarine {
     this.beam.mesh.position.copy(model.lampPosition);
     this.aimLight(0, 0);
     this.cockpit.copy(model.cockpit);
-    this.clawRoot.copy(model.clawRoot ?? new THREE.Vector3(CLAW.ROOT.x, CLAW.ROOT.y, CLAW.ROOT.z));
-    this.clawRest.copy(model.clawRest ?? new THREE.Vector3(CLAW.REST.x, CLAW.REST.y, CLAW.REST.z));
+    // Le bras sort sous le hublot, devant le poste de pilotage (visible depuis le cockpit)
+    this.clawRoot.copy(model.cockpit).add({ x: 0, y: -0.95, z: 1.0 });
+    this.clawRest.copy(this.clawRoot).add({ x: 0, y: -0.55, z: 0.9 });
     this.tailPoint.position.copy(model.tail);
+    // Poste de pilotage propre à ce sous-marin
+    this.cockpitGroup.clear();
+    this.cockpit3d = createCockpit(level);
+    this.cockpitGroup.add(this.cockpit3d.group);
+    this.cockpitGroup.position.copy(model.cockpit);
+    this.cabinLight.position.copy(model.cockpit).add({ x: 0.1, y: 0.55, z: 0.1 });
     this.setHullVisible(this.hullVisible ?? true);
   }
 
-  /** Coque visible ou non (masquée en vue à la 1re personne ; les lumières restent allumées) */
+  /** Coque visible ou non (masquée en vue à la 1re personne, où l'on voit le poste de pilotage) */
   setHullVisible(v) {
     this.hullVisible = v;
     this.hull.traverse((o) => {
       if (o.isMesh) o.visible = v;
     });
+    this.cockpitGroup.visible = !v;
     this.beam.mesh.visible = v && this.beam.mesh.visible;
   }
 

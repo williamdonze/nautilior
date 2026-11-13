@@ -24,6 +24,7 @@ import { CENTER_POINTER } from '../core/pointer.js';
 import { WRECK_SPOTS } from './landmarks.js';
 import { getFloorHeight } from './seabed.js';
 import { Wake } from './flora.js';
+import { updateTileCulling } from './tiles.js';
 
 /**
  * La plongée : monde sous-marin, sous-marin, pince, survie et leurs effets.
@@ -64,7 +65,7 @@ export class Dive {
     this.follow.snap(this.sub);
     this.cockpitCam = new CockpitCamera(pixel.aspect);
     this.view = 'first'; // 'first' (poste de pilotage) ou 'third' (vue extérieure, touche V)
-    this.cockpitEl = document.getElementById('cockpit');
+
 
     // --- Objets et pince
     this.pickups = new Pickups(scene);
@@ -154,7 +155,7 @@ export class Dive {
     if (view === 'third') this.pointer.unlock();
     this.sub.setHullVisible(view === 'third');
     this.aim.camera = this.camera;
-    this.cockpitEl.className = view === 'first' ? `on hull-${this.sub.model.level}` : '';
+
     if (view === 'third') {
       this.follow.snap(this.sub);
       this.sub.aimLight(0, 0);
@@ -184,7 +185,7 @@ export class Dive {
 
   leave() {
     this.sound.setDrone(0);
-    this.cockpitEl.className = '';
+    this.sound.stopEngine();
     this.inventory.close();
     this.claw.reset();
     this.sound.motorStop();
@@ -297,9 +298,21 @@ export class Dive {
     sub.update(dt, time, survival.dead || this.autopilot ? this.noInput : this.input);
     if (this.autopilot) this.autopilot(dt);
     this.claw.update(dt, time);
-    if (this.view === 'first') this.cockpitCam.update(dt, sub, this.pointer);
-    else follow.update(dt, sub);
+    if (this.view === 'first') {
+      this.cockpitCam.update(dt, sub, this.pointer);
+      // Instruments du poste de pilotage
+      sub.cockpit3d.update(dt, {
+        depth: sub.depth,
+        crushDepth: survival.stats.crushDepth,
+        oxygen: survival.oxygenRatio,
+        hull: survival.hullRatio,
+        heading: ((((-sub.yaw * 180) / Math.PI) % 360) + 360) % 360,
+        throttle: sub.throttle,
+        time,
+      });
+    } else follow.update(dt, sub);
     const camera = this.camera;
+    updateTileCulling(camera.position);
 
     // Vue cockpit : on vise au centre de l'écran ; vue extérieure : sous le curseur
     const aimPointer = this.view === 'first' ? CENTER_POINTER : this.pointer;
@@ -327,6 +340,10 @@ export class Dive {
     this.wake.update(dt, time, sub.position, sub.speed, this._nose);
     sub.getLightRay(this._lightPos, this._lightDir);
     this.snow.update(time, camera.position, this._lightPos, this._lightDir, this.ambience.state.ambient, rad);
+
+    // Turbines : un léger ronronnement qui suit la poussée
+    if (survival.dead || this.autopilot) sound.stopEngine();
+    else sound.setEngine(sub.throttle, sub.lift);
 
     sub.getPropellerPosition(this._propPos);
     this.bubbles.update(dt, this._propPos, Math.abs(sub.throttle) * 22 + 0.5);

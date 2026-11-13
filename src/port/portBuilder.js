@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import layout from './layout.json';
 import { paintFaces, createRandom } from '../core/utils.js';
 import { createSubmarineModel } from '../submarine/subModel.js';
+import { buildBuilding as buildVillageBuilding, decorateVillage } from './village.js';
 
 /**
  * Construit le décor du port : quai de granit, maisons fermées, hôpital, boutique,
@@ -14,7 +15,6 @@ const vertexMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShadin
 const GLOW = new THREE.MeshBasicMaterial({ color: '#cdb57c' });
 const DARK = lambert('#17191a');
 const WOOD = lambert('#3e2114');
-const SHUTTER = lambert('#2c4430');
 
 /** Peint une géométrie de petites variations (pierre irrégulière) */
 function stone(geo, hex, variation = 0.12) {
@@ -45,91 +45,6 @@ function box(w, h, d, material, x, y, z, parent) {
 
 // Éléments que la fin « Traverser » transforme (le vrai Port-Kerys, vivant)
 const tagged = { shutters: [], darkWindows: [], boats: [] };
-
-/** Une fenêtre : éclairée, sombre, ou fermée par des volets */
-function windowAt(parent, x, y, z, state) {
-  const w = box(0.9, 1.1, 0.12, state === 'lit' ? GLOW : DARK, x, y, z, parent);
-  if (state !== 'lit') tagged.darkWindows.push(w);
-  if (state === 'shut') {
-    tagged.shutters.push(box(0.48, 1.2, 0.1, SHUTTER, x - 0.24, y, z + 0.06, parent));
-    tagged.shutters.push(box(0.48, 1.2, 0.1, SHUTTER, x + 0.24, y, z + 0.06, parent));
-  }
-}
-
-function buildBuilding(b, group, colliders, lights) {
-  const g = new THREE.Group();
-  g.position.set(b.x, 0, b.z);
-  group.add(g);
-  const front = b.d / 2 + 0.06;
-
-  // Murs et toit
-  const walls = new THREE.Mesh(stone(new THREE.BoxGeometry(b.w, b.h, b.d), b.wall), vertexMat);
-  walls.position.y = b.h / 2;
-  g.add(walls);
-  const roofH = b.kind === 'workshop' ? 1.2 : b.kind === 'criee' ? 1.4 : 2.4;
-  const roof = new THREE.Mesh(stone(gableRoof(b.w + 0.7, b.d + 0.9, roofH), b.roof, 0.08), vertexMat);
-  roof.position.y = b.h;
-  g.add(roof);
-  // Cheminée
-  if (b.kind === 'house' || b.kind === 'hospital') {
-    box(0.7, 1.8, 0.7, lambert('#45484a'), b.w * 0.3, b.h + 1.4, -b.d * 0.15, g);
-  }
-
-  // Porte
-  const doorW = b.kind === 'workshop' ? 3.4 : b.kind === 'criee' ? 2.2 : 1.2;
-  const doorH = b.kind === 'workshop' ? 3.4 : 2.2;
-  box(doorW, doorH, 0.12, b.kind === 'workshop' ? lambert('#0c0a08') : WOOD, 0, doorH / 2, front, g);
-  // Linteau de granit
-  box(doorW + 0.5, 0.3, 0.25, lambert('#45484a'), 0, doorH + 0.15, front, g);
-
-  // Fenêtres
-  const cols = Math.max(1, Math.floor(b.w / 3));
-  for (let i = 0; i < cols; i++) {
-    const x = -b.w / 2 + (b.w / cols) * (i + 0.5);
-    if (Math.abs(x) < doorW / 2 + 0.8) continue;
-    const state = b.lit && i === 0 ? 'lit' : b.kind === 'house' ? 'shut' : 'dark';
-    windowAt(g, x, b.h * 0.55, front, state);
-    if (b.h > 5.5) windowAt(g, x, b.h * 0.82, front, b.kind === 'house' ? 'shut' : 'dark');
-  }
-
-  // Détails selon le type
-  if (b.kind === 'hospital') {
-    // Croix et lampe au-dessus de la porte
-    box(0.9, 0.25, 0.1, lambert('#a8bdb2'), 0, doorH + 1.0, front + 0.05, g);
-    box(0.25, 0.9, 0.1, lambert('#a8bdb2'), 0, doorH + 1.0, front + 0.05, g);
-  }
-  if (b.kind === 'shop') {
-    // Auvent
-    const awning = box(b.w * 0.8, 0.1, 1.4, lambert('#63321b'), 0, doorH + 0.5, front + 0.7, g);
-    awning.rotation.x = 0.25;
-    // Caisses devant la boutique
-    for (let i = 0; i < 3; i++) box(0.8, 0.6, 0.8, WOOD, b.w / 2 - 0.6 - i * 0.2, 0.3 + i * 0.6 * (i === 2 ? 1 : 0), front + 1.0 + (i % 2) * 0.9, g);
-  }
-  if (b.kind === 'criee') {
-    // Enseigne délavée
-    box(4, 0.7, 0.1, lambert('#83a39a'), 0, b.h - 0.4, front + 0.05, g);
-  }
-  if (b.kind === 'workshop') {
-    // Bidons et pièces détachées
-    for (let i = 0; i < 4; i++) {
-      const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.9, 7), lambert(i % 2 ? '#63321b' : '#2a5056'));
-      barrel.position.set(-b.w / 2 - 0.6, 0.45, front - 1 - i * 0.8);
-      g.add(barrel);
-    }
-    colliders.push({ minX: b.x - b.w / 2 - 1.1, maxX: b.x - b.w / 2, minZ: b.z + front - 4, maxZ: b.z + front - 0.5 });
-  }
-
-  // Lumière chaude à la porte des lieux habités
-  if (b.lit) {
-    const lamp = new THREE.PointLight('#cdb57c', 6, 9, 1.4);
-    lamp.position.set(b.x, doorH + 0.8, b.z + front + 1.0);
-    lights.push(lamp);
-    group.add(lamp);
-    box(0.25, 0.3, 0.25, GLOW, 0.9, doorH + 0.6, front + 0.2, g);
-  }
-
-  colliders.push({ minX: b.x - b.w / 2, maxX: b.x + b.w / 2, minZ: b.z - b.d / 2, maxZ: b.z + b.d / 2 });
-}
 
 /** Coque de barque en train de pourrir */
 function rottenBoat(group, x, y, z, rotY, tilt, length = 5) {
@@ -193,21 +108,15 @@ export function buildPort() {
   for (let i = 0; i < 4; i++) box(0.9, 0.06, 0.06, DARK, layout.sub.x, -0.2 - i * 0.4, 6.35, group);
 
   // --- Bâtiments
+  const ctx = { group, colliders, lights, tagged };
   for (const b of layout.buildings) {
-    buildBuilding(b, group, colliders, lights);
-    if (b.kind === 'house') {
-      interactables.push({ id: b.id, kind: 'house', x: b.x, z: b.z + b.d / 2 + 1.0, label: 'Frapper à la porte' });
+    buildVillageBuilding(b, ctx);
+    if (b.kind === 'house' || b.kind === 'cafe') {
+      interactables.push({ id: b.id, kind: 'house', x: b.x, z: b.z + b.d / 2 + 1.0, label: b.kind === 'cafe' ? 'Pousser la porte du bar' : 'Frapper à la porte' });
     }
   }
-
-  // Clocher de la chapelle au loin
-  const tower = new THREE.Mesh(stone(new THREE.BoxGeometry(3, 11, 3), '#5f6564'), vertexMat);
-  tower.position.set(-6, 5.5, -36);
-  group.add(tower);
-  const spire = new THREE.Mesh(new THREE.ConeGeometry(2.3, 6, 4), lambert('#26292b'));
-  spire.position.set(-6, 14, -36);
-  spire.rotation.y = Math.PI / 4;
-  group.add(spire);
+  // Phare, chapelle et calvaire, fontaine, cabine, voitures, murets, casiers, filets, goélands…
+  const village = decorateVillage(group, colliders, tagged);
 
   // --- Réverbères (deux seulement allumés)
   lampPost(group, -24, 3.6, false, lights);
@@ -275,8 +184,10 @@ export function buildPort() {
       // Les plus gros modèles flottent un peu plus haut
       subRoot.position.y = level === 4 ? 0.2 : level >= 5 ? -0.2 : -0.75;
     },
+    lighthouseLantern: village.lighthouseLantern,
     update(time) {
       waterUniforms.uTime.value = time;
+      village.update(time);
       // Le sous-marin tangue doucement
       subRoot.position.y += (Math.sin(time * 0.9) * 0.08 - (subRoot.userData.bob ?? 0));
       subRoot.userData.bob = Math.sin(time * 0.9) * 0.08;

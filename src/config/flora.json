@@ -1,5 +1,5 @@
 {
-  "_comment": "Flore marine. Chaque espèce : forme (kelp = longue lanière, grass = brin d'herbier, fan = gorgone en éventail, tube = éponge en tube), nombre, profondeurs (min/max), hauteur (min/max, m), couleurs, taille des massifs (patch : fréquence du bruit, seuil = plus il est haut, plus les massifs sont rares) et réaction au passage du sous-marin (push).",
+  "_comment": "Flore marine. Chaque espèce : forme (kelp = longue lanière, grass = brin d'herbier, fan = gorgone, tube = éponge, sheet = laitue de mer, strands = algue filamenteuse, bush = algue buissonnante, anemone, urchin = oursin, feather = plume de mer, coral = corail froid, tubeworm = vers tubicoles, vase = éponge de verre), nombre, profondeurs (min/max), hauteur (min/max, m), couleurs, taille des massifs (patch : fréquence du bruit, seuil = plus il est haut, plus les massifs sont rares) et réaction au passage du sous-marin (push : 1 = la plante suit entièrement le sillage, 0 = immobile).",
   "species": [
     {
       "id": "laminaire",
@@ -28,12 +28,12 @@
       },
       "clump": 9,
       "sway": 0.9,
-      "push": 4.2
+      "push": 1.0
     },
     {
       "id": "zostere",
       "shape": "grass",
-      "count": 32000,
+      "count": 26000,
       "minDepth": 0,
       "maxDepth": 95,
       "height": [
@@ -56,7 +56,7 @@
       },
       "clump": 4,
       "sway": 0.25,
-      "push": 1.2
+      "push": 0.45
     },
     {
       "id": "fucus",
@@ -84,7 +84,7 @@
       },
       "clump": 4,
       "sway": 0.5,
-      "push": 2.4
+      "push": 0.8
     },
     {
       "id": "gorgone",
@@ -113,7 +113,7 @@
       },
       "clump": 5,
       "sway": 0.15,
-      "push": 0.8
+      "push": 0.25
     },
     {
       "id": "eponge",
@@ -141,7 +141,254 @@
       },
       "clump": 3,
       "sway": 0.03,
+      "push": 0.08
+    },
+    {
+      "id": "laitue_de_mer",
+      "shape": "sheet",
+      "count": 5000,
+      "minDepth": 0,
+      "maxDepth": 60,
+      "height": [
+        0.3,
+        0.9
+      ],
+      "width": [
+        0.4,
+        0.8
+      ],
+      "colors": [
+        "#7fae6a",
+        "#8ab86a",
+        "#6a9a52",
+        "#9ac07a"
+      ],
+      "patch": {
+        "scale": 0.035,
+        "threshold": 0.0
+      },
+      "clump": 3,
+      "sway": 0.18,
+      "push": 0.5
+    },
+    {
+      "id": "spaghetti_de_mer",
+      "shape": "strands",
+      "count": 2500,
+      "minDepth": 5,
+      "maxDepth": 110,
+      "height": [
+        1.5,
+        4.5
+      ],
+      "width": [
+        0.8,
+        1.4
+      ],
+      "colors": [
+        "#7a6a3a",
+        "#6a5a32",
+        "#8a7a40"
+      ],
+      "patch": {
+        "scale": 0.028,
+        "threshold": 0.05
+      },
+      "clump": 4,
+      "sway": 0.7,
+      "push": 0.9
+    },
+    {
+      "id": "algue_rouge",
+      "shape": "bush",
+      "count": 3000,
+      "minDepth": 10,
+      "maxDepth": 160,
+      "height": [
+        0.4,
+        1.1
+      ],
+      "width": [
+        0.6,
+        1.1
+      ],
+      "colors": [
+        "#8a3a2a",
+        "#a04a3a",
+        "#7a2a2a",
+        "#9a5a4a"
+      ],
+      "patch": {
+        "scale": 0.04,
+        "threshold": 0.1
+      },
+      "clump": 3,
+      "sway": 0.12,
+      "push": 0.4
+    },
+    {
+      "id": "anemone",
+      "shape": "anemone",
+      "count": 1800,
+      "minDepth": 5,
+      "maxDepth": 450,
+      "height": [
+        0.35,
+        0.8
+      ],
+      "width": [
+        0.5,
+        1.0
+      ],
+      "colors": [
+        "#c08850",
+        "#d8a0a0",
+        "#e8ece2",
+        "#b07a90",
+        "#a8c070"
+      ],
+      "patch": {
+        "scale": 0.045,
+        "threshold": 0.15
+      },
+      "clump": 3,
+      "sway": 0.08,
+      "push": 0.15
+    },
+    {
+      "id": "oursin",
+      "shape": "urchin",
+      "count": 1800,
+      "minDepth": 3,
+      "maxDepth": 300,
+      "height": [
+        0.25,
+        0.5
+      ],
+      "width": [
+        0.25,
+        0.5
+      ],
+      "colors": [
+        "#3a2a4a",
+        "#4a2a3a",
+        "#2a2a3a"
+      ],
+      "patch": {
+        "scale": 0.05,
+        "threshold": 0.2
+      },
+      "clump": 4,
+      "sway": 0.0,
+      "push": 0.0
+    },
+    {
+      "id": "plume_de_mer",
+      "shape": "feather",
+      "count": 1200,
+      "minDepth": 250,
+      "maxDepth": 1000,
+      "height": [
+        0.6,
+        1.6
+      ],
+      "width": [
+        0.8,
+        1.3
+      ],
+      "colors": [
+        "#c08850",
+        "#e8c8a0",
+        "#d8a080"
+      ],
+      "patch": {
+        "scale": 0.04,
+        "threshold": 0.1
+      },
+      "clump": 5,
+      "sway": 0.15,
       "push": 0.3
+    },
+    {
+      "id": "corail_froid",
+      "shape": "coral",
+      "count": 1000,
+      "minDepth": 300,
+      "maxDepth": 1050,
+      "height": [
+        0.6,
+        1.6
+      ],
+      "width": [
+        0.8,
+        1.5
+      ],
+      "colors": [
+        "#e8ece2",
+        "#e0b090",
+        "#c08850",
+        "#d8d0c0"
+      ],
+      "patch": {
+        "scale": 0.035,
+        "threshold": 0.15
+      },
+      "clump": 4,
+      "sway": 0.0,
+      "push": 0.05
+    },
+    {
+      "id": "vers_tubicoles",
+      "shape": "tubeworm",
+      "count": 900,
+      "minDepth": 950,
+      "maxDepth": 1300,
+      "height": [
+        0.8,
+        2.2
+      ],
+      "width": [
+        0.8,
+        1.4
+      ],
+      "colors": [
+        "#e8ece2",
+        "#d8d4c0"
+      ],
+      "patch": {
+        "scale": 0.04,
+        "threshold": 0.1
+      },
+      "clump": 5,
+      "sway": 0.06,
+      "push": 0.2
+    },
+    {
+      "id": "eponge_de_verre",
+      "shape": "vase",
+      "count": 600,
+      "minDepth": 700,
+      "maxDepth": 1300,
+      "height": [
+        0.8,
+        2.4
+      ],
+      "width": [
+        0.8,
+        1.6
+      ],
+      "colors": [
+        "#b9cbc2",
+        "#ccd8cc",
+        "#a8bdb2"
+      ],
+      "patch": {
+        "scale": 0.03,
+        "threshold": 0.2
+      },
+      "clump": 3,
+      "sway": 0.02,
+      "push": 0.05
     }
   ]
 }

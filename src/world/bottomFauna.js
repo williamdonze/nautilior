@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { WORLD, SEABED } from '../config/settings.js';
 import { createRandom } from '../core/utils.js';
 import { getFloorHeight } from './seabed.js';
+import { tileKey, registerSmall } from './tiles.js';
 
 /**
  * Petit peuple du fond : étoiles de mer et crabes posés sur le sable et les rochers
@@ -66,7 +67,7 @@ function scatter(group, geo, material, count, colors, maxDepth, sizeRange, rand)
     p.set(x, y + 0.02, z);
     q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rand() * Math.PI * 2);
     s.setScalar(rand.range(sizeRange[0], sizeRange[1]));
-    const band = Math.floor(z / 140);
+    const band = tileKey(x, z);
     if (!bands.has(band)) bands.set(band, []);
     bands.get(band).push({ matrix: m.compose(p, q, s).clone(), color: new THREE.Color(rand.pick(colors)).multiplyScalar(rand.range(0.85, 1.15)) });
     placed++;
@@ -78,6 +79,7 @@ function scatter(group, geo, material, count, colors, maxDepth, sizeRange, rand)
       mesh.setColorAt(i, it.color);
     });
     mesh.computeBoundingSphere();
+    registerSmall(mesh, 45);
     group.add(mesh);
   }
 }

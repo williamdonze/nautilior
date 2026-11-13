@@ -96,7 +96,10 @@ export class Port {
   /** Le vrai Port-Kerys : volets ouverts, fenêtres éclairées, ciel plus clair, foule sur le quai */
   makeAlive() {
     const T = this.world.tagged;
-    T.shutters.forEach((m) => (m.visible = false));
+    // Volets ouverts, rabattus contre les murs
+    T.shutters.forEach((m) => (m.rotation.y = m.userData.side * -1.45));
+    // Le phare se rallume
+    if (this.world.lighthouseLantern) this.world.lighthouseLantern.material = new THREE.MeshBasicMaterial({ color: '#efe3bb' });
     T.darkWindows.forEach((m) => (m.material = this.world.glowMaterial));
     T.boats.forEach((m) => (m.visible = false));
     this.scene.background.set('#9a9a94');

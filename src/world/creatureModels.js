@@ -139,6 +139,28 @@ export function createEel() {
   const tailFin = fin([[0, 0.5, -0.4], [0, -0.5, -0.4], [0, 0, 0.5]], '#3e2114');
   segments[N - 1].add(tailFin);
 
+  // Mutation : une deuxième tête atrophiée sort du flanc, gueule ouverte
+  const twin = new THREE.Group();
+  const twinSkull = shade(lathe([[0.04, -0.4], [0.26, -0.15], [0.24, 0.25], [0.06, 0.55]], 7, 0.85), skinBack, '#8a7a5c');
+  twin.add(new THREE.Mesh(twinSkull, vmat()));
+  teeth(twin, 6, 0.18, 0.4, -0.08, 0.1, 0.16);
+  eye(twin, 0.16, 0.12, 0.25, 0.06, '#7fbf7a');
+  twin.position.set(0.45, 0.2, 0);
+  twin.rotation.y = 1.0;
+  twin.rotation.z = -0.4;
+  segments[4].add(twin);
+  // Vertèbres qui percent la peau sur l'arrière du corps
+  const boneMat = lambert('#d8d4c0');
+  for (let i = 9; i < N; i += 2) {
+    const r = 0.46 * (1 - (i / N) * 0.85);
+    const bone = new THREE.Mesh(new THREE.ConeGeometry(0.06, r * 1.4, 4), boneMat);
+    bone.position.y = r * 1.2;
+    bone.rotation.x = -0.4;
+    segments[i].add(bone);
+  }
+  // Grappe d'yeux sur le crâne
+  for (let i = 0; i < 4; i++) eye(head, -0.12 + i * 0.09, 0.42, 0.15 - i * 0.12, 0.035, '#e0b050', false);
+
   const SCALE = 1.8;
   head.scale.setScalar(SCALE);
   for (const s of segments) s.scale.multiplyScalar(SCALE);
@@ -223,8 +245,46 @@ export function createLantern() {
   const lureHalo = createHalo('#7fbf7a', 4);
   lure.add(lureHalo);
 
+  // Mutation : une seconde bouche s'ouvre sur le flanc
+  const side = new THREE.Group();
+  side.position.set(-1.25, -0.1, -0.2);
+  side.rotation.y = -Math.PI / 2;
+  body.add(side);
+  side.add(new THREE.Mesh(new THREE.CircleGeometry(0.32, 9), new THREE.MeshBasicMaterial({ color: '#05090d' })));
+  teeth(side, 9, 0.3, 0.3, 0.05, -0.05, 0.22, '#b9cbc2');
+  // Ventre translucide : on devine les organes qui luisent
+  const belly = new THREE.Mesh(
+    new THREE.SphereGeometry(0.85, 9, 6, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5),
+    new THREE.MeshLambertMaterial({ color: '#5a6a5a', transparent: true, opacity: 0.45, flatShading: true, depthWrite: false })
+  );
+  belly.position.set(0, -0.55, -0.1);
+  body.add(belly);
+  for (let i = 0; i < 4; i++) {
+    const organ = new THREE.Mesh(new THREE.IcosahedronGeometry(0.16 + (i % 2) * 0.08, 0), glow(i % 2 ? '#7fbf7a' : '#a8955f'));
+    organ.position.set(Math.sin(i * 2.3) * 0.35, -0.75 + (i % 2) * 0.1, Math.cos(i * 1.7) * 0.35 - 0.1);
+    body.add(organ);
+  }
+  // Deux leurres supplémentaires, plus courts
+  const lures = [lureHalo];
+  for (const sgn of [-1, 1]) {
+    const stalk2 = new THREE.Group();
+    stalk2.position.set(sgn * 0.45, 1.15, 0.4);
+    stalk2.rotation.set(0.6, 0, sgn * 0.5);
+    stalk2.add(new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 0.9, 4).translate(0, 0.45, 0), lambert('#26292b')));
+    const bulb = new THREE.Mesh(new THREE.IcosahedronGeometry(0.1, 1), glow('#a8bdb2'));
+    bulb.position.y = 0.95;
+    stalk2.add(bulb);
+    const h = createHalo('#7fbf7a', 2.4);
+    h.position.y = 0.95;
+    stalk2.add(h);
+    lures.push(h);
+    body.add(stalk2);
+  }
+  // Rangée de petits yeux sur le flanc droit
+  for (let i = 0; i < 5; i++) eye(body, 1.18 - i * 0.04, 0.2 - i * 0.05, 0.4 - i * 0.3, 0.05, '#e0b050', false);
+
   body.scale.setScalar(1.6);
-  return { root, body, tail, jaw, pect, stalk, lureHalo };
+  return { root, body, tail, jaw, pect, stalk, lureHalo, lures };
 }
 
 /* ================================================================== Méduse irradiée */
@@ -266,6 +326,14 @@ export function createJelly() {
   halo.material.opacity = 0.5;
   halo.position.y = 0.4;
   root.add(halo);
+  // Mutation : des yeux flottent à l'intérieur de la cloche et regardent dehors
+  const innerEyes = [];
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    const e = eye(root, Math.cos(a) * 0.75, 0.55 + (i % 2) * 0.25, Math.sin(a) * 0.75, 0.11, i % 3 ? '#e8ece2' : '#e0b050', false);
+    e.lookAt(Math.cos(a) * 3, 0.5, Math.sin(a) * 3);
+    innerEyes.push(e);
+  }
   // Bras buccaux (rubans ondulants) et longs filaments
   const tendrils = [];
   const armMat = new THREE.MeshBasicMaterial({ color: '#a8bdb2', transparent: true, opacity: 0.55, side: THREE.DoubleSide });
@@ -301,65 +369,159 @@ export function createJelly() {
     }
   }
   root.scale.setScalar(1.5);
-  return { root, bell, tendrils, halo };
+  return { root, bell, tendrils, halo, innerEyes };
 }
 
-/* ================================================================== Poissons ordinaires */
+/* ================================================================== Poissons irradiés */
 
-/** Espèces des bancs : silhouette, couleurs, taille */
+/**
+ * Espèces des bancs. Même près de la surface, les poissons ont été touchés :
+ * yeux en trop, bosses, double queue, côtes à nu, pustules lumineuses.
+ * mutations : liste de difformités appliquées à la géométrie.
+ */
 export const FISH_SPECIES = {
-  sardine: { length: 0.75, back: '#3f5f6e', belly: '#ccd8cc', fins: '#83a39a', stripes: false, scale: 0.8 },
-  maquereau: { length: 0.95, back: '#2f5a4a', belly: '#d8e0d8', fins: '#4a6a5a', stripes: true, scale: 1 },
-  bar: { length: 1.1, back: '#5a6464', belly: '#d0d4cc', fins: '#6b6e6c', stripes: false, scale: 1.5 },
-  vieille: { length: 1, back: '#8a4f28', belly: '#c08850', fins: '#a8955f', stripes: false, spots: true, scale: 1.3 },
+  sardine: { length: 0.75, back: '#3f5f6e', belly: '#ccd8cc', fins: '#83a39a', scale: 0.8, mutations: ['extraEyes', 'tumors'] },
+  maquereau: { length: 0.95, back: '#2f5a4a', belly: '#d8e0d8', fins: '#4a6a5a', stripes: true, scale: 1, mutations: ['hump', 'glowStripes', 'spines'] },
+  bar: { length: 1.1, back: '#5a6464', belly: '#d0d4cc', fins: '#6b6e6c', scale: 1.5, mutations: ['doubleTail', 'ribs', 'fangs'] },
+  vieille: { length: 1, back: '#8a4f28', belly: '#c08850', fins: '#a8955f', spots: true, scale: 1.3, mutations: ['bigHead', 'pustules', 'raggedFins'] },
+  squelette: { length: 1, back: '#b9cbc2', belly: '#e8ece2', fins: '#83a39a', scale: 1.4, mutations: ['skeleton', 'extraEyes'] },
 };
 
-/** Géométrie d'un poisson (une seule géométrie pour le banc instancié) */
+/**
+ * Géométrie d'un poisson (une seule géométrie pour tout le banc instancié).
+ * Attributs ajoutés pour le shader :
+ *  - aU    : 0 à la tête, 1 au bout de la queue (l'onde de nage part de la tête)
+ *  - aGlow : 0..1, parties qui luisent dans le noir (yeux, pustules, rayures irradiées)
+ */
 export function createFishGeometry(speciesId = 'sardine') {
   const sp = FISH_SPECIES[speciesId];
   const L = sp.length;
-  const body = shade(
-    lathe([[0.01, -L * 0.5], [0.09, -L * 0.36], [0.16, -L * 0.1], [0.17, L * 0.12], [0.12, L * 0.34], [0.01, L * 0.5]], 7, 0.55),
-    sp.back,
-    sp.belly,
-    (c, x, y, z, t) => {
+  const mut = new Set(sp.mutations ?? []);
+  const parts = []; // { geo, color, glow }
+
+  // --- Corps (ou squelette)
+  if (mut.has('skeleton')) {
+    // Colonne et côtes : on voit à travers
+    const spine = new THREE.CylinderGeometry(0.025, 0.02, L * 0.9, 4);
+    spine.rotateX(Math.PI / 2);
+    parts.push({ geo: spine, color: sp.back });
+    for (let i = 0; i < 7; i++) {
+      const z = L * 0.3 - i * L * 0.09;
+      const r = 0.15 * Math.sin(((i + 1) / 8) * Math.PI);
+      const rib = new THREE.TorusGeometry(r, 0.012, 3, 8, Math.PI * 1.4);
+      rib.rotateY(Math.PI / 2);
+      rib.rotateX(-Math.PI * 0.2);
+      rib.translate(0, 0, z);
+      parts.push({ geo: rib, color: sp.belly });
+    }
+    const skull = lathe([[0.01, L * 0.3], [0.12, L * 0.36], [0.1, L * 0.46], [0.01, L * 0.52]], 6, 0.7);
+    parts.push({ geo: skull, color: sp.belly });
+  } else {
+    const profile = [[0.01, -L * 0.5], [0.09, -L * 0.36], [0.16, -L * 0.1], [0.17, L * 0.12], [0.12, L * 0.34], [0.01, L * 0.5]];
+    if (mut.has('bigHead')) {
+      profile[4] = [0.2, L * 0.3];
+      profile[3] = [0.2, L * 0.12];
+    }
+    const body = shade(lathe(profile, 7, 0.55), sp.back, sp.belly, (c, x, y, z, t) => {
       if (sp.stripes && t > 0.5 && Math.sin(z * 26 + Math.sin(x * 40) * 2) > 0.3) c.multiplyScalar(0.45);
       if (sp.spots && Math.sin(z * 30) * Math.sin(y * 40) > 0.6) c.offsetHSL(0, 0, 0.12);
+      if (mut.has('ribs') && Math.sin(z * 34) > 0.55 && Math.abs(x) > 0.05) c.multiplyScalar(0.35);
+    });
+    if (mut.has('hump')) {
+      // Bosse difforme sur le dos
+      const p = body.attributes.position;
+      for (let i = 0; i < p.count; i++) {
+        const y = p.getY(i), z = p.getZ(i);
+        if (y > 0.05) p.setY(i, y + Math.max(0, 0.16 - Math.abs(z + 0.05)) * 1.6);
+      }
+      body.computeVertexNormals();
     }
-  );
-  // Nageoires : caudale fourchue, dorsale, pectorales
-  const f = sp.fins;
-  const fc = new THREE.Color(f);
+    parts.push({ geo: body, color: null, glowFn: mut.has('glowStripes') ? (x, y, z) => (y > 0.04 && Math.sin(z * 26) > 0.6 ? 0.7 : 0) : null });
+  }
+
+  // --- Yeux (un de plus pour les mutants), pupilles lumineuses
+  const eyes = [[0.07, 0.04, L * 0.32], [-0.07, 0.04, L * 0.32]];
+  if (mut.has('extraEyes')) eyes.push([0.05, 0.1, L * 0.22], [-0.02, 0.12, L * 0.28]);
+  for (const [x, y, z] of eyes) {
+    const e = new THREE.IcosahedronGeometry(0.035, 0);
+    e.translate(x, y, z);
+    parts.push({ geo: e, color: '#e8ece2', glow: speciesId === 'squelette' ? 1 : 0.6 });
+  }
+  // --- Tumeurs et pustules
+  if (mut.has('tumors') || mut.has('pustules')) {
+    const n = mut.has('pustules') ? 7 : 3;
+    for (let i = 0; i < n; i++) {
+      const g = new THREE.IcosahedronGeometry(0.03 + (i % 3) * 0.015, 0);
+      const a = i * 2.4;
+      g.translate(Math.cos(a) * 0.09, Math.sin(a) * 0.1, L * (0.25 - i * 0.07));
+      parts.push({ geo: g, color: mut.has('pustules') ? '#c8e8a0' : '#9a9282', glow: mut.has('pustules') ? 0.9 : 0 });
+    }
+  }
+  // --- Crocs
+  if (mut.has('fangs')) {
+    for (const s of [-1, 1]) {
+      const f = new THREE.ConeGeometry(0.015, 0.08, 3);
+      f.rotateX(Math.PI);
+      f.translate(s * 0.03, -0.04, L * 0.47);
+      parts.push({ geo: f, color: '#e8ece2' });
+    }
+  }
+
+  // --- Nageoires
   const tri = (pts) => {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(pts.flat(), 3));
-    const col = new Float32Array(pts.length * 3);
-    for (let i = 0; i < pts.length; i++) col.set([fc.r, fc.g, fc.b], i * 3);
-    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-    g.computeVertexNormals();
     return g;
   };
-  const parts = [
-    body,
-    tri([[0, 0, -L * 0.45], [0, 0.2, -L * 0.75], [0, 0.02, -L * 0.6], [0, 0, -L * 0.45], [0, -0.02, -L * 0.6], [0, -0.2, -L * 0.75]]),
-    tri([[0, 0.14, L * 0.05], [0, 0.14, -L * 0.25], [0, 0.3, -L * 0.15]]),
-    tri([[0.08, -0.05, L * 0.15], [0.2, -0.12, -L * 0.02], [0.08, -0.06, 0]]),
-    tri([[-0.08, -0.05, L * 0.15], [-0.2, -0.12, -L * 0.02], [-0.08, -0.06, 0]]),
-  ];
-  // Fusion en une seule géométrie non indexée (position + couleur)
+  const ragged = mut.has('raggedFins') ? 0.6 : 1;
+  const tail = (zOff, yOff) =>
+    tri([[0, yOff, -L * 0.45 + zOff], [0, yOff + 0.2 * ragged, -L * 0.75 + zOff], [0, yOff + 0.02, -L * 0.6 + zOff],
+      [0, yOff, -L * 0.45 + zOff], [0, yOff - 0.02, -L * 0.6 + zOff], [0, yOff - 0.2, -L * 0.75 + zOff]]);
+  if (mut.has('doubleTail')) {
+    parts.push({ geo: tail(0, 0.07), color: sp.fins }, { geo: tail(0, -0.07), color: sp.fins });
+  } else parts.push({ geo: tail(0, 0), color: sp.fins });
+  parts.push({ geo: tri([[0, 0.14, L * 0.05], [0, 0.14, -L * 0.25], [0, 0.14 + 0.16 * ragged, -L * 0.15]]), color: sp.fins });
+  parts.push({ geo: tri([[0.08, -0.05, L * 0.15], [0.2, -0.12, -L * 0.02], [0.08, -0.06, 0]]), color: sp.fins });
+  parts.push({ geo: tri([[-0.08, -0.05, L * 0.15], [-0.2 * ragged, -0.12, -L * 0.02], [-0.08, -0.06, 0]]), color: sp.fins });
+  if (mut.has('spines')) {
+    for (let i = 0; i < 4; i++) {
+      const sp2 = new THREE.ConeGeometry(0.012, 0.12, 3);
+      sp2.translate(0, 0.2, L * (0.1 - i * 0.08));
+      parts.push({ geo: sp2, color: '#22140d' });
+    }
+  }
+
+  // --- Fusion : position, couleur, aU (tête → queue), aGlow
   let count = 0;
-  for (const g of parts) count += g.attributes.position.count;
+  const prepared = parts.map((p) => {
+    const g = p.geo.index ? p.geo.toNonIndexed() : p.geo;
+    count += g.attributes.position.count;
+    return { ...p, geo: g };
+  });
   const pos = new Float32Array(count * 3), col = new Float32Array(count * 3);
+  const uArr = new Float32Array(count), glowArr = new Float32Array(count);
+  const c = new THREE.Color();
   let o = 0;
-  for (const g of parts) {
+  for (const p of prepared) {
+    const g = p.geo, n = g.attributes.position.count;
     pos.set(g.attributes.position.array, o * 3);
-    col.set(g.attributes.color.array, o * 3);
-    o += g.attributes.position.count;
+    for (let i = 0; i < n; i++) {
+      const x = g.attributes.position.getX(i), y = g.attributes.position.getY(i), z = g.attributes.position.getZ(i);
+      if (p.color) c.set(p.color);
+      else c.setRGB(g.attributes.color.getX(i), g.attributes.color.getY(i), g.attributes.color.getZ(i));
+      col.set([c.r, c.g, c.b], (o + i) * 3);
+      uArr[o + i] = THREE.MathUtils.clamp((L * 0.5 - z) / (L * 1.25), 0, 1);
+      glowArr[o + i] = p.glowFn ? p.glowFn(x, y, z) : p.glow ?? 0;
+    }
+    o += n;
   }
   const merged = new THREE.BufferGeometry();
   merged.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   merged.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  merged.setAttribute('aU', new THREE.BufferAttribute(uArr, 1));
+  merged.setAttribute('aGlow', new THREE.BufferAttribute(glowArr, 1));
   merged.computeVertexNormals();
   merged.scale(sp.scale, sp.scale, sp.scale);
+  merged.userData.length = L * sp.scale;
   return merged;
 }

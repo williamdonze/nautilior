@@ -54,3 +54,17 @@ Parmi les objets rares se trouvent des objets personnels du joueur venus du vrai
 ## Ton
 
 Intrigant, mélancolique, de plus en plus inquiétant avec la profondeur. Dialogues courts, évasifs, avec des sous-entendus. Aucun humour cartoon.
+
+## Dosage des révélations dans les dialogues
+
+Les villageois ne disent jamais la vérité. Ce qu'ils laissent échapper suit des paliers :
+
+| Fragments trouvés | Attitude |
+| --- | --- |
+| 0 – 1 | Banals, prévenants, explications rationnelles (« partis à la ville », « un mauvais hiver »). |
+| 2 – 4 | Gênés : ils minimisent (« un rêve de convalescent », « la mer recrache n'importe quoi »). |
+| 5 – 6 | Premiers lapsus, vite rattrapés (« Les noyés en font beaucoup… ceux qui ont failli se noyer »). |
+| 7 | Culpabilité à demi-mot (« Il y a des noms qu'on n'aime pas relire »). |
+| Coque abyssale | Suppliques et fausses raisons. |
+
+Le dernier fragment ne nomme pas les villageois : il laisse deviner trois métiers sur une plaque effacée.

@@ -176,6 +176,7 @@ export class Game {
 
   pause() {
     if (this.pausedAll) return;
+    this.sound.stopEngine();
     this.pausedAt = performance.now();
     this.pausedAll = true;
     this.sound.motorStop();
@@ -385,7 +386,10 @@ export class Game {
     const index = fragmentsData.fragments.findIndex((f) => f.id === id);
     if (index < 0 || this.memoryView.isOpen) return;
     this.busy = true;
-    if (pause) this.paused = true;
+    if (pause) {
+      this.paused = true;
+      this.sound.stopEngine();
+    }
     await this.memoryView.show(fragmentsData.fragments[index], index + 1);
     this.paused = false;
     this.busy = false;

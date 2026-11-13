@@ -47,27 +47,47 @@ class FishSchools {
   constructor(scene) {
     const uniforms = (this.uniforms = { uTime: { value: 0 } });
     const mat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide });
-    // Le corps ondule de plus en plus vers la queue (chaque poisson a sa phase)
+    /*
+     * Nage : une onde part de la tête et grandit en descendant vers la queue
+     * (la tête bouge à peine, la queue bat). aU = 0 à la tête, 1 au bout de la queue.
+     * aGlow : yeux, pustules et rayures irradiées qui luisent dans le noir.
+     */
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uTime = uniforms.uTime;
       shader.vertexShader = shader.vertexShader
-        .replace('#include <common>', '#include <common>\nuniform float uTime;')
+        .replace(
+          '#include <common>',
+          `#include <common>
+          uniform float uTime;
+          attribute float aU;
+          attribute float aGlow;
+          varying float vGlow;`
+        )
         .replace(
           '#include <begin_vertex>',
           `#include <begin_vertex>
+          vGlow = aGlow;
           float ph = dot(instanceMatrix[3].xyz, vec3(1.3, 0.7, 1.1));
-          float back = max(0.0, 0.15 - position.z);
-          transformed.x += sin(uTime * 10.0 + ph - position.z * 4.0) * back * 0.35;`
+          float amp = 0.012 + 0.16 * aU * aU;
+          transformed.x += sin(uTime * 9.0 + ph - aU * 5.0) * amp;`
+        );
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nvarying float vGlow;')
+        .replace(
+          '#include <emissivemap_fragment>',
+          `#include <emissivemap_fragment>
+          totalEmissiveRadiance += diffuseColor.rgb * vGlow * 1.4;`
         );
     };
-    // Un banc = une espèce (sardines, maquereaux, bars, vieilles)
-    const species = Object.keys(FISH_SPECIES);
-    const geoCache = {};
+    // Un banc = une espèce ; les espèces disponibles dépendent de la zone (voir zones.json)
+    this.geoCache = {};
+    this.material = mat;
+    this.scene = scene;
     this.schools = [];
     for (let s = 0; s < MAX_SCHOOLS; s++) {
-      const id = species[s % species.length];
-      geoCache[id] ??= createFishGeometry(id);
-      const mesh = new THREE.InstancedMesh(geoCache[id], mat, FISH.perSchool);
+      const id = 'sardine';
+      this.geoCache[id] ??= createFishGeometry(id);
+      const mesh = new THREE.InstancedMesh(this.geoCache[id], mat, FISH.perSchool);
       mesh.frustumCulled = false;
       mesh.visible = false;
       const c = new THREE.Color();
@@ -81,15 +101,24 @@ class FishSchools {
     }
   }
 
-  update(dt, time, sub, wanted) {
+  /** Change l'espèce d'un banc (à sa réapparition) */
+  setSpecies(school, id) {
+    if (school.species === id) return;
+    school.species = id;
+    this.geoCache[id] ??= createFishGeometry(id);
+    school.mesh.geometry = this.geoCache[id];
+  }
+
+  update(dt, time, sub, wanted, speciesList = ['sardine']) {
     this.uniforms.uTime.value = time;
     for (let s = 0; s < MAX_SCHOOLS; s++) {
       const school = this.schools[s];
       const shouldLive = s < wanted;
       const far = school.active && school.center.distanceTo(sub.position) > DESPAWN;
       if (shouldLive && (!school.active || far)) {
-        // (Ré)apparition hors de vue
-        spawnPoint(sub, school.center, -140, -3);
+        // (Ré)apparition hors de vue, avec une espèce de la zone
+        this.setSpecies(school, speciesList[Math.floor(Math.random() * speciesList.length)]);
+        spawnPoint(sub, school.center, -1300, -3);
         school.target.copy(school.center);
         for (const f of school.fish) {
           f.pos.copy(school.center).add(f.offset);
@@ -105,7 +134,7 @@ class FishSchools {
         let idx = 0;
         // Le banc erre vers une cible qui change de temps en temps
         if (school.center.distanceTo(school.target) < 3) {
-          spawnPoint({ position: school.center }, school.target, -140, -3);
+          spawnPoint({ position: school.center }, school.target, -1300, -3);
           school.target.lerp(school.center, 0.6);
         }
         _v.subVectors(school.target, school.center).normalize().multiplyScalar(FISH.speed * 0.6 * dt);
@@ -269,8 +298,11 @@ class Mutant {
       const jawTarget = charging ? 0.7 : 0.15 + Math.sin(t * 0.9) * 0.08;
       m.jaw.rotation.x += (jawTarget - m.jaw.rotation.x) * k;
       m.stalk.rotation.z = Math.sin(t * 1.1) * 0.25;
-      const flick = 0.75 + Math.sin(t * 7) * 0.15 + (Math.random() < 0.02 ? -0.5 : 0);
-      m.lureHalo.material.opacity = 0.5 * flick;
+      // Les leurres clignotent chacun à leur rythme
+      m.lures.forEach((h, i) => {
+        const flick = 0.75 + Math.sin(t * (7 + i * 2.3)) * 0.15 + (Math.random() < 0.02 ? -0.5 : 0);
+        h.material.opacity = 0.5 * flick;
+      });
     } else {
       o.position.copy(this.pos);
       const pulse = Math.sin(t * 1.6);
@@ -281,6 +313,8 @@ class Mutant {
         p.rotation.z = Math.cos(t * 1.0 + i * 0.5) * 0.22;
       });
       m.halo.material.opacity = 0.35 + pulse * 0.1;
+      // Les yeux de la cloche roulent dans tous les sens
+      m.innerEyes.forEach((e, i) => (e.rotation.z = Math.sin(t * 0.7 + i * 1.9) * 0.8));
     }
   }
 }
@@ -311,7 +345,7 @@ export class Creatures {
    * @returns {number} dégâts subis par le sous-marin ce tour
    */
   update(dt, time, sub, zone) {
-    this.fish.update(dt, time, sub, zone.fishSchools ?? 0);
+    this.fish.update(dt, time, sub, zone.fishSchools ?? 0, zone.fishSpecies);
 
     // Retire les créatures trop lointaines
     for (let i = this.mutants.length - 1; i >= 0; i--) {

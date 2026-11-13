@@ -76,10 +76,24 @@ Juste avant le choix final, une sauvegarde à part est créée : depuis l'écran
   et le **sonar** (écran rond en bas à droite) servent à les trouver : objets (points dorés),
   souvenirs (anneau blanc), créatures (triangle rouge), bancs de poissons, épaves.
   Sa portée augmente avec l'amélioration « Phare et sonar ».
-- **Flore** : forêts de laminaires, herbiers, fucus, gorgones et éponges ; les algues s'écartent
-  au passage du sous-marin puis se redressent en ondulant.
+- **Flore** : 14 espèces (laminaires, herbiers, laitue de mer, spaghetti de mer, algues rouges,
+  fucus, anémones, oursins, gorgones, plumes de mer, coraux froids, éponges de verre, vers tubicoles…).
+  Le sous-marin couche les plantes qu'il traverse (champ de déplacement simulé par des ressorts),
+  qui se redressent ensuite en se balançant.
+- **Décor** : barils, caisses, pneus, chaînes, planches, coquillages, moulières, deux 2CV englouties,
+  et les ruines d'Ys (colonnes, arches, escaliers, têtes de pierre) dans le canyon et les abysses.
+- **Faune irradiée** : même les poissons du récif sont difformes (yeux en trop, bosses, double queue,
+  pustules lumineuses) ; dans le canyon et les abysses nagent des poissons-squelettes.
 - **Sept sous-marins** : le modèle change à chaque amélioration de coque, du vieux cigare rouillé
-  au sous-marin abyssal anguleux à quatre rotors verticaux. Chacun a son propre hublot en vue cockpit.
+  au sous-marin abyssal anguleux à quatre rotors verticaux. Chacun a son poste de pilotage en 3D
+  (hublot, cadrans à aiguilles reliés au jeu, manette des gaz, écrans sur les modèles récents).
+
+## Le village
+
+Port-Kerys compte une vingtaine de bâtiments : maisons de granit ou chaulées, toits d'ardoise,
+lucarnes, cheminées de pignon, volets colorés, enseignes (hôpital, épicerie, criée, Bar des Marins,
+mécanique marine), chapelle et calvaire, phare éteint sur sa jetée, fontaine, cabine téléphonique,
+4L abandonnée, murets de pierres sèches, casiers, filets qui sèchent, linge, goélands.
 
 ## Le monde
 
