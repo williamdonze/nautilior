@@ -9,14 +9,14 @@ import { RENDER, WORLD } from '../config/settings.js';
 const LOOK_YAW = 1.0; // le regard peut tourner jusqu'à ±57° de l'axe du sous-marin
 const LOOK_PITCH_UP = 0.6;
 const LOOK_PITCH_DOWN = -1.05;
-const BASE_PITCH = -0.12; // on regarde un peu vers le fond
+const BASE_PITCH = -0.2; // on regarde un peu vers le bas : le tableau de bord est dans le champ
 const SENSITIVITY = 0.0022; // radians par pixel de souris
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 const X_AXIS = new THREE.Vector3(1, 0, 0);
 
 export class CockpitCamera {
   constructor(aspect) {
-    this.camera = new THREE.PerspectiveCamera(RENDER.FIRST_PERSON_FOV, aspect, 0.1, 130);
+    this.camera = new THREE.PerspectiveCamera(RENDER.FIRST_PERSON_FOV, aspect, 0.03, 130);
     this.yaw = 0;
     this.pitch = BASE_PITCH;
     this.shakeAmount = 0;

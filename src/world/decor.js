@@ -6,6 +6,7 @@ import { getFloorHeight } from './seabed.js';
 import { createLandmarks } from './landmarks.js';
 import { createFlora } from './flora.js';
 import { createBottomFauna } from './bottomFauna.js';
+import { createProps } from './props.js';
 
 const rand = createRandom(WORLD.SEED + 7);
 const noise = createNoise2D(WORLD.SEED + 3);
@@ -85,6 +86,7 @@ export function createDecor() {
   group.add(landmarks);
   group.add(createFlora());
   group.add(createBottomFauna());
+  group.add(createProps(colliders));
   return {
     group,
     colliders,

@@ -63,6 +63,9 @@ const GRANITE = [new THREE.Color('#4a4f50'), new THREE.Color('#5c6061'), new THR
 const ABYSS = [new THREE.Color('#1f2629'), new THREE.Color('#262e30'), new THREE.Color('#1a2023')];
 const MOSS = new THREE.Color('#3f5a3c');
 const SICK = new THREE.Color('#2c4430');
+const GRAVEL = new THREE.Color('#3f4240');
+const SHELL_SAND = new THREE.Color('#9a968a');
+const MUD = new THREE.Color('#2e2a24');
 
 function floorColor(center, normal, out) {
   const steep = 1 - normal.y;
@@ -74,7 +77,13 @@ function floorColor(center, normal, out) {
     out.copy(SAND[pick]);
     const moss = smoothstep(0.55, 0.8, noise(center.x * 0.03 + 9, center.z * 0.03)) * smoothstep(-90, -40, center.y);
     out.lerp(MOSS, moss * 0.8);
-  } else if (depth < 900) out.copy(SILT[pick]);
+  } else if (depth < 900) {
+    out.copy(SILT[pick]);
+    // Plaques de vase sombre et coulées de sable
+    const g = noise(center.x * 0.05 - 13, center.z * 0.05 + 4);
+    if (g > 0.4) out.lerp(MUD, 0.6);
+    else if (g < -0.45) out.lerp(SAND[1], 0.4);
+  }
   else {
     out.copy(ABYSS[pick]);
     // Vase maladive près du portail

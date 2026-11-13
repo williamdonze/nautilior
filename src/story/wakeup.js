@@ -1,5 +1,6 @@
 import texts from './wakeup.json';
 import { storyState } from './state.js';
+import { matches } from './dialogue.js';
 
 /**
  * Séquence de réveil à l'hôpital (oxygène épuisé ou coque brisée) :
@@ -59,7 +60,9 @@ export class WakeUp {
 
     // 4. La voix du médecin
     await this.say(texts.doctor, 'voice', 2400);
-    await this.say(`« ${pick(texts.followUps)} »`, 'voice', 3200);
+    // Réplique du médecin selon le palier de fragments trouvés
+    const tier = texts.followUps.find((t) => matches({ fragmentsMin: t.fragmentsMin ?? 0, fragmentsMax: t.fragmentsMax ?? 99 }));
+    await this.say(`« ${pick((tier ?? texts.followUps[0]).lines)} »`, 'voice', 3200);
 
     // 5. Ce qui a été perdu
     // Regroupe les doublons : « Galet de granit rose ×2 »

@@ -624,4 +624,71 @@ export class Sound {
       o.stop(t + dt + 0.35);
     }
   }
+
+  /**
+   * Ronronnement des turbines : discret au ralenti, un peu plus présent à pleine poussée.
+   * Sons graves et filtrés, légèrement pulsés, pour rester agréable sur la durée.
+   * @param {number} throttle poussée avant (-1..1), @param {number} lift montée/descente (-1..1)
+   */
+  setEngine(throttle, lift) {
+    if (!this.ready) return;
+    const ctx = this.ctx;
+    if (!this.engine) {
+      const out = ctx.createGain();
+      out.gain.value = 0;
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 320;
+      lp.Q.value = 0.4;
+      // Deux oscillateurs graves et un souffle filtré
+      const a = ctx.createOscillator();
+      a.type = 'sine';
+      a.frequency.value = 52;
+      const b = ctx.createOscillator();
+      b.type = 'triangle';
+      b.frequency.value = 104;
+      b.detune.value = 7;
+      const bGain = ctx.createGain();
+      bGain.gain.value = 0.35;
+      const hiss = ctx.createBufferSource();
+      hiss.buffer = this.noise;
+      hiss.loop = true;
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 170;
+      bp.Q.value = 0.9;
+      const hissGain = ctx.createGain();
+      hissGain.gain.value = 0.5;
+      // Pulsation douce des pales
+      const flutter = ctx.createGain();
+      flutter.gain.value = 1;
+      const lfo = ctx.createOscillator();
+      lfo.frequency.value = 6;
+      const lfoDepth = ctx.createGain();
+      lfoDepth.gain.value = 0.12;
+      lfo.connect(lfoDepth).connect(flutter.gain);
+      a.connect(flutter);
+      b.connect(bGain).connect(flutter);
+      hiss.connect(bp).connect(hissGain).connect(flutter);
+      flutter.connect(lp).connect(out).connect(this.muffle);
+      a.start();
+      b.start();
+      hiss.start();
+      lfo.start();
+      this.engine = { out, a, b, lfo, lp };
+    }
+    const e = this.engine;
+    const t = ctx.currentTime;
+    const level = Math.min(1, Math.abs(throttle) * 0.85 + Math.abs(lift) * 0.5);
+    e.out.gain.setTargetAtTime(0.012 + level * 0.05, t, 0.25);
+    e.a.frequency.setTargetAtTime(48 + level * 22, t, 0.3);
+    e.b.frequency.setTargetAtTime(96 + level * 44, t, 0.3);
+    e.lfo.frequency.setTargetAtTime(4 + level * 9, t, 0.3);
+    e.lp.frequency.setTargetAtTime(260 + level * 220, t, 0.3);
+  }
+
+  /** Coupe les turbines (au port, en pause, pendant le réveil) */
+  stopEngine() {
+    if (this.engine) this.engine.out.gain.setTargetAtTime(0, this.ctx.currentTime, 0.2);
+  }
 }

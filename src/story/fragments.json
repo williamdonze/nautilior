@@ -2,7 +2,11 @@
   "_comment": "Fragments de mémoire : objets personnels du joueur venus du vrai monde. Positions fixes (x, z) ; ils ne réapparaissent pas une fois trouvés. 'art' = image pixel dessinée dans ui/memoryArt.js. 'lines' = le souvenir, affiché ligne par ligne.",
   "fragments": [
     {
-      "id": "photo", "name": "Photographie délavée", "x": 38, "z": -70, "art": "photo",
+      "id": "photo",
+      "name": "Photographie délavée",
+      "x": 38,
+      "z": -70,
+      "art": "photo",
       "description": "Le papier a gondolé. Deux silhouettes sur un quai, au soleil.",
       "title": "Un quai plein de monde",
       "lines": [
@@ -12,7 +16,11 @@
       ]
     },
     {
-      "id": "alliance", "name": "Alliance", "x": -72, "z": -135, "art": "ring",
+      "id": "alliance",
+      "name": "Alliance",
+      "x": -72,
+      "z": -135,
+      "art": "ring",
       "description": "Un anneau d'or tout simple. Il glisse à ton doigt comme s'il l'attendait.",
       "title": "Une promesse",
       "lines": [
@@ -22,7 +30,11 @@
       ]
     },
     {
-      "id": "plaque", "name": "Plaque de plongée", "x": 24, "z": -262, "art": "tag",
+      "id": "plaque",
+      "name": "Plaque de plongée",
+      "x": 24,
+      "z": -262,
+      "art": "tag",
       "description": "Une plaque d'identité gravée à ton nom. Tu le lis, et il ne te dit rien.",
       "title": "Le jour de la plongée",
       "lines": [
@@ -32,7 +44,11 @@
       ]
     },
     {
-      "id": "carnet", "name": "Carnet de bord", "x": -46, "z": -462, "art": "logbook",
+      "id": "carnet",
+      "name": "Carnet de bord",
+      "x": -46,
+      "z": -462,
+      "art": "logbook",
       "description": "Les pages ont collé entre elles. La dernière se lit encore.",
       "title": "La dernière page",
       "lines": [
@@ -42,7 +58,12 @@
       ]
     },
     {
-      "id": "journal", "name": "Coupure de journal", "x": -6, "z": -650, "art": "newspaper", "inCanyon": true,
+      "id": "journal",
+      "name": "Coupure de journal",
+      "x": -6,
+      "z": -650,
+      "art": "newspaper",
+      "inCanyon": true,
       "description": "Du papier journal, miraculeusement lisible. Une photo en noir et blanc.",
       "title": "Les recherches",
       "lines": [
@@ -52,7 +73,12 @@
       ]
     },
     {
-      "id": "montre", "name": "Montre de plongée", "x": 0, "z": -805, "art": "watch", "inCanyon": true,
+      "id": "montre",
+      "name": "Montre de plongée",
+      "x": 0,
+      "z": -805,
+      "art": "watch",
+      "inCanyon": true,
       "description": "Le verre est fendu. Les aiguilles ne bougent plus.",
       "title": "4 h 12",
       "lines": [
@@ -62,13 +88,17 @@
       ]
     },
     {
-      "id": "stele", "name": "Plaque commémorative", "x": 34, "z": -985, "art": "memorial",
-      "description": "Une plaque de granit arrachée à un quai. « À nos disparus en mer. »",
+      "id": "stele",
+      "name": "Plaque commémorative",
+      "x": 34,
+      "z": -985,
+      "art": "memorial",
+      "description": "Une plaque de granit arrachée à un quai. Les noms sont presque effacés.",
       "title": "À nos disparus",
       "lines": [
-        "Tu as déjà lu cette plaque, enfant, sur le vrai quai. Des fleurs fanées dessous.",
-        "Trois noms, gravés il y a longtemps : un médecin, un mécanicien, une commerçante.",
-        "Ils sont morts bien avant ta naissance. Ils t'attendent pourtant, là-haut."
+        "Une plaque de granit, arrachée à un quai. « À nos disparus en mer. »",
+        "Le sel a rongé les noms. Tu en devines trois, et un mot sous chacun : « docteur », « mécanicien », « commerçante ».",
+        "La date a été effacée par l'eau. Tu as froid, tout à coup."
       ]
     }
   ]

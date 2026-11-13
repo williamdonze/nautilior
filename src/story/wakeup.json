@@ -1,5 +1,5 @@
 {
-  "_comment": "Textes de la séquence de réveil (oxygène épuisé ou coque brisée). Le médecin parle toujours en premier. {items} = objets perdus.",
+  "_comment": "Textes de la séquence de réveil (oxygène épuisé ou coque brisée). Le médecin parle toujours en premier. followUps : répliques par palier de fragments trouvés (de plus en plus troublantes). {items} = objets perdus.",
   "causes": {
     "oxygen": [
       "L'air devient épais comme de l'eau.",
@@ -14,11 +14,31 @@
   },
   "doctor": "Encore toi…",
   "followUps": [
-    "La mer t'a rendu. Elle finit toujours par te rendre.",
-    "Tu respirais à peine. Comme la première fois.",
-    "Ne pose pas de questions. Repose-toi.",
-    "Tu as de la chance. Ou autre chose.",
-    "Le mécano a repêché ta boîte de conserve. Elle tient encore."
+    {
+      "fragmentsMax": 1,
+      "lines": [
+        "Tu as eu de la chance. Repose-toi.",
+        "Le mécano t'a repêché près de la jetée.",
+        "Tu nous as fait peur. Ne remonte pas si tard, la prochaine fois."
+      ]
+    },
+    {
+      "fragmentsMin": 2,
+      "fragmentsMax": 4,
+      "lines": [
+        "La mer t'a rendu. Elle le fait souvent, avec toi.",
+        "Ne pose pas de questions. Repose-toi.",
+        "Tu as de la chance. Ou autre chose."
+      ]
+    },
+    {
+      "fragmentsMin": 5,
+      "lines": [
+        "Tu respirais à peine. Comme la première fois.",
+        "Elle finit toujours par te rendre. Toujours.",
+        "Tu reviens toujours ici."
+      ]
+    }
   ],
   "lost": "Ta soute est plus légère : {items}.",
   "nothingLost": "La soute était vide. Elle l'est encore."

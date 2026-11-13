@@ -1,30 +1,292 @@
 {
   "_comment": "Disposition du port de Port-Kerys. Le quai longe l'axe X, la mer est côté +Z, le village côté -Z. Tailles en mètres (w = largeur X, d = profondeur Z, h = hauteur des murs).",
-  "bounds": { "minX": -36, "maxX": 36, "minZ": -27, "maxZ": 5.3 },
+  "bounds": {
+    "minX": -36,
+    "maxX": 36,
+    "minZ": -27,
+    "maxZ": 5.3
+  },
   "spawns": {
-    "hospital": { "x": -18, "z": -5.6, "yaw": 0 },
-    "quay": { "x": 12, "z": 1.2, "yaw": 3.14 }
+    "hospital": {
+      "x": -18,
+      "z": -5.6,
+      "yaw": 0
+    },
+    "quay": {
+      "x": 12,
+      "z": 1.2,
+      "yaw": 3.14
+    }
   },
   "buildings": [
-    { "id": "hospital", "kind": "hospital", "x": -18, "z": -11, "w": 11, "d": 7, "h": 6.5, "wall": "#878a85", "roof": "#26292b", "lit": true },
-    { "id": "shop", "kind": "shop", "x": -4, "z": -10, "w": 6, "d": 6, "h": 4.6, "wall": "#5f6564", "roof": "#3f4446", "lit": true },
-    { "id": "criee", "kind": "criee", "x": 8.5, "z": -12, "w": 12, "d": 7, "h": 4.2, "wall": "#6b6e6c", "roof": "#3e2114" },
-    { "id": "workshop", "kind": "workshop", "x": 25, "z": -8, "w": 8, "d": 8, "h": 5, "wall": "#4a2615", "roof": "#63321b", "lit": true },
-    { "id": "house1", "kind": "house", "x": -30, "z": -12, "w": 6, "d": 6, "h": 4.5, "wall": "#5f6564", "roof": "#26292b" },
-    { "id": "house2", "kind": "house", "x": -26, "z": -22, "w": 7, "d": 6, "h": 5, "wall": "#6b6e6c", "roof": "#26292b" },
-    { "id": "house3", "kind": "house", "x": -11, "z": -22, "w": 6, "d": 6, "h": 4.8, "wall": "#878a85", "roof": "#3f4446" },
-    { "id": "house4", "kind": "house", "x": 2, "z": -23, "w": 7, "d": 6, "h": 5.2, "wall": "#5f6564", "roof": "#26292b" },
-    { "id": "house5", "kind": "house", "x": 17, "z": -21, "w": 6, "d": 6, "h": 4.6, "wall": "#6b6e6c", "roof": "#3e2114" },
-    { "id": "house6", "kind": "house", "x": 32, "z": -19, "w": 6, "d": 6, "h": 4.4, "wall": "#878a85", "roof": "#26292b" }
+    {
+      "id": "hospital",
+      "kind": "hospital",
+      "x": -18,
+      "z": -11,
+      "w": 11,
+      "d": 7,
+      "h": 6.5,
+      "wall": "#878a85",
+      "roof": "#26292b",
+      "lit": true,
+      "style": "granit"
+    },
+    {
+      "id": "shop",
+      "kind": "shop",
+      "x": -4,
+      "z": -10,
+      "w": 6,
+      "d": 6,
+      "h": 4.6,
+      "wall": "#5f6564",
+      "roof": "#3f4446",
+      "lit": true
+    },
+    {
+      "id": "criee",
+      "kind": "criee",
+      "x": 8.5,
+      "z": -12,
+      "w": 12,
+      "d": 7,
+      "h": 4.2,
+      "wall": "#6b6e6c",
+      "roof": "#3e2114"
+    },
+    {
+      "id": "workshop",
+      "kind": "workshop",
+      "x": 25,
+      "z": -8,
+      "w": 8,
+      "d": 8,
+      "h": 5,
+      "wall": "#4a2615",
+      "roof": "#63321b",
+      "lit": true
+    },
+    {
+      "id": "house1",
+      "kind": "cafe",
+      "x": -30,
+      "z": -12,
+      "w": 6,
+      "d": 6,
+      "h": 5.4,
+      "wall": "#6b6e6c",
+      "roof": "#2a2f33",
+      "shutter": "#8a3a2a"
+    },
+    {
+      "id": "house2",
+      "kind": "house",
+      "x": -26,
+      "z": -22,
+      "w": 7,
+      "d": 6,
+      "h": 5.6,
+      "wall": "#6b6e6c",
+      "roof": "#26292b",
+      "style": "chaux",
+      "shutter": "#2f4a66"
+    },
+    {
+      "id": "house3",
+      "kind": "house",
+      "x": -11,
+      "z": -22,
+      "w": 6,
+      "d": 6,
+      "h": 4.8,
+      "wall": "#878a85",
+      "roof": "#3f4446"
+    },
+    {
+      "id": "house4",
+      "kind": "house",
+      "x": 2,
+      "z": -23,
+      "w": 7.5,
+      "d": 6,
+      "h": 5.8,
+      "wall": "#5f6564",
+      "roof": "#26292b",
+      "style": "chaux",
+      "shutter": "#3c7048"
+    },
+    {
+      "id": "house5",
+      "kind": "house",
+      "x": 17,
+      "z": -21,
+      "w": 6,
+      "d": 6,
+      "h": 4.6,
+      "wall": "#6b6e6c",
+      "roof": "#3e2114"
+    },
+    {
+      "id": "house6",
+      "kind": "house",
+      "x": 32,
+      "z": -19,
+      "w": 6,
+      "d": 6,
+      "h": 4.4,
+      "wall": "#878a85",
+      "roof": "#26292b",
+      "style": "chaux",
+      "shutter": "#5b7a8a"
+    },
+    {
+      "id": "house7",
+      "kind": "house",
+      "x": -38,
+      "z": -31,
+      "w": 6,
+      "d": 6,
+      "h": 4.6,
+      "wall": "#6b6e6c",
+      "roof": "#2a2f33"
+    },
+    {
+      "id": "house8",
+      "kind": "house",
+      "x": -19,
+      "z": -33,
+      "w": 7.5,
+      "d": 6.5,
+      "h": 6,
+      "wall": "#5f6564",
+      "roof": "#2a2f33",
+      "style": "chaux",
+      "shutter": "#8a3a2a"
+    },
+    {
+      "id": "house9",
+      "kind": "house",
+      "x": 11,
+      "z": -35,
+      "w": 6,
+      "d": 6,
+      "h": 4.8,
+      "wall": "#878a85",
+      "roof": "#3a3f44"
+    },
+    {
+      "id": "house10",
+      "kind": "house",
+      "x": 24,
+      "z": -31,
+      "w": 8,
+      "d": 6.5,
+      "h": 5.8,
+      "wall": "#6b6e6c",
+      "roof": "#2a2f33",
+      "style": "chaux",
+      "shutter": "#2f4a66"
+    },
+    {
+      "id": "house11",
+      "kind": "house",
+      "x": 40,
+      "z": -30,
+      "w": 6,
+      "d": 6,
+      "h": 4.5,
+      "wall": "#5f6564",
+      "roof": "#3a3f44"
+    },
+    {
+      "id": "house12",
+      "kind": "house",
+      "x": -45,
+      "z": -8,
+      "w": 6,
+      "d": 6.5,
+      "h": 5,
+      "wall": "#6b6e6c",
+      "roof": "#2a2f33",
+      "style": "chaux",
+      "shutter": "#3c7048"
+    },
+    {
+      "id": "house13",
+      "kind": "house",
+      "x": 44,
+      "z": -8,
+      "w": 6,
+      "d": 6.5,
+      "h": 5.2,
+      "wall": "#878a85",
+      "roof": "#2a2f33"
+    },
+    {
+      "id": "house14",
+      "kind": "house",
+      "x": -31,
+      "z": -41,
+      "w": 7,
+      "d": 6,
+      "h": 5.6,
+      "wall": "#5f6564",
+      "roof": "#2a2f33",
+      "style": "chaux"
+    },
+    {
+      "id": "house15",
+      "kind": "house",
+      "x": 30,
+      "z": -42,
+      "w": 7,
+      "d": 6,
+      "h": 5.2,
+      "wall": "#6b6e6c",
+      "roof": "#3a3f44"
+    }
   ],
   "npcs": [
-    { "id": "doctor", "x": -15.6, "z": -6.6, "yaw": 0 },
-    { "id": "merchant", "x": -2.2, "z": -6.2, "yaw": -0.3 },
-    { "id": "mechanic", "x": 19.5, "z": 2.4, "yaw": 2.6 }
+    {
+      "id": "doctor",
+      "x": -15.6,
+      "z": -6.6,
+      "yaw": 0
+    },
+    {
+      "id": "merchant",
+      "x": -2.2,
+      "z": -6.2,
+      "yaw": -0.3
+    },
+    {
+      "id": "mechanic",
+      "x": 19.5,
+      "z": 2.4,
+      "yaw": 2.6
+    }
   ],
   "interactables": [
-    { "id": "criee", "kind": "action", "action": "openCollection", "x": 8.5, "z": -7.8, "label": "Entrer dans l'ancienne criée" },
-    { "id": "sub", "kind": "action", "action": "dive", "x": 12, "z": 4.7, "label": "Embarquer sur le Nautiliar" }
+    {
+      "id": "criee",
+      "kind": "action",
+      "action": "openCollection",
+      "x": 8.5,
+      "z": -7.8,
+      "label": "Entrer dans l'ancienne criée"
+    },
+    {
+      "id": "sub",
+      "kind": "action",
+      "action": "dive",
+      "x": 12,
+      "z": 4.7,
+      "label": "Embarquer sur le Nautiliar"
+    }
   ],
-  "sub": { "x": 12, "z": 8.8 }
+  "sub": {
+    "x": 12,
+    "z": 8.8
+  }
 }
