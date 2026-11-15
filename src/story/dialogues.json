@@ -1,8 +1,8 @@
 {
-  "_comment": "Dialogues par personnage. La conversation jouée est celle de plus haute priorité dont la condition 'when' est vraie. Conditions : drapeau = valeur, ou <variable>Min / <variable>Max (deaths, fragments). 'once' : une seule fois ; 'oncePer': 'deaths' / 'fragments' : une fois par réveil / par nouveau fragment. Un texte peut être une liste de variantes. Paliers : 0–1 fragment = banal et évasif ; 2–4 = gêne, explications rationnelles ; 5–6 = lapsus ; 7 = culpabilité à demi-mot ; coque abyssale = suppliques et fausses raisons. Rien sur la vérité ne doit être dit directement.",
+  "_comment": "Dialogues par personnage (voir docs/LORE.md). La conversation jouée est celle de plus haute priorité dont la condition 'when' est vraie. Conditions : drapeau = valeur, ou <variable>Min / <variable>Max (deaths, fragments). 'once' : une seule fois ; 'oncePer': 'deaths' / 'fragments' : une fois par réveil / par nouveau souvenir. Un texte peut être une liste de variantes. Règle : dans le rêve, personne ne raconte l'histoire ; chaque réplique doit pouvoir se relire comme une phrase dite au chevet de Loïc. ÉTAT : l'acte I (intro, défaut, paliers '_a', 0 à 2 souvenirs) est écrit d'après la nouvelle histoire ; les paliers suivants (_b, _c, _d, uneasy, abyssal, plead, portal) datent encore de l'ancienne et restent à réécrire.",
   "npcs": {
     "doctor": {
-      "name": "Le médecin",
+      "name": "Le docteur",
       "conversations": [
         {
           "id": "doctor_abyssal",
@@ -83,7 +83,7 @@
           "start": "a",
           "nodes": {
             "a": {
-              "text": "Doucement. Ne te lève pas trop vite.",
+              "text": "Doucement, Loïc. Ne te lève pas trop vite.",
               "next": "b"
             },
             "b": {
@@ -91,7 +91,7 @@
               "next": "c"
             },
             "c": {
-              "text": "(Il te dévisage, comme s'il cherchait quelque chose sur ton visage.)",
+              "text": "(Il regarde tes yeux l'un après l'autre, avec une petite lampe.)",
               "choices": [
                 {
                   "text": "Combien de temps ?",
@@ -104,15 +104,15 @@
               ]
             },
             "d": {
-              "text": "Assez longtemps. Ne compte pas les jours, ça n'aide pas.",
+              "text": "Longtemps. Je ne compte plus les jours devant toi, ça n'aide personne.",
               "next": "f"
             },
             "e": {
-              "text": "Ça reviendra. Ou pas. Ce n'est pas toujours une mauvaise chose.",
+              "text": "C'est normal. Ça reviendra quand tu seras prêt. Pas avant.",
               "next": "f"
             },
             "f": {
-              "text": "Va voir le mécano, sur le quai. Il t'a gardé quelque chose.",
+              "text": "Va voir Job, sur le quai. Il n'a pas bougé de là depuis que tu es couché.",
               "set": {
                 "introDone": true
               },
@@ -131,14 +131,14 @@
           "start": "a",
           "nodes": {
             "a": {
-              "text": "(Il te pose une couverture de laine sur les épaules.)",
+              "text": "(Il te pose une couverture sur les épaules.)",
               "next": "b"
             },
             "b": {
               "text": [
-                "Tu as avalé la moitié de la baie. Repose-toi.",
-                "Le mécano t'a sorti de l'eau près de la jetée. Tu as eu de la chance.",
-                "Pas de fièvre. C'est déjà ça. La prochaine fois, remonte plus tôt."
+                "Tu nous as fait peur, cette nuit.",
+                "Ton cœur s'est emballé. On t'a rattrapé de justesse.",
+                "Tu descends trop vite. Laisse-toi du temps."
               ],
               "end": true
             }
@@ -202,24 +202,24 @@
           "start": "a",
           "nodes": {
             "a": {
-              "text": "(Il regarde ce que tu tiens, une seconde de trop.) Tu ramasses de drôles de choses, en bas.",
+              "text": "(Il regarde ce que tu tiens.) Où as-tu trouvé ça ?",
               "choices": [
+                {
+                  "text": "Au fond.",
+                  "next": "deep"
+                },
                 {
                   "text": "Je crois que c'est à moi.",
                   "next": "mine"
-                },
-                {
-                  "text": "Vous savez ce que c'est ?",
-                  "next": "know"
                 }
               ]
             },
-            "mine": {
-              "text": "La mer mélange tout. Les affaires des uns finissent chez les autres.",
+            "deep": {
+              "text": "Laisse le fond tranquille. Rien ne presse.",
               "end": true
             },
-            "know": {
-              "text": "Un objet abîmé. Ne te mets pas des idées en tête.",
+            "mine": {
+              "text": "Sans doute. Garde-le près de toi, alors. Ça ne peut pas faire de mal.",
               "end": true
             }
           },
@@ -378,10 +378,10 @@
           "nodes": {
             "a": {
               "text": [
+                "Ton cœur est régulier, aujourd'hui. C'est bien.",
                 "Tu as meilleure mine qu'hier.",
-                "Mange quelque chose avant de replonger.",
-                "La brume ne se lève jamais vraiment, ici. On s'y fait.",
-                "(Il note quelque chose dans un registre et tourne la page quand tu approches.)"
+                "Je repasserai te voir ce soir.",
+                "(Il note quelque chose dans un registre. La même ligne qu'hier.)"
               ],
               "choices": [
                 {
@@ -404,22 +404,22 @@
             },
             "what": {
               "text": [
-                "La mer a changé. Les gens aussi.",
-                "Un mauvais hiver. Puis un autre."
+                "Rien. Il ne se passe rien, ici. C'est ce qu'il te faut.",
+                "Tu as eu un accident. Le reste peut attendre."
               ],
               "end": true
             },
             "others": {
               "text": [
-                "Partis. Il ne reste que nous. Et toi, maintenant.",
-                "À la ville, pour la plupart. Il n'y a plus de travail, ici."
+                "Ils passent, quelquefois. Tu ne les entends pas tous.",
+                "Il ne reste que nous. Ceux qui viennent tous les jours."
               ],
               "end": true
             },
             "look": {
               "text": [
-                "Déformation professionnelle.",
-                "Tu as été long à te réveiller. Je m'assure que tu restes réveillé."
+                "Je te surveille. C'est mon métier.",
+                "J'attends que tu me répondes. Vraiment."
               ],
               "end": true
             }
@@ -428,7 +428,7 @@
       ]
     },
     "mechanic": {
-      "name": "Le mécano",
+      "name": "Job",
       "conversations": [
         {
           "id": "mechanic_abyssal",
@@ -515,7 +515,7 @@
           "start": "a",
           "nodes": {
             "a": {
-              "text": "Va voir le docteur d'abord. Il n'aime pas qu'on lui vole ses patients.",
+              "text": "Va voir le docteur d'abord. C'est lui qui décide, ici.",
               "end": true
             }
           }
@@ -530,14 +530,14 @@
           "start": "a",
           "nodes": {
             "a": {
-              "text": "Te voilà debout. Le docteur disait que tu tiendrais.",
+              "text": "Te voilà debout. (Il s'essuie les mains, longtemps.) Le docteur disait que tu tiendrais.",
               "next": "b"
             },
             "b": {
-              "text": "Ça, c'est le Nautiliar. Vieux, rouillé, comme moi. Mais il plonge encore.",
+              "text": "Le Nautiliar. Je l'ai remis en état. Il t'attendait.",
               "choices": [
                 {
-                  "text": "Pourquoi me le confier ?",
+                  "text": "Pourquoi moi ?",
                   "next": "why"
                 },
                 {
@@ -547,19 +547,19 @@
               ]
             },
             "why": {
-              "text": "Parce que personne d'autre ne descend. Et qu'il faut bien que quelqu'un s'en serve.",
+              "text": "Parce que c'est le tien. Tu ne te rappelles pas ? … Ça ne fait rien.",
               "next": "c"
             },
             "safe": {
-              "text": "Rien n'est sûr. Il tient jusqu'à cent trente mètres. Après, il gémit. Quand il gémit, tu remontes.",
+              "text": "Il tient ce qu'il tient. Pas plus de quarante mètres, Loïc. Tu m'entends ? Pas plus de quarante.",
               "next": "c"
             },
             "c": {
-              "text": "Ramène ce que tu trouves. La marchande achète tout. Moi, je t'arrangerai la bête.",
+              "text": "Ramène ce que tu trouves. Soazig prend tout. Moi, je te l'arrange.",
               "next": "d"
             },
             "d": {
-              "text": "Quand tu remontes, je la répare. Pour rien. Ce n'est pas comme si j'avais autre chose à faire.",
+              "text": "Je répare quand tu remontes. Je n'ai que ça à faire. Attendre que tu remontes.",
               "set": {
                 "subGiven": true
               },
@@ -580,8 +580,8 @@
           "nodes": {
             "a": {
               "text": [
-                "On t'a repêché. Ta bête est à quai, elle a eu plus de chance que ta soute.",
-                "Tu l'as poussée trop loin. Elle me l'a dit. Les coques parlent, si on écoute."
+                "Je t'ai cru parti. (Il tousse.) Ta bête est à quai.",
+                "Tu l'as poussée trop loin. Tu fais toujours ça."
               ],
               "next": "b"
             },
@@ -651,7 +651,7 @@
               "next": "b"
             },
             "b": {
-              "text": "(Il hausse les épaules.) La mer recrache n'importe quoi. Vends-le, ou rejette-le.",
+              "text": "(Il le regarde longtemps, puis te le rend sans un mot.)",
               "end": true
             }
           },
@@ -785,9 +785,9 @@
             "a": {
               "text": [
                 "Hm.",
-                "Elle a encore grincé, hein ? Je l'ai entendue d'ici.",
-                "Le sel mange tout. Faut graisser, graisser, graisser.",
-                "(Il essuie une clé à molette qui n'a pas besoin de l'être.)"
+                "Pas plus de quarante mètres. Je le dis, je le redis.",
+                "(Il resserre un boulon sous le second siège. Tu n'avais pas remarqué qu'il y en avait deux.)",
+                "Je t'ai entendu remonter. Je t'entends toujours."
               ],
               "choices": [
                 {
@@ -811,15 +811,15 @@
             },
             "what": {
               "text": [
-                "Les autres sont partis. Point. On répare ta pince ou on fait la causette ?",
-                "La pêche s'est arrêtée. Le reste a suivi."
+                "On répare ta pince ou on cause ?",
+                "Demande au docteur. Moi, je ne sais plus dire ces choses-là."
               ],
               "end": true
             },
             "sub": {
               "text": [
-                "À la commune. Pour les câbles, les épaves, ce genre de travail.",
-                "Il était à quai, et personne ne s'en servait. Voilà."
+                "À nous. (Il se reprend.) À toi.",
+                "On l'a construit ici, dans cet atelier. Trois hivers."
               ],
               "end": true
             }
@@ -828,7 +828,7 @@
       ]
     },
     "merchant": {
-      "name": "La marchande",
+      "name": "Soazig",
       "conversations": [
         {
           "id": "merchant_abyssal",
@@ -905,11 +905,11 @@
           "start": "a",
           "nodes": {
             "a": {
-              "text": "Un nouveau visage. Ça faisait longtemps.",
+              "text": "Te voilà. (Elle te regarde longtemps.) Tu as maigri.",
               "next": "b"
             },
             "b": {
-              "text": "Je rachète tout ce que la mer rend. Je ne pose pas de questions. N'en pose pas non plus.",
+              "text": "Je prends tout ce que tu remontes. Viens me voir souvent. Et parle-moi, même pour ne rien dire.",
               "choices": [
                 {
                   "text": "Vendre ma soute",
@@ -935,7 +935,7 @@
           "start": "a",
           "nodes": {
             "a": {
-              "text": "(Elle fronce le nez.) Ça, je ne l'achète pas. C'est trop… personnel.",
+              "text": "(Elle repousse ta main, doucement.) Ça, je ne l'achète pas.",
               "choices": [
                 {
                   "text": "Vendre ma soute",
@@ -949,7 +949,7 @@
               ]
             },
             "why": {
-              "text": "Il y a des choses qui n'ont pas de prix. Garde-le, si tu y tiens.",
+              "text": "Parce que c'est à toi. Garde-le. Garde tout ce qui est à toi.",
               "end": true
             }
           },
@@ -1069,9 +1069,9 @@
             "a": {
               "text": [
                 "Qu'est-ce que tu m'apportes ?",
-                "La mer a été généreuse ?",
-                "Les prix bougent avec la marée. Ne te plains pas.",
-                "(Elle compte des pièces. De vieux francs, usés jusqu'à la corde.)"
+                "Tu as mangé ?",
+                "(Elle pose trois bols sur la table. Elle en reprend un.)",
+                "Les prix bougent avec la marée. Ne te plains pas."
               ],
               "choices": [
                 {
@@ -1095,15 +1095,15 @@
             },
             "what": {
               "text": [
-                "Les autres sont partis. Par la route, par la mer… Qu'est-ce que ça change ?",
-                "On avait dit : pas de questions."
+                "Tu es là. C'est tout ce qui compte pour l'instant.",
+                "Pas aujourd'hui, Loïc."
               ],
               "end": true
             },
             "who": {
               "text": [
-                "À des brocanteurs de Quimper. Ils passent quand ils peuvent.",
-                "Ça ne te regarde pas, mon petit."
+                "À personne. Je garde tout. Ne le dis pas à Job.",
+                "Ça t'occupe. Et ça me fait te voir."
               ],
               "end": true
             }
@@ -1122,11 +1122,11 @@
           "nodes": {
             "a": {
               "text": [
-                "Les volets sont cloués de l'intérieur.",
-                "Une table est mise derrière la vitre. La poussière a tout recouvert.",
+                "Les volets sont fermés. Tu ne te rappelles pas qui habitait là.",
+                "Une table est mise derrière la vitre. Pour combien, tu n'arrives pas à compter.",
                 "Tu frappes. Personne ne répond.",
-                "Le nom sur la boîte aux lettres a été gratté.",
-                "Un calendrier, derrière le carreau, arrêté sur un mois que tu ne reconnais pas."
+                "Un nom sur la boîte aux lettres. Tu le lis, et il s'efface aussitôt de ta tête.",
+                "Un calendrier, derrière le carreau. Octobre."
               ],
               "end": true
             }
@@ -1144,7 +1144,7 @@
           "start": "a",
           "nodes": {
             "a": {
-              "text": "Un vieux sous-marin rouillé, amarré au quai. Il faudrait parler au mécano.",
+              "text": "Un sous-marin, amarré au quai. Tu en connais chaque rivet, sans savoir pourquoi. Il faudrait parler à Job.",
               "end": true
             }
           }

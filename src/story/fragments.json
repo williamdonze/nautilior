@@ -3,15 +3,15 @@
   "fragments": [
     {
       "id": "photo",
-      "name": "Photographie délavée",
+      "name": "Photographie",
       "x": 38,
       "z": -70,
       "art": "photo",
-      "description": "Le papier a gondolé. Deux silhouettes sur un quai, au soleil.",
-      "title": "Un quai plein de monde",
+      "description": "Le papier a gondolé. Un quai, au soleil, plein de monde.",
+      "title": "Le quai",
       "lines": [
         "Le quai de Port-Kermor, un dimanche. Il y a du monde partout.",
-        "Des enfants courent entre les casiers. Quelqu'un rit à côté de toi.",
+        "Quelqu'un rit à côté de toi. Tu connais ce rire. Tu n'arrives pas à tourner la tête.",
         "C'est le même quai. Les mêmes maisons. Mais les volets sont ouverts."
       ]
     },
@@ -21,12 +21,12 @@
       "x": -72,
       "z": -135,
       "art": "ring",
-      "description": "Un anneau d'or tout simple. Il glisse à ton doigt comme s'il l'attendait.",
+      "description": "Un anneau d'or tout simple. À l'intérieur, deux lettres : L. & A.",
       "title": "Une promesse",
       "lines": [
         "Une main serre la tienne, sur le pas d'une porte.",
         "« Reviens avant la nuit. »",
-        "Tu avais promis. Tu promets toujours."
+        "Tu as dit oui. Tu ne sais plus quelle nuit c'était."
       ]
     },
     {

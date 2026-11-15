@@ -1,5 +1,5 @@
 {
-  "_comment": "Indices du village : petites choses qu'on peut examiner au port. Jamais d'explication : chaque texte doit intriguer au premier passage et se relire autrement une fois la fin connue (voir docs/LORE.md, sections 7 et 11). x, z = où se tenir pour l'examiner.",
+  "_comment": "Indices du village : petites choses qu'on peut examiner au port. Jamais d'explication : chaque texte intrigue au premier passage et se relit comme une sensation de la chambre d'hôpital (voir docs/LORE.md, section 4). x, z = où se tenir pour l'examiner.",
   "clues": [
     {
       "id": "tunnel",
@@ -30,8 +30,8 @@
       "label": "Regarder la boîte aux lettres",
       "lines": [
         "Elle déborde. Personne ne relève le courrier.",
-        "Des dizaines d'enveloppes, de la même écriture. Toutes pour « Yann ».",
-        "Aucune n'a de timbre. Aucune n'a d'adresse."
+        "Des dizaines d'enveloppes, de la même écriture. Ton prénom sur chacune.",
+        "Aucune n'est ouverte. Tu n'oses pas."
       ]
     },
     {
@@ -40,8 +40,8 @@
       "z": 3.1,
       "label": "Examiner la barque retournée",
       "lines": [
-        "Une plate. Trop petite pour un homme.",
-        "La peinture de la coque est fraîche. Le bois, dessous, est pourri.",
+        "Une plate. Trop petite pour un homme, assez grande pour deux enfants.",
+        "La peinture de la coque est fraîche. Le bois, dessous, est vieux.",
         "Quelqu'un la repeint. Souvent."
       ]
     },
@@ -62,8 +62,8 @@
       "z": -7.7,
       "label": "Lire les avis sur la porte",
       "lines": [
-        "Des avis de la criée, délavés. Les prix sont en anciens francs.",
-        "Le dernier annonce un coup de vent. « Sortie déconseillée. » La date a coulé avec l'encre.",
+        "Des avis de la criée, délavés.",
+        "Le dernier annonce un coup de vent. « Sortie déconseillée. 14 octobre. »",
         "Dessous, à la craie, une main a ajouté : « On l'attend. »"
       ]
     },
