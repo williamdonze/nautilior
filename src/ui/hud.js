@@ -170,7 +170,8 @@ export class Hud {
     let label = '';
     if (!canGrab) {
       // Vue extérieure : on repère les objets, mais il faut être aux manettes pour les saisir
-      if (aim.pickup || performance.now() < (this.needCockpitUntil ?? 0)) {
+      state = 'hidden';
+      if (performance.now() < (this.needCockpitUntil ?? 0)) {
         state = 'far';
         label = 'PINCE : POSTE DE PILOTAGE (V)';
       }

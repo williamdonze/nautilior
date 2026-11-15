@@ -118,7 +118,8 @@ export class Game {
         this.releasingPointer = false;
         return;
       }
-      if (this.mode === 'dive' && !this.inMenu && !this.pausedAll && !this.busy && !this.dive.inventory.isOpen) this.pause();
+      // On lâche simplement les commandes ; un second Échap (ou P) ouvre la pause
+      this.lockLostAt = performance.now();
     });
 
     this.menu = new Menu({
@@ -181,6 +182,7 @@ export class Game {
   pause() {
     if (this.pausedAll) return;
     this.sound.stopEngine();
+    this.sound.setSonar(false);
     this.pausedAt = performance.now();
     this.pausedAll = true;
     this.sound.motorStop();
@@ -325,6 +327,8 @@ export class Game {
       if (menuKey && performance.now() - (this.pausedAt ?? 0) > 300) this.resume();
       return;
     }
+    // Échap pendant le pilotage : il sert à lâcher les commandes (souris), pas à mettre en pause
+    if (code === 'Escape' && (this.pointer.locked || performance.now() - (this.lockLostAt ?? -1e9) < 400)) return;
     if (menuKey) {
       // Échap ferme d'abord ce qui est ouvert ; sinon, pause
       if (this.panels.isOpen) return code === 'Escape' && this.panels.close();
