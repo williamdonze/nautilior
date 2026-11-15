@@ -64,20 +64,25 @@ export class DialogueBox {
     return action;
   }
 
-  /** Une réplique isolée d'un personnage (cinématiques) */
-  async line(npcId, text) {
+  /** Une réplique isolée d'un personnage (cinématiques : avance seule, ou plus tôt sur appui) */
+  async line(npcId, text, auto = true) {
     this.open(NPCS[npcId]?.name ?? '');
     await this.type(text);
-    await this.waitAdvance();
+    await this.waitAdvance(auto ? this.readTime(text) : 0);
     this.close();
   }
 
   /** Une simple ligne de narration (sans personnage) */
-  async narrate(text) {
+  async narrate(text, auto = true) {
     this.open('');
     await this.type(text);
-    await this.waitAdvance();
+    await this.waitAdvance(auto ? this.readTime(text) : 0);
     this.close();
+  }
+
+  /** Temps de lecture d'une ligne (ms) */
+  readTime(text) {
+    return 1600 + text.length * 45;
   }
 
   open(name) {
@@ -121,14 +126,18 @@ export class DialogueBox {
     });
   }
 
-  waitAdvance() {
+  /** Attend un appui ; avec `autoMs`, avance aussi toute seule après ce délai */
+  waitAdvance(autoMs = 0) {
     this.nextEl.classList.add('visible');
     return new Promise((resolve) => {
+      let timer = null;
       const done = () => {
+        clearTimeout(timer);
         this.onKey = this.onClick = null;
         this.nextEl.classList.remove('visible');
         resolve();
       };
+      if (autoMs > 0) timer = setTimeout(done, autoMs);
       this.onKey = (code) => ADVANCE_KEYS.has(code) && done();
       this.onClick = () => done();
     });

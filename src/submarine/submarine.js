@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { SUBMARINE, WORLD } from '../config/settings.js';
+import { SUBMARINE, WORLD, RADIATION } from '../config/settings.js';
 import { clamp, damp, lerp } from '../core/utils.js';
 import { getFloorHeight } from '../world/seabed.js';
 import { createSubmarineModel, spinPropellers } from './subModel.js';
@@ -203,7 +203,6 @@ export class Submarine {
   collide() {
     const S = SUBMARINE;
     const p = this.position;
-    const B = WORLD.BOUNDS;
     // Fond : on teste le centre, l'avant et l'arrière de la coque
     const floorAt = (x, z) => {
       const fwd = this.forward;
@@ -247,11 +246,24 @@ export class Submarine {
       if (this.velocity.y > 0) this.velocity.y = 0;
     }
 
-    // Limites horizontales : on repousse doucement
-    if (p.x < B.minX) { p.x = B.minX; this.velocity.x = Math.abs(this.velocity.x) * 0.3; }
-    if (p.x > B.maxX) { p.x = B.maxX; this.velocity.x = -Math.abs(this.velocity.x) * 0.3; }
-    if (p.z < B.minZ) { p.z = B.minZ; this.velocity.z = Math.abs(this.velocity.z) * 0.3; }
-    if (p.z > B.maxZ) { p.z = B.maxZ; this.velocity.z = -Math.abs(this.velocity.z) * 0.3; }
+    // La falaise dépasse la surface : impossible de passer par-dessus
+    if (floorAt(p.x, p.z) + S.HULL_RADIUS > maxY) {
+      p.x = this._prev.x;
+      p.z = this._prev.z;
+      this.velocity.x *= -0.25;
+      this.velocity.z *= -0.25;
+    }
+
+    // La déchirure du portail ne se traverse pas en avançant : il faut choisir de la franchir
+    if (!this.ghost) {
+      const dx = p.x - RADIATION.SOURCE.x, dz = p.z - RADIATION.SOURCE.z, d = Math.hypot(dx, dz), R = 6.5 + S.HULL_RADIUS;
+      if (d < R && d > 1e-4) {
+        p.x = RADIATION.SOURCE.x + (dx / d) * R;
+        p.z = RADIATION.SOURCE.z + (dz / d) * R;
+        const vn = (this.velocity.x * dx + this.velocity.z * dz) / d;
+        if (vn < 0) { this.velocity.x -= (vn * dx) / d; this.velocity.z -= (vn * dz) / d; }
+      }
+    }
 
     // Rochers (sphères)
     for (const c of this.colliders) {

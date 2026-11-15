@@ -821,3 +821,5 @@ body.mode-dive.needs-lock #lock-hint { display: block; }
 body.cinema #lock-hint, body.in-menu #lock-hint { display: none !important; }
 .setting-note { margin: -4px 0 4px; font-size: 18px; color: var(--hud-dim); text-align: left; }
 .setting-note button { font-family: inherit; font-size: 18px; padding: 0 10px; color: #020407; background: var(--hud-warm); border: none; }
+/* Pendant les cinématiques, la narration reste lisible au-dessus des fondus */
+body.cinema #dialogue { z-index: 17; }

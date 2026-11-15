@@ -18,8 +18,9 @@ const HIGHLIGHT = new THREE.Color('#cdb57c');
  * Chaque objet est un groupe 3D dont `userData.pickup` renvoie vers ses données.
  */
 export class Pickups {
-  constructor(scene) {
+  constructor(scene, colliders = []) {
     this.scene = scene;
+    this.colliders = colliders;
     this.list = [];
     this.highlighted = null;
     this.rand = createRandom(WORLD.SEED + 101);
@@ -103,6 +104,11 @@ export class Pickups {
    * @param {object} item définition de l'objet
    */
   spawn(item, x, z) {
+    // Jamais sous un rocher, un pilier ou une dalle : on glisse l'objet juste à côté
+    for (let pass = 0; pass < 2; pass++) for (const c of this.colliders) {
+      const dx = x - c.x, dz = z - c.z, d = Math.hypot(dx, dz), R = c.r + 1.2;
+      if (d < R && c.y - c.r < getFloorHeight(x, z) + 2.5) { const k = R / Math.max(d, 0.01); x = c.x + (d > 0.01 ? dx : 1) * k; z = c.z + dz * k; }
+    }
     const rarity = getRarity(item.rarity);
     const { object, materials } = createItemModel(item);
     object.rotation.y = this.rand() * Math.PI * 2;

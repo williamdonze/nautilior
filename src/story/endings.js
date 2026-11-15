@@ -91,6 +91,7 @@ export async function playEnding(game, kind) {
     /* ---------- Traverser : le Nautiliar entre dans la lumière ---------- */
     const target = dive.portal.center.clone();
     sound.whoosh(5);
+    dive.sub.ghost = true; // seul ce choix permet de franchir la déchirure
     dive.autopilot = (dt) => {
       const sub = dive.sub;
       const to = new THREE.Vector3().subVectors(target, sub.position);
@@ -106,6 +107,7 @@ export async function playEnding(game, kind) {
 
     // Le village des morts se dissout
     dive.autopilot = null;
+    dive.sub.ghost = false;
     dive.leave();
     game.setMode('port');
     port.enter('quay');

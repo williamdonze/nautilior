@@ -15,7 +15,7 @@ import { Claw } from '../claw/claw.js';
 import { Aim } from '../claw/aim.js';
 import { CaptureFx } from '../loot/captureFx.js';
 import { Inventory } from '../ui/inventory.js';
-import { SURVIVAL, SUBMARINE, RADIATION } from '../config/settings.js';
+import { SURVIVAL, SUBMARINE, RADIATION, DEFENSE } from '../config/settings.js';
 import { Creatures } from './creatures.js';
 import { Wildlife } from './wildlife.js';
 import { zoneAtDepth } from './zones.js';
@@ -51,6 +51,8 @@ export class Dive {
     this.radar = new Radar(sound);
     this.wake = new Wake();
     this._contacts = [];
+    this.pulseCooldown = 0;
+    this.pulseFx = 0;
     // Repères fixes visibles au sonar : épaves et portail
     this.landmarkContacts = [
       ...WRECK_SPOTS.map(([x, z], i) => ({ id: `wreck${i}`, kind: 'wreck', x, y: getFloorHeight(x, z), z })),
@@ -70,7 +72,7 @@ export class Dive {
 
 
     // --- Objets et pince
-    this.pickups = new Pickups(scene);
+    this.pickups = new Pickups(scene, this.decor.colliders);
     this.captureFx = new CaptureFx(scene);
     this.claw = new Claw({
       scene,
@@ -100,20 +102,24 @@ export class Dive {
       growl: () => sound.growl(),
       bite: (mutant, dir) => {
         sound.bite();
-        this.shake(0.6);
+        this.shake(1.1);
         hud.damageFlash(1);
-        this.bubbles.burst(this.sub.position, 30, 4);
-        this.sub.velocity.addScaledVector(dir, 6); // le choc repousse le sous-marin
+        this.bubbles.burst(this.sub.position, 40, 5);
+        this.sub.velocity.addScaledVector(dir, 11); // le choc projette le sous-marin…
+        this.sub.yawVelocity += (Math.random() - 0.5) * 2.4; // …et le fait embarder
       },
     });
     // Grande faune : raies, tortues, requins… et leurs cousins décharnés des profondeurs
     this.wildlife = new Wildlife(scene, {
+      charge: () => sound.growl(1.2),
       hit: (animal, dir) => {
         sound.bite();
-        this.shake(0.45);
-        hud.damageFlash(0.8);
-        this.bubbles.burst(this.sub.position, 22, 3);
-        this.sub.velocity.addScaledVector(dir, 4);
+        sound.impact(1.2);
+        this.shake(0.9 + animal.size * 0.06);
+        hud.damageFlash(1);
+        this.bubbles.burst(this.sub.position, 36, 5);
+        this.sub.velocity.addScaledVector(dir, 7 + animal.size);
+        this.sub.yawVelocity += (Math.random() - 0.5) * 2;
       },
     });
     this.zoneId = null;
@@ -238,14 +244,13 @@ export class Dive {
     const near = (x, z) => (x - p.x) ** 2 + (z - p.z) ** 2 < r2;
     for (const k of this.pickups.list) {
       const o = k.object.position;
-      if (near(o.x, o.z)) C.push({ id: k.object.id, kind: k.item.fragment ? 'fragment' : 'item', x: o.x, y: o.y, z: o.z });
+      // Seuls les objets qui comptent : souvenirs, pièces rares et au-delà, objets uniques
+      const important = k.item.fragment || k.item.spawn || k.rarity.level >= 2;
+      if (important && near(o.x, o.z)) C.push({ id: k.object.id, kind: k.item.fragment ? 'fragment' : 'item', x: o.x, y: o.y, z: o.z });
     }
     for (const m of this.creatures.mutants) {
       if (near(m.pos.x, m.pos.z)) C.push({ id: m.object.id, kind: 'creature', x: m.pos.x, y: m.pos.y, z: m.pos.z });
     }
-    this.creatures.fish.schools.forEach((s, i) => {
-      if (s.active && near(s.center.x, s.center.z)) C.push({ id: `school${i}`, kind: 'fish', x: s.center.x, y: s.center.y, z: s.center.z });
-    });
     for (const a of this.wildlife.animals) {
       if (near(a.pos.x, a.pos.z)) C.push({ id: a.object.id, kind: a.spec.damage > 0 ? 'creature' : 'fish', x: a.pos.x, y: a.pos.y, z: a.pos.z });
     }
@@ -273,9 +278,27 @@ export class Dive {
     if (this.survival.dead) return;
     if (code === 'KeyI' || code === 'Tab') this.inventory.toggle();
     else if (code === 'Escape') this.inventory.close();
+    else if (code === 'KeyF') this.pulse();
     else if (code === 'KeyV') this.setView(this.view === 'first' ? 'third' : 'first');
     else if (code === 'KeyE' && this.survival.atSurface && !this.claw.busy) this.onReturn();
     else if (code === 'KeyE' && this.nearPortal && !this.claw.busy) this.onPortal();
+  }
+
+  /**
+   * Impulsion : le sonar crache une onde assourdissante. Tout ce qui rôde à portée prend la fuite
+   * quelques secondes. Elle se recharge lentement (voir DEFENSE dans config/settings.js).
+   */
+  pulse() {
+    if (this.pulseCooldown > 0 || this.autopilot) return;
+    this.pulseCooldown = DEFENSE.COOLDOWN;
+    this.sound.pulse?.();
+    this.creatures.scare(this.sub.position, DEFENSE.RADIUS, DEFENSE.FEAR_TIME);
+    this.wildlife.scare(this.sub.position, DEFENSE.RADIUS, DEFENSE.FEAR_TIME);
+    this.guardian?.scare(DEFENSE.FEAR_TIME * 0.5);
+    this.radar.pulse?.();
+    this.pulseFx = 1;
+    this.shake(0.25);
+    this.hud.flash('#7fd0c0');
   }
 
   /** Sons et effets liés à la survie */
@@ -317,6 +340,9 @@ export class Dive {
 
   update(dt, time) {
     const { sub, survival, follow, hud, scene, sound } = this;
+    this.pulseCooldown = Math.max(0, this.pulseCooldown - dt);
+    this.pulseFx = Math.max(0, this.pulseFx - dt * 0.9);
+    hud.setPulse?.(1 - this.pulseCooldown / DEFENSE.COOLDOWN);
     // Pendant une cinématique, ni l'air ni la coque ne s'épuisent
     if (!this.autopilot) survival.update(dt, sub);
     sub.update(dt, time, survival.dead || this.autopilot ? this.noInput : this.input);

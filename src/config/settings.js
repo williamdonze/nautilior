@@ -13,7 +13,8 @@ export const RENDER = {
 export const WORLD = {
   SEED: 1984,
   // Zone navigable (en mètres, 1 unité = 1 m)
-  BOUNDS: { minX: -170, maxX: 170, minZ: -1120, maxZ: 150 },
+  // Zone où apparaissent objets et créatures (le sous-marin, lui, n'est arrêté que par les falaises)
+  BOUNDS: { minX: -140, maxX: 140, minZ: -1105, maxZ: 150 },
   // Surface de l'eau
   SURFACE_Y: 0,
 };
@@ -118,6 +119,13 @@ export const SURVIVAL = {
 };
 
 /* ---------- Radiation : émise par le portail, au fond des abysses ---------- */
+/** Impulsion de défense (touche F) : fait fuir les bêtes à portée */
+export const DEFENSE = {
+  RADIUS: 55, // portée de l'onde (m)
+  FEAR_TIME: 7, // durée de la fuite (s)
+  COOLDOWN: 18, // recharge (s)
+};
+
 export const RADIATION = {
   SOURCE: { x: 0, z: -1060 }, // emplacement du portail
   RADIUS: 280, // rayon d'influence (m)

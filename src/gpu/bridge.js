@@ -255,7 +255,11 @@ export class Bridge {
     this.params(o.material, o, geo);
     const w = o.matrixWorld.elements, out = this.single, k = this.nSingle * INST;
     const sx = Math.hypot(w[0], w[1], w[2]), sy = Math.hypot(w[4], w[5], w[6]);
-    this._m.set(ce[0] * sx, ce[4] * sy, ce[8], w[12], ce[1] * sx, ce[5] * sy, ce[9], w[13], ce[2] * sx, ce[6] * sy, ce[10], w[14], 0, 0, 0, 1);
+    // Face à la caméra mais sans son roulis : le haut du halo reste le haut du monde
+    let rx = ce[10], rz = -ce[8];
+    const rl = Math.hypot(rx, rz) || 1;
+    rx /= rl; rz /= rl;
+    this._m.set(rx * sx, 0, ce[8], w[12], 0, sy, ce[9], w[13], rz * sx, 0, ce[10], w[14], 0, 0, 0, 1);
     this.write(out, k, this._m.elements, null);
     this.lists.add.push({ geo, buf: this.singleBuf, first: this.nSingle++, count: 1, tex: this.white });
   }
