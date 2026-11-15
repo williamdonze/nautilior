@@ -81,12 +81,17 @@ export function createDecor() {
   const uniforms = { uTime: { value: 0 } };
   const colliders = [];
   const group = new THREE.Group();
-  group.add(createRocks(colliders));
+  const rocks = createRocks(colliders);
+  group.add(rocks);
   const landmarks = createLandmarks(colliders, uniforms);
   group.add(landmarks);
   group.add(createFlora());
   group.add(createBottomFauna());
-  group.add(createProps(colliders));
+  const props = createProps(colliders);
+  group.add(props);
+  // Ombres : rochers, épaves et débris en portent et en reçoivent ; la flore en reçoit seulement
+  for (const g of [rocks, landmarks, props]) g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  group.traverse((o) => { if (o.isMesh) o.receiveShadow = true; });
   return {
     group,
     colliders,

@@ -119,7 +119,9 @@ export function createSeabed() {
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
   for (let z = SEABED.Z_START; z > SEABED.Z_END; z -= SEABED.CHUNK_LENGTH) {
     const z1 = Math.max(SEABED.Z_END, z - SEABED.CHUNK_LENGTH);
-    group.add(new THREE.Mesh(createChunk(z, z1), mat));
+    const chunk = new THREE.Mesh(createChunk(z, z1), mat);
+    chunk.receiveShadow = true;
+    group.add(chunk);
   }
   return group;
 }

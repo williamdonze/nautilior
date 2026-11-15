@@ -66,10 +66,112 @@ const UpShader = {
   `,
 };
 
+/**
+ * Lumière volumétrique (demi-résolution), d'après les « light shafts » d'Abyssal Garden.
+ * On remonte chaque rayon de vue jusqu'au décor (lu dans la profondeur de la scène) et on
+ * accumule la lumière diffusée par l'eau :
+ *  - rayons du soleil : motif de bandes projeté depuis la surface selon la direction du soleil,
+ *    qui s'atténue avec la profondeur ;
+ *  - faisceau du phare : cône du projecteur, atténué avec la distance (s'arrête sur les rochers).
+ * Un décalage aléatoire par pixel (IGN) remplace les paliers par un grain, lissé ensuite.
+ */
+const RaysShader = {
+  uniforms: {
+    tDepth: { value: null },
+    uInvProj: { value: new THREE.Matrix4() },
+    uCamWorld: { value: new THREE.Matrix4() },
+    uCamPos: { value: new THREE.Vector3() },
+    uNear: { value: 0.1 },
+    uFar: { value: 130 },
+    uTime: { value: 0 },
+    uSun: { value: 0 }, // force des rayons du soleil
+    uSunDir: { value: new THREE.Vector3(0.3, 1, 0.2).normalize() },
+    uSunCol: { value: new THREE.Color() },
+    uDensity: { value: 0.03 },
+    uSpotPos: { value: new THREE.Vector3() },
+    uSpotDir: { value: new THREE.Vector3(0, 0, 1) },
+    uSpotCos: { value: 0.88 },
+    uSpot: { value: 0 }, // force du faisceau
+    uSpotCol: { value: new THREE.Color('#efe3bb') },
+    uRes: { value: new THREE.Vector2() },
+  },
+  vertexShader: FS_VERT,
+  fragmentShader: /* glsl */ `
+    #include <packing>
+    uniform sampler2D tDepth;
+    uniform mat4 uInvProj, uCamWorld;
+    uniform vec3 uCamPos, uSunDir, uSunCol, uSpotPos, uSpotDir, uSpotCol;
+    uniform float uNear, uFar, uTime, uSun, uDensity, uSpotCos, uSpot;
+    uniform vec2 uRes;
+    varying vec2 vUv;
+    float ign(vec2 p) { return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715)))); }
+    float h2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+    float vn(vec2 p) {
+      vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+      return mix(mix(h2(i), h2(i + vec2(1, 0)), f.x), mix(h2(i + vec2(0, 1)), h2(i + vec2(1, 1)), f.x), f.y);
+    }
+    // Motif des rayons : bandes lumineuses projetées depuis la surface, qui ondulent lentement
+    float shafts(vec3 p) {
+      vec2 q = p.xz - uSunDir.xz * (p.y / uSunDir.y);
+      float a = vn(q / 7.0 + vec2(uTime * 0.05, uTime * 0.03));
+      float b = vn(q.yx / 17.0 - vec2(uTime * 0.02, 0.0) + 4.1);
+      return smoothstep(0.55, 0.85, a) * smoothstep(0.25, 0.7, b) * 1.6;
+    }
+    void main() {
+      float z = texture2D(tDepth, vUv).x;
+      vec4 vp = uInvProj * vec4(vUv * 2.0 - 1.0, z * 2.0 - 1.0, 1.0);
+      vp /= vp.w;
+      float sceneDist = z >= 0.9999 ? 1e4 : length(vp.xyz);
+      vec3 rd = normalize((uCamWorld * vec4(vp.xyz, 0.0)).xyz);
+      vec3 acc = vec3(0.0);
+      float j = ign(gl_FragCoord.xy + fract(uTime * 7.0) * 61.0);
+      float sigma = uDensity * 0.9;
+
+      // --- Rayons du soleil (jusqu'à 90 m, et jamais au-dessus de la surface)
+      if (uSun > 0.001) {
+        float tm = min(sceneDist, 90.0);
+        if (rd.y > 1e-4) tm = min(tm, -uCamPos.y / rd.y);
+        const int N = 14;
+        float dt = tm / float(N);
+        for (int n = 0; n < N; n++) {
+          float t = (float(n) + j) * dt;
+          vec3 p = uCamPos + rd * t;
+          float light = exp(p.y * 0.022); // le soleil faiblit avec la profondeur
+          acc += uSunCol * shafts(p) * light * exp(-sigma * t) * dt;
+        }
+        float mu = max(dot(rd, uSunDir), 0.0);
+        acc *= uSun * (0.25 + 1.6 * mu * mu * mu) * sigma * 9.0;
+      }
+
+      // --- Faisceau du phare (jusqu'à 60 m)
+      if (uSpot > 0.001) {
+        float tm = min(sceneDist, 60.0);
+        const int M = 16;
+        float dt = tm / float(M);
+        vec3 beam = vec3(0.0);
+        for (int n = 0; n < M; n++) {
+          float t = (float(n) + j) * dt;
+          vec3 p = uCamPos + rd * t;
+          vec3 l = p - uSpotPos;
+          float d = length(l);
+          float cone = smoothstep(uSpotCos, mix(uSpotCos, 1.0, 0.35), dot(l / max(d, 1e-3), uSpotDir));
+          beam += cone / (1.0 + d * 0.25 + d * d * 0.03) * exp(-sigma * (t + d)) * dt;
+        }
+        // Diffusion vers l'avant : plus fort quand on regarde dans le sens du faisceau
+        float g = 0.65 + 0.8 * max(dot(rd, uSpotDir), 0.0);
+        acc += uSpotCol * beam * uSpot * g * sigma * 1.1;
+      }
+      gl_FragColor = vec4(min(acc, vec3(20.0)), 1.0);
+    }
+  `,
+};
+
 const CompositeShader = {
   uniforms: {
     tScene: { value: null },
     tBloom: { value: null },
+    tRays: { value: null },
+    uRaysOn: { value: 0 },
     uExposure: { value: 1 },
     uBloom: { value: 0.09 },
     uDistort: { value: 0 },
@@ -80,6 +182,8 @@ const CompositeShader = {
   fragmentShader: /* glsl */ `
     uniform sampler2D tScene;
     uniform sampler2D tBloom;
+    uniform sampler2D tRays;
+    uniform float uRaysOn;
     uniform float uExposure;
     uniform float uBloom;
     uniform float uDistort;
@@ -99,6 +203,14 @@ const CompositeShader = {
         uv.y += cos(vUv.x * 27.0 + uTime * 1.9) * 0.0025 * uDistort;
       }
       vec3 c = texture2D(tScene, uv).rgb;
+      if (uRaysOn > 0.5) {
+        // Lumière volumétrique, lissée par un petit flou en croix (cache le grain de l'échantillonnage)
+        vec2 e = 1.5 / uRes;
+        vec3 r = texture2D(tRays, uv).rgb * 0.4
+          + (texture2D(tRays, uv + vec2(e.x, 0.0)).rgb + texture2D(tRays, uv - vec2(e.x, 0.0)).rgb
+          + texture2D(tRays, uv + vec2(0.0, e.y)).rgb + texture2D(tRays, uv - vec2(0.0, e.y)).rgb) * 0.15;
+        c += r;
+      }
       vec3 bl = texture2D(tBloom, uv).rgb;
       // Le bloom adoucit et entoure les sources lumineuses d'un halo diffus (l'eau diffuse la lumière)
       c = mix(c, bl, uBloom * 0.65) + bl * uBloom * 0.35;
@@ -134,11 +246,20 @@ export class GameRenderer {
   constructor(container) {
     this.renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
     container.appendChild(this.renderer.domElement);
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.quality = 1;
     this.exposure = 1;
 
-    // Cible pleine résolution, multi-échantillonnée (antialiasing), HalfFloat : la scène est en HDR
+    // Cible pleine résolution, multi-échantillonnée (antialiasing), HalfFloat : la scène est en HDR.
+    // La profondeur est conservée pour la lumière volumétrique.
     this.target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 });
+    this.target.depthTexture = new THREE.DepthTexture(1, 1, THREE.UnsignedIntType);
+
+    // Lumière volumétrique, en demi-résolution
+    this.raysTarget = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, depthBuffer: false });
+    this.raysMat = makeMaterial(RaysShader);
+    this.rays = null; // paramètres fournis par la plongée (null = pas de lumière volumétrique)
 
     // Chaîne du bloom
     this.bloomTargets = [];
@@ -188,6 +309,7 @@ export class GameRenderer {
     const tw = Math.max(1, Math.round(w * ratio));
     const th = Math.max(1, Math.round(h * ratio));
     this.target.setSize(tw, th);
+    this.raysTarget.setSize(Math.max(1, tw >> 1), Math.max(1, th >> 1));
     let bw = tw, bh = th;
     for (const t of this.bloomTargets) {
       bw = Math.max(1, bw >> 1);
@@ -225,16 +347,47 @@ export class GameRenderer {
     }
   }
 
+  /**
+   * Paramètres de la lumière volumétrique pour la prochaine image (ou null).
+   * { time, sun, sunColor, density, spotPos, spotDir, spotCos, spot }
+   */
+  setRays(params) {
+    this.rays = params;
+  }
+
+  renderRays(camera) {
+    const u = this.raysMat.uniforms, p = this.rays;
+    u.tDepth.value = this.target.depthTexture;
+    u.uInvProj.value.copy(camera.projectionMatrixInverse);
+    u.uCamWorld.value.copy(camera.matrixWorld);
+    u.uCamPos.value.setFromMatrixPosition(camera.matrixWorld);
+    u.uTime.value = p.time;
+    u.uSun.value = p.sun;
+    u.uSunCol.value.copy(p.sunColor);
+    u.uDensity.value = p.density;
+    u.uSpotPos.value.copy(p.spotPos);
+    u.uSpotDir.value.copy(p.spotDir);
+    u.uSpotCos.value = p.spotCos;
+    u.uSpot.value = p.spot;
+    this.quad.material = this.raysMat;
+    this.renderer.setRenderTarget(this.raysTarget);
+    this.quad.render(this.renderer);
+  }
+
   render(scene, camera) {
     const r = this.renderer;
     r.setRenderTarget(this.target);
     r.render(scene, camera);
+    const raysOn = !!this.rays && (this.rays.sun > 0.001 || this.rays.spot > 0.001);
+    if (raysOn) this.renderRays(camera);
     this.renderBloom();
     r.setRenderTarget(null);
     const u = this.material.uniforms;
     u.tScene.value = this.target.texture;
     u.tBloom.value = this.bloomTargets[0].texture;
     u.uExposure.value = this.exposure;
+    u.tRays.value = this.raysTarget.texture;
+    u.uRaysOn.value = raysOn ? 1 : 0;
     this.quad.material = this.material;
     this.quad.render(r);
   }

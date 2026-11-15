@@ -1,13 +1,14 @@
 import * as THREE from 'three';
 import ambienceData from '../config/depthAmbience.json';
 import { clamp } from '../core/utils.js';
-import { WATER_GLSL } from '../core/waterFog.js';
+import { WATER_GLSL, waterUniform } from '../core/waterFog.js';
 
 /**
  * Ambiance en fonction de la profondeur :
  * couleur et densité du brouillard, lumière ambiante, « soleil » filtré par l'eau,
  * et la surface vue d'en dessous.
  */
+const SUN_DEEP = new THREE.Color('#3f8f8a');
 const KEYS = ambienceData.keyframes.map((k) => ({ ...k, fogColor: new THREE.Color(k.fog) }));
 
 /** Interpole les paliers de profondeur */
@@ -91,6 +92,16 @@ export function createAmbience(scene) {
   // Lumière froide venant de la surface
   const sun = new THREE.DirectionalLight('#ccd8cc', 1);
   sun.position.set(30, 100, 20);
+  // Ombres portées du soleil, sur une zone de 140 m autour du sous-marin
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  const sc = sun.shadow.camera;
+  sc.left = sc.bottom = -70;
+  sc.right = sc.top = 70;
+  sc.near = 1;
+  sc.far = 400;
+  sun.shadow.bias = -0.0008;
+  sun.shadow.normalBias = 0.4;
   scene.add(sun);
   scene.add(sun.target);
 
@@ -134,8 +145,18 @@ export function createAmbience(scene) {
       scene.background.copy(state.fogColor);
       hemi.intensity = state.ambient;
       sun.intensity = state.sun;
-      sun.position.set(focus.x + 30, 100, focus.z + 20);
-      sun.target.position.copy(focus);
+      // Le soleil se teinte de bleu-vert en profondeur (l'eau a mangé le rouge)
+      sun.color.setRGB(0.8, 0.85, 0.8).lerp(SUN_DEEP, clamp(depth / 120, 0, 1));
+      // Caustiques : fortes près de la surface, absentes quand il n'y a plus de soleil
+      waterUniform.x = time;
+      waterUniform.y = clamp(state.sun / 1.3, 0, 1) * 0.55;
+      // L'ombre suit le sous-marin ; on la cale sur une grille pour éviter qu'elle ne « nage »
+      const snap = 140 / 2048;
+      const fx = Math.round(focus.x / snap) * snap, fz = Math.round(focus.z / snap) * snap;
+      sun.position.set(fx + 90, focus.y + 300, fz + 60);
+      sun.target.position.set(fx, focus.y, fz);
+      // Plus de soleil en profondeur : on ne recalcule plus l'ombre
+      sun.shadow.autoUpdate = state.sun > 0.03;
       surface.position.x = focus.x;
       surface.position.z = focus.z;
       surfaceUniforms.uTime.value = time;

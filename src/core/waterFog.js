@@ -81,12 +81,70 @@ const vertex = /* glsl */ `
 #endif
 `;
 
+/**
+ * Paramètres partagés par tous les matériaux éclairés (caustiques).
+ * Objet simple {x, y, z, w} et non Vector4 : Three.js ne copie pas les objets simples
+ * en compilant un matériau, donc tous les matériaux lisent CE même objet.
+ *   x = temps, y = force des caustiques, z = direction du soleil (x), w = direction du soleil (z)
+ */
+export const waterUniform = { x: 0, y: 0, z: 0.3, w: 0.2 };
+
+/**
+ * Caustiques : le réseau de lumière que les vagues projettent sur le fond.
+ * Motif procédural (itérations trigonométriques, d'après Abyssal Garden), projeté selon
+ * la direction du soleil, avec un léger décalage par canal (irisation) et deux échelles.
+ * Ajouté à la lumière directe, sur les faces tournées vers la surface, et atténué en profondeur.
+ */
+const causticsChunk = /* glsl */ `
+#if defined(USE_FOG) && (defined(LAMBERT) || defined(PHONG) || defined(STANDARD) || defined(TOON))
+  if (uWater.y > 0.001 && vFogWorld.y < 0.0 && cameraPosition.y < 0.0) {
+    vec3 wN = inverseTransformDirection(normal, viewMatrix);
+    float facing = smoothstep(-0.1, 0.6, wN.y);
+    float fade = exp(vFogWorld.y * 0.02) * smoothstep(-150.0, -2.0, vFogWorld.y);
+    if (facing * fade > 0.002) {
+      vec2 q = vFogWorld.xz - uWater.zw * vFogWorld.y;
+      float t = uWater.x * 0.45;
+      vec3 ca = vec3(causticPattern(q / 3.3 + vec2(0.004, 0.0025), t), causticPattern(q / 3.3, t), causticPattern(q / 3.3 - vec2(0.004, 0.0025), t));
+      float big = causticPattern(q.yx / 6.9 + 0.37, t * 0.8);
+      vec3 c = min(pow(ca, vec3(2.3)) * 5.0 * (0.45 + big * 1.3), vec3(4.0));
+      // Au loin, le motif devient une lumière moyenne (évite le scintillement)
+      c = mix(c, vec3(0.33), smoothstep(35.0, 90.0, vFogDepth));
+      reflectedLight.directDiffuse += diffuseColor.rgb * c * facing * fade * uWater.y;
+    }
+  }
+#endif
+`;
+
+const causticsPars = /* glsl */ `
+#ifdef USE_FOG
+  uniform vec4 uWater;
+  float causticPattern(vec2 uv, float t) {
+    vec2 p = uv * 6.2831853;
+    vec2 i = p;
+    float c = 0.0;
+    for (int n = 1; n <= 4; n++) {
+      float tt = t * (1.0 - 3.5 / float(n));
+      i = p + vec2(cos(tt - i.x) + sin(tt + i.y), sin(tt - i.y) + cos(tt + i.x));
+      float s = sin(i.x + tt), k = cos(i.y + tt);
+      c += abs(s * k) / (1.25 * sqrt(s * s + k * k) + 1e-4);
+    }
+    c = 1.17 - pow(c / 4.0, 1.4);
+    return pow(abs(c), 8.0);
+  }
+#endif
+`;
+
 /** À appeler une fois, avant la compilation du premier matériau */
 export function installWaterFog() {
-  THREE.ShaderChunk.fog_pars_fragment = pars;
+  THREE.ShaderChunk.fog_pars_fragment = pars + causticsPars;
   THREE.ShaderChunk.fog_fragment = fragment;
   THREE.ShaderChunk.fog_pars_vertex = parsVertex;
   THREE.ShaderChunk.fog_vertex = vertex;
+  // Caustiques : après le calcul de la lumière, dans les matériaux éclairés
+  THREE.ShaderChunk.aomap_fragment += causticsChunk;
+  for (const id of ['lambert', 'phong', 'standard', 'physical', 'toon']) {
+    THREE.ShaderLib[id].uniforms.uWater = { value: waterUniform };
+  }
 }
 
 /** Même calcul, en GLSL, pour le fond d'eau (voir ambience.js) */
