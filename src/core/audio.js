@@ -598,6 +598,23 @@ export class Sound {
     o.stop(t + 0.16);
   }
 
+  /** Écho : le ping part, puis revient en vagues qui s'éteignent */
+  sonarEcho() {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    for (let i = 1; i <= 4; i++) {
+      const o = this.ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = 920 - i * 40;
+      const g = this.ctx.createGain();
+      this.envelope(g, t + i * 0.55, 0.05 / i, 0.01, 0.5);
+      o.connect(g).connect(this.muffle);
+      g.connect(this.echo);
+      o.start(t + i * 0.55);
+      o.stop(t + i * 0.55 + 0.6);
+    }
+  }
+
   /** Le bip ne retombe plus : une note tenue, qui s'éteint */
   sonarFlat(duration = 2.2) {
     if (!this.ready) return;

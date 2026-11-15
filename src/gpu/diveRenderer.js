@@ -10,9 +10,9 @@
  * et y ajoute ce qui est natif — fond rocheux, forêts de kelp, surface, neige marine.
  */
 import { buildShaders } from './shaders.js';
-import { Bridge, VERTEX_LAYOUT, INSTANCE_LAYOUT } from './bridge.js';
+import { Bridge, VERTEX_LAYOUT, INSTANCE_LAYOUT, MAX_PTS } from './bridge.js';
 import { buildGarden, buildGroundMap, GRID } from './garden.js';
-import { RADIATION } from '../config/settings.js';
+import { RADIATION, ECHO } from '../config/settings.js';
 import { KelpSim } from './kelpSim.js';
 
 const HDR = 'rgba16float', DEPTH = 'depth32float';
@@ -69,7 +69,7 @@ export class GpuDiveRenderer {
     const mod = (code) => device.createShaderModule({ code });
     const tex = (w, h, format, usage, o = {}) => device.createTexture({ size: [w, h], format, usage, mipLevelCount: o.mips || 1, sampleCount: o.samples || 1 });
     this.tex = tex;
-    const W = buildShaders({ ...Q, DK: 0.42 });
+    const W = buildShaders({ ...Q, DK: 0.42, ECHO_SPEED: ECHO.SPEED });
 
     /* ---- Ressources fixes */
     const sRep = (this.sRep = device.createSampler({ addressModeU: 'repeat', addressModeV: 'repeat', magFilter: 'linear', minFilter: 'linear', mipmapFilter: 'linear', maxAnisotropy: Q.LV > 1 ? 1 : 8 }));
@@ -94,7 +94,7 @@ export class GpuDiveRenderer {
     for (let i = 0; i < snow.length; i++) snow[i] = Math.random();
     this.ibSnow = vbuf(snow); this.nSnow = 9000;
     // Particules du jeu (bulles, étincelles, lueurs du portail), remplies à chaque image par le pont
-    this.ibPts = device.createBuffer({ size: 8000 * 32, usage: BU.VERTEX | BU.COPY_DST });
+    this.ibPts = device.createBuffer({ size: MAX_PTS * 32, usage: BU.VERTEX | BU.COPY_DST });
 
 
     // Bloc d'uniformes : voir struct G dans shaders.js (144 flottants)
@@ -316,6 +316,8 @@ export class GpuDiveRenderer {
     const dt = Math.min(0.1, Math.max(0, time - (this.lastTime ?? time)));
     this.lastTime = time;
     this.kelp.update(dt, dive.sub.position, dive.sub.velocity, dive.sub.forward);
+    // Écho du sonar : les points du relevé et des bêtes, allumés par l'onde (voir vsPt)
+    if (dive.echoAge != null) bridge.addEcho(dive.radar.cloud, dive.radar.nFloor ?? 0, dive.movers());
     if (bridge.nPts) Qu.writeBuffer(this.ibPts, 0, bridge.pts, 0, bridge.nPts * 8);
 
     /* ---- Caméra : base et projection à profondeur inversée (plan lointain à l'infini) */
@@ -340,7 +342,7 @@ export class GpuDiveRenderer {
     m[59] = (dive.survival?.radiation ?? 0) * 0.0035; // ondulation de l'image près du portail
     // Sous-marin (il écarte les feuilles), portail (l'eau verdit), lumières
     const sub = dive.sub, S = RADIATION.SOURCE;
-    m[60] = sub.position.x; m[61] = sub.position.y; m[62] = sub.position.z; m[63] = 6;
+    m[60] = sub.position.x; m[61] = sub.position.y; m[62] = sub.position.z; m[63] = dive.echoAge ?? -1; // âge de l'écho du sonar
     m[64] = sub.velocity.x; m[65] = sub.velocity.y; m[66] = sub.velocity.z;
     m[67] = 1 - (dive.survival?.hullRatio ?? 1); // dégâts de coque (rayures, suie)
     const pd = Math.hypot(c.x - S.x, c.z - S.z), pk = Math.min(1, Math.max(0, (300 - pd) / 240));

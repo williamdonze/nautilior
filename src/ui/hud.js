@@ -159,6 +159,29 @@ export class Hud {
    *  - « far »    : objet trop loin
    *  - « busy »   : la pince travaille
    */
+  /** Le Linceul sur la bulle du cockpit : un voile laiteux couvre l'image */
+  setShroud(on) {
+    if (!this.shroudEl) {
+      this.shroudEl = document.createElement('div');
+      this.shroudEl.id = 'shroud';
+      document.body.appendChild(this.shroudEl);
+    }
+    this.shroudEl.classList.toggle('on', !!on);
+  }
+
+  /** Petit message passager, en bas de l'écran */
+  notice(text) {
+    if (!this.noticeEl) {
+      this.noticeEl = document.createElement('div');
+      this.noticeEl.id = 'notice';
+      document.body.appendChild(this.noticeEl);
+    }
+    this.noticeEl.textContent = text;
+    this.noticeEl.classList.add('on');
+    clearTimeout(this.noticeTimer);
+    this.noticeTimer = setTimeout(() => this.noticeEl.classList.remove('on'), 2600);
+  }
+
   /** Recharge de l'impulsion de défense (0..1) */
   setPulse(v) {
     this.pulseEl ??= document.getElementById('pulse');

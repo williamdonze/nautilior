@@ -1,17 +1,208 @@
 {
-  "_comment": "Grande faune qui rôde autour du sous-marin. Par espèce : size = envergure ou longueur (m, min/max), speed = nage (m/s), altitude = hauteur au-dessus du fond (m, min/max), turn = vivacité des virages, curious = attirance pour le sous-marin (0 = l'ignore, 1 = tourne autour), damage = dégâts si elle heurte la coque (0 = inoffensive). Par zone : nombre maximal d'individus de chaque espèce autour du joueur.",
+  "_comment": "Grande faune qui rôde autour du sous-marin. Par espèce : size = envergure ou longueur (m, min/max), speed = nage (m/s), altitude = hauteur au-dessus du fond (m, min/max), turn = vivacité des virages, curious = attirance pour le sous-marin (0 = l'ignore, 1 = tourne autour), damage = dégâts si elle heurte la coque (0 = inoffensive). Par zone : nombre maximal d'individus de chaque espèce autour du joueur. behavior : cling = s'enroule autour de la coque et serre ; walker = marche sur le fond et frappe ce qui passe à sa portée ; veil = se plaque sur le cockpit et aveugle. Sans behavior : rôde puis charge.",
   "species": {
-    "raie": { "name": "Raie manta", "size": [3.2, 5], "speed": 2.4, "altitude": [6, 30], "turn": 0.35, "curious": 0.15, "damage": 0 },
-    "tortue": { "name": "Tortue luth", "size": [1.6, 2.3], "speed": 1.3, "altitude": [4, 25], "turn": 0.5, "curious": 0.25, "damage": 0 },
-    "requin": { "name": "Requin pèlerin", "size": [5, 7.5], "speed": 2.0, "altitude": [5, 28], "turn": 0.25, "curious": 0.3, "damage": 0 },
-    "raieZombie": { "name": "Raie décharnée", "size": [3.5, 6], "speed": 2.8, "altitude": [4, 22], "turn": 0.5, "curious": 0.85, "damage": 5 },
-    "requinZombie": { "name": "Requin décharné", "size": [5.5, 8], "speed": 2.6, "altitude": [5, 24], "turn": 0.3, "curious": 0.7, "damage": 9 },
-    "calmar": { "name": "Calmar pâle", "size": [3, 5.5], "speed": 3.2, "altitude": [8, 40], "turn": 0.6, "curious": 0.5, "damage": 0 }
+    "raie": {
+      "name": "Raie manta",
+      "size": [
+        3.2,
+        5
+      ],
+      "speed": 2.4,
+      "altitude": [
+        6,
+        30
+      ],
+      "turn": 0.35,
+      "curious": 0.15,
+      "damage": 0
+    },
+    "tortue": {
+      "name": "Tortue luth",
+      "size": [
+        1.6,
+        2.3
+      ],
+      "speed": 1.3,
+      "altitude": [
+        4,
+        25
+      ],
+      "turn": 0.5,
+      "curious": 0.25,
+      "damage": 0
+    },
+    "requin": {
+      "name": "Requin pèlerin",
+      "size": [
+        5,
+        7.5
+      ],
+      "speed": 2.0,
+      "altitude": [
+        5,
+        28
+      ],
+      "turn": 0.25,
+      "curious": 0.3,
+      "damage": 0
+    },
+    "raieZombie": {
+      "name": "Raie décharnée",
+      "size": [
+        3.5,
+        6
+      ],
+      "speed": 2.8,
+      "altitude": [
+        4,
+        22
+      ],
+      "turn": 0.5,
+      "curious": 0.85,
+      "damage": 5
+    },
+    "requinZombie": {
+      "name": "Requin décharné",
+      "size": [
+        5.5,
+        8
+      ],
+      "speed": 2.6,
+      "altitude": [
+        5,
+        24
+      ],
+      "turn": 0.3,
+      "curious": 0.7,
+      "damage": 9
+    },
+    "calmar": {
+      "name": "Calmar pâle",
+      "size": [
+        3,
+        5.5
+      ],
+      "speed": 3.2,
+      "altitude": [
+        8,
+        40
+      ],
+      "turn": 0.6,
+      "curious": 0.5,
+      "damage": 0
+    },
+    "ecorche": {
+      "name": "L'Écorché",
+      "size": [
+        4.5,
+        7.5
+      ],
+      "speed": 3.0,
+      "altitude": [
+        4,
+        22
+      ],
+      "turn": 0.55,
+      "curious": 0.9,
+      "damage": 8
+    },
+    "chapelet": {
+      "name": "Le Chapelet",
+      "size": [
+        9,
+        14
+      ],
+      "speed": 2.6,
+      "altitude": [
+        5,
+        25
+      ],
+      "turn": 0.6,
+      "curious": 0.9,
+      "damage": 10,
+      "behavior": "cling"
+    },
+    "choeur": {
+      "name": "Le Chœur",
+      "size": [
+        5,
+        8
+      ],
+      "speed": 3.4,
+      "altitude": [
+        6,
+        28
+      ],
+      "turn": 0.8,
+      "curious": 1,
+      "damage": 6
+    },
+    "glaneuse": {
+      "name": "La Glaneuse",
+      "size": [
+        9,
+        13
+      ],
+      "speed": 1.5,
+      "altitude": [
+        0,
+        0
+      ],
+      "turn": 0.6,
+      "curious": 1,
+      "damage": 14,
+      "behavior": "walker"
+    },
+    "linceul": {
+      "name": "Le Linceul",
+      "size": [
+        5,
+        8
+      ],
+      "speed": 1.4,
+      "altitude": [
+        6,
+        30
+      ],
+      "turn": 0.5,
+      "curious": 1,
+      "damage": 2,
+      "behavior": "veil"
+    }
   },
   "zones": {
-    "recif": { "raie": 3, "tortue": 3, "requin": 1 },
-    "epaves": { "raie": 1, "requin": 1, "raieZombie": 2, "requinZombie": 1 },
-    "canyon": { "raieZombie": 3, "requinZombie": 2, "calmar": 2 },
-    "abysses": { "raieZombie": 3, "calmar": 3, "requinZombie": 1 }
+    "recif": {
+      "raie": 3,
+      "tortue": 3,
+      "requin": 1
+    },
+    "epaves": {
+      "raie": 1,
+      "requin": 1,
+      "raieZombie": 2,
+      "requinZombie": 1,
+      "ecorche": 1,
+      "linceul": 1
+    },
+    "canyon": {
+      "raieZombie": 2,
+      "requinZombie": 1,
+      "calmar": 2,
+      "ecorche": 2,
+      "chapelet": 1,
+      "choeur": 1,
+      "glaneuse": 2,
+      "linceul": 1
+    },
+    "abysses": {
+      "raieZombie": 1,
+      "calmar": 2,
+      "requinZombie": 1,
+      "chapelet": 2,
+      "choeur": 2,
+      "glaneuse": 3,
+      "linceul": 2,
+      "ecorche": 1
+    }
   }
 }

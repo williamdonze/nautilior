@@ -120,6 +120,13 @@ export const SURVIVAL = {
 };
 
 /* ---------- Radiation : émise par le portail, au fond des abysses ---------- */
+/** Écho du sonar volumétrique (touche R) : révèle en points ce qui est hors de vue */
+export const ECHO = {
+  SPEED: 70, // vitesse de l'onde (m/s)
+  DURATION: 9, // durée de l'image (s)
+  COOLDOWN: 3, // délai avant un nouvel écho (s)
+};
+
 /** Impulsion de défense (touche F) : fait fuir les bêtes à portée */
 export const DEFENSE = {
   RADIUS: 55, // portée de l'onde (m)

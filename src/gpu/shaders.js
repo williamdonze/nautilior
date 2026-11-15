@@ -11,7 +11,7 @@
  * buildShaders(Q) : Q = { WATER, SHADOW, AA, RAYN, SPOTN, LV, DK }
  */
 export function buildShaders(Q) {
-const { WATER, SHADOW, AA, RAYN, SPOTN, LV, DK } = Q;
+const { WATER, SHADOW, AA, RAYN, SPOTN, LV, DK, ECHO_SPEED = 70 } = Q;
 const W_NOISE = /*wgsl*/`
 fn ss(a: f32, b: f32, x: f32) -> f32 { let t = clamp((x - a) / (b - a), 0., 1.); return t * t * (3. - 2. * t); }
 fn h31(p: vec3f) -> f32 { var q = fract(p * vec3f(.1031, .1030, .0973)); q += dot(q, q.yzx + 33.33); return fract((q.x + q.y) * q.z); }
@@ -661,11 +661,24 @@ fn quad(i: u32) -> vec2f { return vec2f(f32(i & 1u), f32(i >> 1u)) * 2. - 1.; }
 @vertex fn vsPt(@builtin(vertex_index) vi: u32, @location(0) a: vec4f, @location(1) b: vec4f) -> VO {
   var o: VO; let q = quad(vi);
   let d = length(a.xyz - g.cam.xyz);
-  let sz = max(a.w, d * .0016);
+  var sz = max(a.w, d * .0016);
+  var col = vec3f(0.); var kind = b.w; var zb = 1.;
+  if (b.w > 1.5) {
+    // Écho du sonar (type 2) : les points apparaissent au passage de l'onde partie du sous-marin
+    // (g.sub.w = âge de l'onde en secondes), brillent, puis s'éteignent. Ni brouillard ni obscurité.
+    let ds = distance(a.xyz, g.sub.xyz); let front = g.sub.w * ${ECHO_SPEED}.;
+    let vis = step(ds, front) * step(0., g.sub.w) * (1. - ss(6., 9., g.sub.w)) * (.55 + 3. * exp(-abs(ds - front) * .1));
+    // taille en pixels (≈ 3 px de rayon), quelle que soit la résolution
+    sz = max(a.w, d * g.up.w / g.res.y * 3.);
+    col = b.rgb * vis * 1.8; kind = 1.; zb = 1.04;
+  } else {
+    let lit = select(vec3f(1.), sunE(a.y, 0.) * .5 + amb(a.xyz, vec3f(0., 1., 0.), 1., 0.) + lightsVol(a.xyz) * .5, b.w < .5);
+    col = b.rgb * lit * exp(-SIG * d) * min(1., a.w / sz);
+  }
   o.cp = g.vp * vec4f(a.xyz + (g.right.xyz * q.x + g.up.xyz * q.y) * sz, 1.); o.uv = q; o.wp = a.xyz;
-  let lit = select(vec3f(1.), sunE(a.y, 0.) * .5 + amb(a.xyz, vec3f(0., 1., 0.), 1., 0.) + lightsVol(a.xyz) * .5, b.w < .5);
-  o.lv = b.rgb * lit * exp(-SIG * d) * min(1., a.w / sz);
-  o.pr = vec4f(b.w, 0., 0., 0.);
+  o.cp.z *= zb; // l'écho passe juste devant la surface qu'il dessine
+  o.lv = col;
+  o.pr = vec4f(kind, 0., 0., 0.);
   return o;
 }
 @fragment fn fsPt(i: VO) -> @location(0) vec4f {

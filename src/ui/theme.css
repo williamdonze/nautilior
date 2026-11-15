@@ -118,3 +118,19 @@ body.mode-port #reticle { display: none; }
 #pulse .bar { flex: 1; height: 2px; background: rgba(190, 220, 210, 0.16); }
 #pulse .fill { height: 100%; width: 100%; background: #7fd0c0; }
 #pulse.ready { color: #7fd0c0; }
+
+/* Le Linceul plaqué sur la bulle : membrane laiteuse, veinée, qui ne laisse voir qu'un trou au centre */
+#shroud {
+  position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.6s; z-index: 1;
+  background:
+    radial-gradient(ellipse at 50% 55%, rgba(200, 235, 230, 0.15) 0%, rgba(170, 205, 205, 0.78) 34%, rgba(120, 160, 165, 0.94) 100%),
+    repeating-radial-gradient(circle at 50% 55%, rgba(255, 255, 255, 0.08) 0 2px, transparent 2px 26px);
+  backdrop-filter: blur(7px);
+}
+#shroud.on { opacity: 1; animation: shroudBreath 2.4s ease-in-out infinite; }
+@keyframes shroudBreath { 50% { filter: brightness(1.15); transform: scale(1.03); } }
+#notice {
+  position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); padding: 6px 18px; opacity: 0; transition: opacity 0.4s;
+  font-size: 16px; letter-spacing: 0.22em; color: var(--hud-fg); background: var(--glass); border: 1px solid var(--line); border-radius: 3px; pointer-events: none;
+}
+#notice.on { opacity: 1; }
