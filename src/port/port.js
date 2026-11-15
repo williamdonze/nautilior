@@ -5,6 +5,7 @@ import { Player } from './player.js';
 import { createCharacter, LOOKS } from './characters.js';
 import { NPCS } from '../story/dialogue.js';
 import { damp } from '../core/utils.js';
+import { createSeaAndSky } from './sea.js';
 
 /**
  * Scène du port, à la surface : brume, ciel gris, lumière froide.
@@ -28,6 +29,9 @@ export class Port {
 
     this.world = buildPort();
     this.scene.add(this.world.group);
+    // Mer de Gerstner et ciel couvert (la mer remplace le matériau provisoire du décor)
+    this.sea = createSeaAndSky(this.scene);
+    this.world.water.material = this.sea.waterMaterial;
 
     this.player = new Player(this.scene);
 
@@ -201,6 +205,7 @@ export class Port {
     this.focus = best;
 
     this.world.update(time);
+    this.sea.update(time);
   }
 }
 
