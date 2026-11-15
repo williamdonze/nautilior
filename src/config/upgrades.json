@@ -266,7 +266,7 @@
         {
           "label": "Sonar volumétrique",
           "cost": 3800,
-          "description": "Le relief et tout ce qui rôde autour du Nautiliar, en nuage de points.",
+          "description": "Touche R : une onde dessine en points, à travers le noir, la forme de tout ce qui entoure le Nautiliar.",
           "stats": {
             "sonar3d": 1
           }
