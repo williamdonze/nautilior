@@ -17,6 +17,9 @@ export const FRAGMENT_RARITY = { id: 'souvenir', name: 'Souvenir', level: 3, col
 export const getRarity = (id) => (id === 'souvenir' ? FRAGMENT_RARITY : rarityById.get(id) ?? RARITIES[0]);
 export const getItem = (id) => itemById.get(id);
 
+/** Objets uniques posés à une place fixe à chaque plongée */
+export const UNIQUE_ITEMS = ITEMS.filter((it) => it.unique);
+
 /** Poids de chaque rareté à une profondeur donnée (interpolation entre paliers) */
 export function rarityWeightsAt(depth) {
   const bands = lootTable.bands;
@@ -69,7 +72,10 @@ export function rollItem(depth, rand) {
   let level = getRarity(rarityId).level;
   while (level >= 0) {
     const rid = RARITIES[level].id;
-    const candidates = ITEMS.filter((it) => it.rarity === rid && it.minDepth <= depth);
+    // Les objets uniques (cloche, éclat vert) sont posés à part, jamais tirés au sort
+    const candidates = ITEMS.filter(
+      (it) => it.rarity === rid && !it.unique && it.minDepth <= depth && (it.maxDepth === undefined || depth <= it.maxDepth)
+    );
     if (candidates.length) {
       return weightedPick(candidates.map((it) => ({ v: it, w: it.spawnWeight ?? 1 })), rand);
     }

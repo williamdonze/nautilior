@@ -1,5 +1,6 @@
 import { gameState } from './gameState.js';
 import { storyState } from '../story/state.js';
+import { getItem } from '../loot/loot.js';
 
 /**
  * Sauvegarde dans le localStorage.
@@ -25,11 +26,34 @@ export function save() {
 }
 
 /** Charge la sauvegarde dans les objets d'état ; renvoie true si une sauvegarde existait */
+/**
+ * Migration des anciennes sauvegardes (lore v1) : les identifiants d'objets supprimés
+ * sont convertis en objets de même rareté. Les id inconnus sont retirés.
+ */
+const ID_MIGRATION = {
+  clochette_ys: 'clochette_chapelle',
+  couronne_dahut: 'couronne_mariee',
+  clef_gradlon: 'clochette_chapelle',
+  larme_dahut: 'couronne_mariee', // jamais l'éclat vert : il ne se trouve qu'au fond
+  statuette_ys: 'figure_proue',
+  tesselle_ys: 'hublot_cargo',
+};
+
+function migrateIds(ids, dedupe = false) {
+  if (!Array.isArray(ids)) return [];
+  const out = ids.map((id) => ID_MIGRATION[id] ?? id).filter((id) => getItem(id));
+  return dedupe ? [...new Set(out)] : out;
+}
+
 export function load() {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return false;
     const data = JSON.parse(raw);
+    if (data.game) {
+      data.game.hold = migrateIds(data.game.hold);
+      data.game.collection = migrateIds(data.game.collection, true);
+    }
     Object.assign(gameState, data.game, { upgrades: { ...gameState.upgrades, ...data.game?.upgrades } });
     Object.assign(storyState, data.story, { flags: { ...data.story?.flags } });
     return true;

@@ -9,8 +9,7 @@ import { tileKey, registerSmall } from './tiles.js';
  * Tout ce qui peuple le fond en dehors des plantes :
  *  - débris humains : barils, caisses, pneus, chaînes, planches, deux 2CV englouties ;
  *  - coquillages et moulières ;
- *  - ruines de la cité d'Ys dans le canyon et les abysses (colonnes, blocs, escaliers,
- *    arche, tête de pierre).
+ *  - éboulis rocheux dans le canyon et les abysses.
  * Les objets répétés sont instanciés et regroupés par bandes (culling hors champ).
  */
 const rand = createRandom(WORLD.SEED + 909);
@@ -82,18 +81,7 @@ const GEOS = {
     }
     return mergeGeos(parts);
   },
-  column: () => {
-    // Fût cannelé d'Ys, chapiteau simple
-    const parts = [weathered(new THREE.CylinderGeometry(0.55, 0.6, 5, 10, 3), '#8a8a80', '#5f6a5a', 0.3)];
-    parts.push(weathered(new THREE.BoxGeometry(1.5, 0.35, 1.5).translate(0, 2.65, 0), '#9a9a90', '#5f6a5a', 0.3));
-    parts.push(weathered(new THREE.BoxGeometry(1.4, 0.3, 1.4).translate(0, -2.6, 0), '#7a7a72', '#5f6a5a', 0.2));
-    return mergeGeos(parts);
-  },
-  block: () => weathered(new THREE.BoxGeometry(1.6, 0.9, 1), '#7a7a72', '#4a5a4a', 0.35),
-  amphora: () => {
-    const pts = [[0.001, 0], [0.16, 0.05], [0.32, 0.35], [0.28, 0.7], [0.1, 0.85], [0.1, 1], [0.14, 1.05]].map(([r, y]) => new THREE.Vector2(r, y));
-    return weathered(new THREE.LatheGeometry(pts, 8), '#a8704a', '#63321b', 0.3);
-  },
+  block: () => weathered(new THREE.DodecahedronGeometry(0.8, 0).scale(1.4, 0.7, 1), '#3a3e40', '#26292b', 0.3),
 };
 
 /* ------------------------------------------------------------ Placement instancié par bandes */
@@ -172,64 +160,8 @@ function deuxChevaux(x, z, ry) {
   return g;
 }
 
-/** Arche d'Ys : deux piliers et un arc */
-function ysArch(x, z, ry, colliders) {
-  const g = new THREE.Group();
-  const stone = (geo) => new THREE.Mesh(weathered(geo, '#8a8a80', '#4a5a4a', 0.35), vmat);
-  for (const s of [-1, 1]) {
-    const p = stone(new THREE.BoxGeometry(1.4, 7, 1.4));
-    p.position.set(s * 3.5, 3.5, 0);
-    g.add(p);
-  }
-  const arc = stone(new THREE.TorusGeometry(3.5, 0.7, 4, 10, Math.PI));
-  arc.position.y = 7;
-  g.add(arc);
-  g.position.set(x, getFloorHeight(x, z) - 0.5, z);
-  g.rotation.set(0, ry, rand.range(-0.08, 0.08));
-  g.updateMatrixWorld(true);
-  for (const s of [-1, 1]) {
-    const p = new THREE.Vector3(s * 3.5, 3, 0).applyMatrix4(g.matrixWorld);
-    colliders.push({ x: p.x, y: p.y, z: p.z, r: 1.3 });
-  }
-  return g;
-}
 
-/** Escalier englouti */
-function stairs(x, z, ry) {
-  const g = new THREE.Group();
-  for (let i = 0; i < 6; i++) {
-    const step = new THREE.Mesh(weathered(new THREE.BoxGeometry(5, 0.4, 0.9), '#7a7a72', '#4a5a4a', 0.3), vmat);
-    step.position.set(0, i * 0.4, -i * 0.9);
-    g.add(step);
-  }
-  g.position.set(x, getFloorHeight(x, z) - 0.3, z);
-  g.rotation.y = ry;
-  return g;
-}
 
-/** Grande tête de pierre aux yeux vides, à moitié ensablée */
-function stoneHead(x, z, colliders) {
-  const g = new THREE.Group();
-  const head = new THREE.Mesh(weathered(new THREE.IcosahedronGeometry(3, 1).scale(0.9, 1.25, 0.95), '#8a8a80', '#4a5a4a', 0.25), vmat);
-  g.add(head);
-  for (const s of [-1, 1]) {
-    const socket = new THREE.Mesh(new THREE.SphereGeometry(0.55, 8, 6), new THREE.MeshBasicMaterial({ color: '#05090d' }));
-    socket.position.set(s * 1.05, 0.7, 2.55);
-    socket.scale.set(1, 0.7, 0.4);
-    g.add(socket);
-  }
-  const nose = new THREE.Mesh(weathered(new THREE.ConeGeometry(0.5, 1.4, 4), '#7a7a72'), vmat);
-  nose.position.set(0, -0.2, 2.8);
-  nose.rotation.x = Math.PI / 2 + 0.3;
-  g.add(nose);
-  const mouth = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.18, 0.4), new THREE.MeshBasicMaterial({ color: '#05090d' }));
-  mouth.position.set(0, -1.3, 2.6);
-  g.add(mouth);
-  g.position.set(x, getFloorHeight(x, z) + 0.8, z);
-  g.rotation.set(0.25, rand() * 6, 0.3);
-  colliders.push({ x, y: g.position.y, z, r: 3.2 });
-  return g;
-}
 
 export function createProps(colliders) {
   const group = new THREE.Group();
@@ -253,31 +185,15 @@ export function createProps(colliders) {
   // --- Deux 2CV englouties
   group.add(deuxChevaux(-24, -150, 0.7), deuxChevaux(84, -330, 2.2));
 
-  // --- Ruines d'Ys : canyon et abysses
-  const ruinSites = [
+  // --- Éboulis : blocs de roche détachés des parois du canyon et dans la plaine des abysses
+  const rubbleSites = [
     [canyonCenter(-620) + 6, -620], [canyonCenter(-705) - 10, -705], [canyonCenter(-790) + 8, -790],
     [-60, -940], [70, -1000], [-30, -1090],
   ];
-  const columns = [], blocks = [], amphoras = [];
-  for (const [sx, sz] of ruinSites) {
-    for (let i = 0; i < 7; i++) {
-      const p = floorPoints(1, 0, 3000, [sx, sz], 16)[0];
-      if (!p) continue;
-      const fallen = rand() < 0.45;
-      columns.push({ ...p, y: p.y + (fallen ? 0.5 : 2.4), rz: fallen ? Math.PI / 2 : rand.range(-0.12, 0.12), s: rand.range(0.7, 1.2) });
-      if (!fallen) colliders.push({ x: p.x, y: p.y + 2.4, z: p.z, r: 0.8 });
-    }
-    blocks.push(...floorPoints(10, 0, 3000, [sx, sz], 18).map((p) => ({ ...p, y: p.y + 0.3, rx: rand.range(-0.3, 0.3), rz: rand.range(-0.3, 0.3), s: rand.range(0.7, 1.6) })));
-    amphoras.push(...floorPoints(8, 0, 3000, [sx, sz], 14).map((p) => ({ ...p, y: p.y + 0.15, rz: rand() < 0.6 ? Math.PI / 2 : 0, s: rand.range(0.8, 1.3) })));
+  const blocks = [];
+  for (const [sx, sz] of rubbleSites) {
+    blocks.push(...floorPoints(14, 0, 3000, [sx, sz], 20).map((p) => ({ ...p, y: p.y + 0.2, rx: rand.range(-0.4, 0.4), rz: rand.range(-0.4, 0.4), s: rand.range(0.6, 2.2) })));
   }
-  scatterInstanced(group, GEOS.column(), columns);
   scatterInstanced(group, GEOS.block(), blocks);
-  scatterInstanced(group, GEOS.amphora(), amphoras);
-  group.add(ysArch(ruinSites[1][0] + 4, ruinSites[1][1] + 6, 0.4, colliders));
-  group.add(ysArch(ruinSites[4][0] - 6, ruinSites[4][1] - 4, 1.2, colliders));
-  group.add(stairs(ruinSites[3][0] + 8, ruinSites[3][1], 0.8));
-  group.add(stairs(ruinSites[0][0] - 6, ruinSites[0][1] + 4, -0.5));
-  group.add(stoneHead(ruinSites[2][0] - 8, ruinSites[2][1] - 6, colliders));
-  group.add(stoneHead(ruinSites[5][0] + 10, ruinSites[5][1], colliders));
   return group;
 }

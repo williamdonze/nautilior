@@ -1,6 +1,6 @@
 # Nautiliar
 
-Jeu web 3D d'exploration sous-marine narratif. Bretagne, 1984 : à bord d'un vieux sous-marin rouillé, le **Nautiliar**, vous explorez les fonds au large de Port-Kerys.
+Jeu web 3D d'exploration sous-marine narratif. Bretagne, 1984 : à bord d'un vieux sous-marin rouillé, le **Nautiliar**, vous explorez les fonds au large de Port-Kermor.
 
 Rendu 3D low-poly en flat shading, net et antialiasé (Three.js + Vite).
 
@@ -58,7 +58,7 @@ Les flèches du clavier fonctionnent aussi. Les touches sont lues par position p
 - `src/config/creatures.json` : vitesse, agressivité et dégâts des créatures mutées.
 - `src/story/fragments.json` : les 7 fragments de mémoire (position, texte du souvenir, image).
 - `SEABED` dans `settings.js` : profil du fond (profondeur le long du parcours, canyon).
-- `src/story/endings.json` : textes des deux fins.
+- `src/story/endings.json` : textes des fins.
 
 ## Sauvegarde et réglages
 
@@ -67,8 +67,8 @@ Sauvegarde automatique dans le `localStorage` (retour au port, ventes, achats, d
 Les réglages (volumes, qualité graphique, compteur d'images/s) sont dans le menu Réglages
 (écran titre ou pause) et conservés à part.
 
-Juste avant le choix final, une sauvegarde à part est créée : depuis l'écran de fin,
-« Revenir devant le portail » permet de voir l'autre fin.
+Le choix final est définitif : il n'y a pas de sauvegarde d'avant le choix. Pour voir une autre
+fin, il faut recommencer une partie (voir `docs/LORE.md`, section 9).
 
 ## Sous l'eau
 
@@ -81,7 +81,7 @@ Juste avant le choix final, une sauvegarde à part est créée : depuis l'écran
   Le sous-marin couche les plantes qu'il traverse (champ de déplacement simulé par des ressorts),
   qui se redressent ensuite en se balançant.
 - **Décor** : barils, caisses, pneus, chaînes, planches, coquillages, moulières, deux 2CV englouties,
-  et les ruines d'Ys (colonnes, arches, escaliers, têtes de pierre) dans le canyon et les abysses.
+  et des éboulis rocheux dans le canyon et les abysses.
 - **Faune irradiée** : même les poissons du récif sont difformes (yeux en trop, bosses, double queue,
   pustules lumineuses) ; dans le canyon et les abysses nagent des poissons-squelettes.
 - **Sept sous-marins** : le modèle change à chaque amélioration de coque, du vieux cigare rouillé
@@ -90,7 +90,7 @@ Juste avant le choix final, une sauvegarde à part est créée : depuis l'écran
 
 ## Le village
 
-Port-Kerys compte une vingtaine de bâtiments : maisons de granit ou chaulées, toits d'ardoise,
+Port-Kermor compte une vingtaine de bâtiments : maisons de granit ou chaulées, toits d'ardoise,
 lucarnes, cheminées de pignon, volets colorés, enseignes (hôpital, épicerie, criée, Bar des Marins,
 mécanique marine), chapelle et calvaire, phare éteint sur sa jetée, fontaine, cabine téléphonique,
 4L abandonnée, murets de pierres sèches, casiers, filets qui sèchent, linge, goélands.

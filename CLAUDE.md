@@ -6,41 +6,12 @@ Tu vas développer **Nautiliar**, un jeu web 3D d'exploration sous-marine narrat
 Le joueur pilote un vieux sous-marin, explore les fonds marins et récupère des objets avec la **pince** du sous-marin. Certains objets sont très rares. Il remonte au **port** pour vendre son loot et améliorer son sous-marin afin de descendre toujours plus profond.
 Boucle de jeu : Port (vendre / améliorer / parler aux PNJ) → Plongée (explorer / attraper) → Remontée (avant d'être à court d'oxygène) → Port.
 
-## Lore (à respecter dans tous les textes, noms d'objets et dialogues)
-Crée un fichier `docs/LORE.md` qui reprend cette section : c'est la référence narrative du projet.
+## Lore
+**La seule référence narrative est `docs/LORE.md`** : lis-le en entier avant d'écrire le moindre texte, en particulier « 2 bis. Les règles de l'Envers » et « 11. Ton et règles d'écriture ».
 
-**Cadre** : Bretagne, 1984. **Port-Kerys** (de *Ker-Ys*, en référence à la cité engloutie d'Ys), un village de pêcheurs brumeux, rustique et presque désert. Maisons fermées, bateaux qui pourrissent, granit et rouille. Le sous-marin du joueur, le **Nautiliar**, est vieux et rouillé.
+En bref : Bretagne, 1984, le village de **Port-Kermor**. Le joueur se réveille à l'hôpital, amnésique, et tout le monde l'appelle **Yann**. Il est en réalité **Loïc**, un plongeur vivant mais dans le coma, retenu dans **l'Envers** (un reflet du village peuplé de morts) par trois noyés de 1952 : le **docteur Guéguen**, **Job Kerhervé** (le mécano) et **Soazig Kerhervé** (la marchande, alliée secrète). Ils attendent depuis 32 ans leur fils Yann, qui n'est jamais venu. Le temps est figé à **4 h 12**, l'heure de l'arrêt cardiaque de Loïc. Chaque mort en plongée relance un cycle (on en est au 112e) ; le docteur efface sa mémoire avec un « remède ». Au fond des Abysses, **le portail** est une déchirure de lumière verte : c'est la vie de Loïc qui fuit, et le tracé de son cœur. Le jeu fait croire au joueur qu'il est mort, alors qu'il est vivant.
 
-**Début** : le joueur se réveille d'un « coma » à l'hôpital du village, sans aucun souvenir. Il ne reste que trois habitants :
-- **Le médecin** : l'a soigné, mystérieux, l'observe bizarrement.
-- **Le vieux mécano** : bourru, lui confie le Nautiliar et gère les améliorations.
-- **La marchande** : rachète le loot sans poser de questions.
-Quand on leur demande ce qui s'est passé, ils restent évasifs : « la mer a changé », « les autres sont partis ».
-
-**La vérité (révélée progressivement, jamais dite directement au début)** :
-- Le joueur n'est pas dans le vrai monde mais dans **l'Envers**, le monde des morts, reflet de Port-Kerys.
-- Dans le vrai monde, il **s'est noyé** pendant une plongée. C'est un **noyé revenu** : il croit sortir du coma, mais il revient de la mort.
-- Les trois villageois sont des **morts**. L'Envers se vide et s'éteint lentement.
-- Au point le plus profond de l'océan se trouve **le portail**, une déchirure vers le monde des vivants. Il émet une énergie surnaturelle semblable à de la radioactivité, qui a transformé les poissons et animaux des abysses en **monstres**.
-- **Le secret des villageois** : le noyé revenu est le seul lien vivant qui maintient l'Envers en existence. S'il traverse le portail, l'Envers disparaît, et eux avec. Ils veulent donc à tout prix qu'il le **ferme** pour qu'il reste à jamais. Ils **mentent** sur leurs raisons.
-
-**Progression** : pour atteindre le portail, il faut la **coque abyssale**, l'amélioration la plus chère du jeu. C'est ce qui repousse la fin et justifie la boucle loot → vente → améliorations.
-
-**Fragments de mémoire** : parmi les objets rares, des objets personnels du joueur venus du vrai monde (photo, alliance, plaque de plongée à son nom, carnet de bord…). Chacun débloque un court souvenir qui rapproche de la vérité.
-
-**Comportement des villageois** :
-- Au début : évasifs, mais bienveillants en apparence.
-- Au fil des fragments : de plus en plus gênés, ils détournent les conversations.
-- Une fois la coque abyssale achetée : ils deviennent insistants et supplient le joueur de fermer le portail, chacun avec une **fausse raison** :
-  - Le médecin : « Ce qui remontera de l'autre côté, ce ne sera pas toi. »
-  - Le mécano : « La mer souffre. Ferme-la, c'est tout. »
-  - La marchande : « Ce qui est derrière nous tuera tous si tu la laisses ouverte. »
-
-**Choix final, devant le portail** :
-- **Fermer le portail** (il les écoute) : les radiations cessent, les monstres se calment. De retour au port, les villageois sont soulagés et souriants… trop souriants. Le joueur comprend qu'il ne pourra plus jamais partir. Dernière réplique du médecin : « Bienvenue chez toi. » Leur mensonge est révélé.
-- **Traverser le portail** (il leur désobéit) : l'Envers s'effondre derrière lui, et une courte scène montre le village des morts qui se dissout. Le joueur émerge dans le vrai Port-Kerys, vivant et plein de monde. Les habitants n'en reviennent pas : il était porté disparu depuis des mois. Il est rentré chez lui.
-
-**Ton** : intrigant, mélancolique, de plus en plus inquiétant avec la profondeur. Dialogues courts, évasifs, avec des sous-entendus. Aucun humour cartoon.
+Règles d'écriture : textes courts, mélancoliques, jamais la vérité dite directement avant le portail. **Aucune** légende bretonne, aucune référence à une cité engloutie : l'Envers est simplement là, et ne s'explique que par l'histoire des personnages.
 
 ## Style visuel (très important)
 3D low-poly avec un **rendu pixelisé** façon rétro / PS1 :
@@ -97,7 +68,7 @@ Travaille **phase par phase**. À la fin de chaque phase : vérifie que `npm run
 
 ### Phase 3 : loot et raretés
 - 5 raretés : commun, peu commun, rare, épique, légendaire (une couleur chacune).
-- Une quinzaine d'objets cohérents avec la Bretagne des années 80 et le lore (filets, casiers, vaisselle de naufrage, médailles, objets de la cité d'Ys…), avec nom, description courte et intrigante, rareté, poids, prix et profondeur minimale.
+- Une quinzaine d'objets cohérents avec la Bretagne des années 80 et le lore (filets, casiers, vaisselle de naufrage, médailles, objets des cycles passés…), avec nom, description courte et intrigante, rareté, poids, prix et profondeur minimale.
 - Table de loot pondérée par la profondeur.
 - Les objets rares brillent et ont un effet spécial à la capture.
 - Une soute limitée et un inventaire (touche I / Tab).
@@ -122,10 +93,13 @@ Travaille **phase par phase**. À la fin de chaque phase : vérifie que `npm run
 - 6 à 8 **fragments de mémoire** répartis par profondeur. Chacun affiche un court souvenir (texte + image pixel ou plan fixe) et fait évoluer les dialogues des villageois.
 
 ### Phase 7 : la fin
-- Une fois la coque abyssale achetée, les dialogues changent : les trois villageois supplient le joueur de fermer le portail, avec leurs fausses raisons.
-- Le portail dans les abysses : structure surnaturelle, lueur verte, distorsion.
-- Le choix final « Fermer » / « Traverser », avec les deux fins décrites dans le lore (courtes cinématiques en jeu + texte, puis écran de fin).
-- Après la fin, possibilité de recharger la sauvegarde d'avant le choix pour voir l'autre fin.
+- Une fois la coque abyssale achetée, les dialogues changent : les trois villageois supplient le joueur de fermer le portail, avec leurs fausses raisons (Soazig, en secret, l'avertit).
+- Le portail dans les Abysses : une déchirure verticale de lumière verte, sans cadre, aux bords ondulants, qui dessine de près un tracé d'électrocardiogramme.
+- **Trois fins** (voir `docs/LORE.md`, section 9) :
+  - **Le Repos** (fermer) : choix **définitif**, la sauvegarde est écrasée, aucun retour possible ;
+  - **Le Réveil** (traverser, avec l'éclat vert) ;
+  - **Le Départ** (traverser avec les 8 fragments et la cloche du Marie-Morgane).
+- **Aucune sauvegarde d'avant le choix** : pour voir une autre fin, il faut recommencer une partie. L'écran-titre change selon la fin vue.
 
 ### Phase 8 : polish
 - Ambiance sonore (bulles, sonar, grincements de coque, vent et mouettes au port) et musique mélancolique.
@@ -134,7 +108,7 @@ Travaille **phase par phase**. À la fin de chaque phase : vérifie que `npm run
 
 ## Consignes générales
 - Commence par la **Phase 1** uniquement.
-- Ne révèle jamais le secret du lore trop tôt dans les textes du jeu : tout passe par les sous-entendus, puis par les fragments de mémoire.
+- Ne révèle jamais le secret du lore trop tôt dans les textes du jeu : tout passe par les sous-entendus, les objets et les fragments de mémoire (voir `docs/LORE.md`).
 - Privilégie le *game feel* : mouvements fluides, retours visuels satisfaisants, ambiance.
 - Pas d'assets payants ; formes générées en code ou assets CC0 uniquement.
 - Si un choix technique n'est pas clair, prends la solution la plus simple et explique-la dans ton résumé.

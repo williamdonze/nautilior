@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import ambienceData from '../config/depthAmbience.json';
 import { clamp } from '../core/utils.js';
+import { WATER_GLSL } from '../core/waterFog.js';
 
 /**
  * Ambiance en fonction de la profondeur :
@@ -28,12 +29,61 @@ export function sampleAmbience(depth, out = {}) {
   out.ambient = a.ambient + (b.ambient - a.ambient) * t;
   out.sun = a.sun + (b.sun - a.sun) * t;
   out.beam = a.beam + (b.beam - a.beam) * t;
+  out.exposure = (a.exposure ?? 1) + ((b.exposure ?? 1) - (a.exposure ?? 1)) * t;
   return out;
+}
+
+/**
+ * Fond d'eau : un dôme centré sur la caméra, dessiné derrière tout le décor.
+ * Il montre l'eau telle qu'on la voit au loin, avec le même calcul que le brouillard
+ * (plus claire vers la surface et le soleil, noire vers le fond) : plus de « mur » de brouillard.
+ */
+function createWaterDome(scene) {
+  const geo = new THREE.SphereGeometry(100, 32, 16);
+  const mat = new THREE.ShaderMaterial({
+    uniforms: {
+      uColor: { value: scene.fog.color }, // même objet que la couleur du brouillard
+      uDensity: { get value() { return scene.fog.density; } },
+    },
+    vertexShader: /* glsl */ `
+      varying vec3 vDir;
+      void main() {
+        vDir = position;
+        // Seulement la rotation de la caméra : le dôme la suit partout
+        vec3 v = (viewMatrix * vec4(position, 0.0)).xyz;
+        gl_Position = projectionMatrix * vec4(v, 1.0);
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      uniform vec3 uColor;
+      uniform float uDensity;
+      varying vec3 vDir;
+      ${WATER_GLSL}
+      void main() {
+        vec3 rd = normalize(vDir);
+        float far = 130.0;
+        vec3 T = waterTransmittance(far, uDensity);
+        vec3 c = waterInscatter(rd, uColor, cameraPosition.y, cameraPosition.y + rd.y * far) * (1.0 - T);
+        gl_FragColor = vec4(c, 1.0);
+      }
+    `,
+    side: THREE.BackSide,
+    depthWrite: false,
+    depthTest: false,
+    fog: false,
+  });
+  const dome = new THREE.Mesh(geo, mat);
+  dome.frustumCulled = false;
+  dome.renderOrder = -1000;
+  dome.raycast = () => {};
+  scene.add(dome);
+  return dome;
 }
 
 export function createAmbience(scene) {
   scene.fog = new THREE.FogExp2(0x000000, 0.02);
   scene.background = new THREE.Color();
+  createWaterDome(scene);
 
   const hemi = new THREE.HemisphereLight('#a8bdb2', '#1a2a20', 1);
   scene.add(hemi);

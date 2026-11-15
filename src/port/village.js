@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { paintFaces, createRandom } from '../core/utils.js';
 
 /**
- * Le village de Port-Kerys en détail : maisons bretonnes (granit ou chaux, toits d'ardoise,
+ * Le village de Port-Kermor en détail : maisons bretonnes (granit ou chaux, toits d'ardoise,
  * cheminées de pignon, lucarnes, encadrements de granit, volets colorés, voilages),
  * et tout ce qui fait un port : phare éteint sur sa jetée, chapelle et calvaire, fontaine,
  * cabine téléphonique, 4L abandonnée, boîte aux lettres, murets, casiers, filets, barques,

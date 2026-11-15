@@ -72,7 +72,8 @@ export class Panels {
 
   renderShop() {
     const { hold, gameState: g } = this;
-    const total = hold.items.reduce((s, it) => s + sellPrice(it, g.day), 0);
+    // Objets que la marchande refuse (cloche, éclat vert) : ils restent en soute
+    const total = hold.items.reduce((s, it) => s + (it.noSale ? 0 : sellPrice(it, g.day)), 0);
     const rows = hold.items
       .map((it, i) => {
         const r = getRarity(it.rarity);
@@ -81,8 +82,9 @@ export class Panels {
         return `<div class="row">
           <img src="${this.thumbnails.get(it.id)}" alt="" style="border-color:${r.color}">
           <span class="row-name" style="color:${r.color}">${it.name}</span>
-          <span class="row-price">${fmt(price)} F ${trend}</span>
-          <button data-act="sell" data-arg="${i}">VENDRE</button>
+          ${it.noSale
+            ? '<span class="row-price">—</span><button disabled>REFUSÉ</button>'
+            : `<span class="row-price">${fmt(price)} F ${trend}</span><button data-act="sell" data-arg="${i}">VENDRE</button>`}
         </div>`;
       })
       .join('');
@@ -93,13 +95,13 @@ export class Panels {
       </div>
       <div class="inv-footer panel-footer">
         <span>Prix du jour (jour ${g.day}) · ▲▼ par rapport à la valeur habituelle</span>
-        ${hold.count ? `<button data-act="sellAll">TOUT VENDRE · ${fmt(total)} F</button>` : ''}
+        ${total ? `<button data-act="sellAll">TOUT VENDRE · ${fmt(total)} F</button>` : ''}
       </div>`;
   }
 
   sell(index) {
     const item = this.hold.items[index];
-    if (!item) return;
+    if (!item || item.noSale) return;
     this.gameState.money += sellPrice(item, this.gameState.day);
     this.hold.removeAt(index);
     this.sound.coin();
@@ -108,9 +110,11 @@ export class Panels {
   }
 
   sellAll() {
-    const items = this.hold.takeAll();
-    for (const it of items) this.gameState.money += sellPrice(it, this.gameState.day);
-    if (items.length) this.sound.coin(true);
+    const kept = this.hold.items.filter((it) => it.noSale);
+    const sold = this.hold.items.filter((it) => !it.noSale);
+    this.hold.fromIds(kept.map((it) => it.id));
+    for (const it of sold) this.gameState.money += sellPrice(it, this.gameState.day);
+    if (sold.length) this.sound.coin(true);
     this.onChange();
     this.render();
   }

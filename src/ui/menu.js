@@ -74,7 +74,7 @@ export class Menu {
     const save = this.hasSave();
     return `<div class="menu-frame">
       <div class="menu-title">NAUTILIAR</div>
-      <div class="menu-sub">Port-Kerys, 1984</div>
+      <div class="menu-sub">Port-Kermor, 1984</div>
       <div class="menu-buttons">
         ${save ? '<button data-menu="continue">CONTINUER</button>' : ''}
         <button data-menu="new">NOUVELLE PARTIE</button>
