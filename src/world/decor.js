@@ -10,6 +10,7 @@ import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { createFlora } from './flora.js';
 import { createBottomFauna } from './bottomFauna.js';
 import { createProps } from './props.js';
+import { gpuMode } from '../gpu/mode.js';
 
 const rand = createRandom(WORLD.SEED + 7);
 const noise = createNoise2D(WORLD.SEED + 3);
@@ -100,7 +101,8 @@ export function createDecor() {
   group.add(rocks);
   const landmarks = createLandmarks(colliders, uniforms);
   group.add(landmarks);
-  group.add(createFlora());
+  // En WebGPU, les plantes sont dessinées par le jardin (src/gpu/garden.js)
+  if (!gpuMode.active) group.add(createFlora());
   group.add(createBottomFauna());
   const props = createProps(colliders);
   group.add(props);

@@ -54,6 +54,7 @@ class FishSchools {
      * (la tête bouge à peine, la queue bat). aU = 0 à la tête, 1 au bout de la queue.
      * aGlow : yeux, pustules et rayures irradiées qui luisent dans le noir.
      */
+    mat.userData.swim = true; // même ondulation dans le moteur WebGPU
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uTime = uniforms.uTime;
       shader.vertexShader = shader.vertexShader

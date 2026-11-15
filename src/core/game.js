@@ -28,7 +28,8 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
  * le réveil à l'hôpital et la sauvegarde automatique.
  */
 export class Game {
-  constructor({ pixel, input, pointer, sound, hud }) {
+  constructor({ pixel, input, pointer, sound, hud, gpuDive = null }) {
+    this.gpuDive = gpuDive;
     Object.assign(this, { pixel, input, pointer, sound, hud });
     this.mode = 'port';
     this.busy = false; // transition ou séquence en cours : commandes bloquées
@@ -413,6 +414,7 @@ export class Game {
   /* ------------------------------------------------------------ Boucle */
 
   update(dt, time) {
+    this.time = time;
     // Ambiance et musique tournent toujours (même en pause, plus doucement)
     const depth = this.mode === 'dive' ? this.dive.sub.depth : 0;
     this.soundscape.update(dt, { mode: this.inMenu ? 'menu' : this.mode, depth, paused: this.pausedAll });
@@ -438,6 +440,13 @@ export class Game {
   }
 
   render() {
+    // Plongée : moteur WebGPU quand il est disponible (le reste du jeu reste en Three.js)
+    const gpu = this.gpuDive && !this.gpuDive.lost ? this.gpuDive : null;
+    gpu?.show(this.mode === 'dive');
+    if (gpu && this.mode === 'dive') {
+      gpu.render(this.dive, this.time ?? 0);
+      return;
+    }
     // Exposition : en plongée elle suit la profondeur (l'œil s'adapte), au port elle est fixe
     this.pixel.setExposure(this.mode === 'dive' && !this.inMenu ? this.dive.ambience.state.exposure ?? 1 : 1.1);
     if (this.mode !== 'dive') this.pixel.setRays(null);

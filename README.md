@@ -158,3 +158,14 @@ et effets (pince, coque, alarmes, créatures, souvenirs).
 - [x] Phase 6 : monde, créatures et fragments de mémoire
 - [x] Phase 7 : la fin
 - [x] Phase 8 : polish (son, musique, menus, réglages, optimisation, déploiement)
+
+## Rendu de la plongée (WebGPU)
+
+Sous l'eau, le jeu utilise un moteur WebGPU (`src/gpu/`) dont l'architecture et les shaders sont
+adaptés d'[Abyssal Garden](https://github.com/Noniv/abyssal-garden) de Maksymilian Dendura
+(licence MIT) : eau et brouillard par canal, caustiques, roche triplanaire, feuilles de kelp
+instanciées, rayons de lumière, halo. Le port et les menus restent en Three.js.
+
+- Navigateur sans WebGPU (ou `?webgl` dans l'adresse) : la plongée repasse sur le rendu Three.js.
+- `?gpuoffscreen` : rendu hors écran recopié dans un canvas 2D (tests automatiques sans écran).
+- `?gpuskip=leaf,rays,shadow…` : saute des passes de rendu (diagnostic).

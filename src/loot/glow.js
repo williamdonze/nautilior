@@ -80,5 +80,7 @@ export function createPillar(color, height) {
       }
     `,
   });
-  return new THREE.Mesh(geo, mat);
+  const pillar = new THREE.Mesh(geo, mat);
+  pillar.userData.gpu = 'pillar'; // dessiné nativement par le moteur WebGPU
+  return pillar;
 }

@@ -123,6 +123,7 @@ const PARS = /* glsl */ `
 export function applyDetail(material, kind = 'rock', scale = 1) {
   const k = KINDS[kind] ?? 0;
   material.flatShading = false;
+  material.userData.detail = kind; // lu par le moteur WebGPU (src/gpu/bridge.js)
   const prev = material.onBeforeCompile;
   material.onBeforeCompile = (shader, renderer) => {
     prev?.(shader, renderer);
@@ -216,6 +217,7 @@ export function applyDetail(material, kind = 'rock', scale = 1) {
 export function applySkin(material, { rim = 0.5, translucent = 0.4, iridescent = 0.25, rimColor = '#5fa8a0' } = {}) {
   const prev = material.onBeforeCompile;
   const col = new THREE.Color(rimColor);
+  material.userData.skin = iridescent; // lu par le moteur WebGPU
   material.onBeforeCompile = (shader, renderer) => {
     prev?.(shader, renderer);
     shader.uniforms.uSkinRim = { value: col };
