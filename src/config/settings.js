@@ -129,9 +129,9 @@ export const DEFENSE = {
 
 /** Le gardien du portail (créature colossale des abysses) */
 export const GUARDIAN = {
-  SEGMENTS: 46, // tronçons du corps
-  RADIUS: 6.5, // rayon du corps près de la tête (m) ; longueur ≈ SEGMENTS × RADIUS × 1,25
-  ORBIT: 95, // rayon de sa ronde autour de la déchirure (m)
+  SEGMENTS: 44, // tronçons du corps
+  RADIUS: 8.5, // rayon du corps près de la tête (m) ; longueur ≈ SEGMENTS × RADIUS × 1,25
+  ORBIT: 110, // rayon de sa ronde autour de la déchirure (m)
   VISIBLE: 330, // elle apparaît quand le sous-marin est à cette distance du portail
   DOMAIN: 175, // en deçà, elle attaque
   SPEED: 11, // ronde (m/s)

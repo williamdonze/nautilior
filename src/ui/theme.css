@@ -99,7 +99,7 @@ button { border-radius: 3px; }
 #radar-canvas { box-shadow: 0 0 0 1px var(--line), 0 0 30px rgba(127, 191, 122, 0.12); }
 /* Sonar volumétrique : grand, sans fond (lignes de relief par-dessus l'image) */
 #radar.sonar3d { width: min(560px, 42vw); }
-#radar.sonar3d #radar-canvas { border-radius: 0; aspect-ratio: 4 / 3; height: auto; background: none; box-shadow: none; filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.9)); }
+#radar.sonar3d #radar-canvas { width: 100%; border-radius: 4px; aspect-ratio: 4 / 3; height: auto; background: none; box-shadow: 0 0 0 1px var(--line); }
 /* Le viseur de la pince n'existe qu'en plongée */
 body.mode-port #reticle { display: none; }
 .radar-label { font-size: 12px; letter-spacing: 0.3em; }

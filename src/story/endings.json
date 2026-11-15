@@ -1,5 +1,5 @@
 {
-  "_comment": "Textes des deux fins. 'who' = doctor / mechanic / merchant (réplique d'un personnage), absent = narration.",
+  "_comment": "Textes des deux fins. 'who' = doctor / mechanic / merchant (réplique d'un personnage), absent = narration. pulse = dernières lignes, sur écran noir, pendant que le bip du sonar continue : c'est là qu'on comprend ce qu'il était.",
   "close": {
     "abyss": [
       "(Tu refermes la pince du Nautiliar sur le bord de la déchirure, et tu tires.)",
@@ -7,16 +7,40 @@
       "(Autour de toi, les bêtes s'arrêtent. Puis elles s'en vont, lentement, apaisées.)"
     ],
     "port": [
-      { "text": "(Ils t'attendent tous les trois sur le quai. Ils ne t'ont jamais attendu ensemble.)" },
-      { "who": "mechanic", "text": "C'est fini. Elle ne fera plus de mal à personne." },
-      { "who": "merchant", "text": "Tu as bien fait. Tu restes, maintenant. Pour de bon." },
-      { "text": "(Ils sourient. Tous les trois. Trop.)" },
-      { "text": "(Tu regardes la route qui sort du village. Elle se perd dans la brume, et ne mène nulle part. Elle n'a jamais mené nulle part.)" },
-      { "text": "(Tu comprends que tu ne partiras jamais d'ici.)" },
-      { "who": "doctor", "text": "Bienvenue chez toi." }
+      {
+        "text": "(Ils t'attendent tous les trois sur le quai. Ils ne t'ont jamais attendu ensemble.)"
+      },
+      {
+        "who": "mechanic",
+        "text": "C'est fini. Elle ne fera plus de mal à personne."
+      },
+      {
+        "who": "merchant",
+        "text": "Tu as bien fait. Tu restes, maintenant. Pour de bon."
+      },
+      {
+        "text": "(Ils sourient. Tous les trois. Trop.)"
+      },
+      {
+        "text": "(Tu regardes la route qui sort du village. Elle se perd dans la brume, et ne mène nulle part. Elle n'a jamais mené nulle part.)"
+      },
+      {
+        "text": "(Tu comprends que tu ne partiras jamais d'ici.)"
+      },
+      {
+        "who": "doctor",
+        "text": "Bienvenue chez toi."
+      }
     ],
     "title": "Bienvenue chez toi",
-    "subtitle": "Tu as fermé le portail. L'Envers ne s'éteindra pas. Toi non plus."
+    "subtitle": "Tu as fermé le portail. L'Envers ne s'éteindra pas. Toi non plus.",
+    "pulse": [
+      "Bip.",
+      "Bip…",
+      "Le bip ne retombe pas.",
+      "Quelque part, très loin, une voix de femme appelle un prénom. Ce n'est pas Yann.",
+      "Une autre voix, plus basse : « Heure du décès… »"
+    ]
   },
   "cross": {
     "abyss": [
@@ -35,6 +59,14 @@
       "(Tu es rentré chez toi.)"
     ],
     "title": "Rentré chez toi",
-    "subtitle": "Tu as traversé. L'Envers s'est éteint, et ceux qui le peuplaient avec lui."
+    "subtitle": "Tu as traversé. L'Envers s'est éteint, et ceux qui le peuplaient avec lui.",
+    "pulse": [
+      "Bip.",
+      "Bip.",
+      "Ce n'est pas le sonar.",
+      "Une lumière blanche. Un plafond. L'odeur de l'éther.",
+      "Une main serre la tienne. Elle tremble.",
+      "« Loïc ? »"
+    ]
   }
 }
