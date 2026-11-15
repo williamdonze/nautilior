@@ -1,0 +1,93 @@
+{
+  "_comment": "Indices du village : petites choses qu'on peut examiner au port. Jamais d'explication : chaque texte doit intriguer au premier passage et se relire autrement une fois la fin connue (voir docs/LORE.md, sections 7 et 11). x, z = où se tenir pour l'examiner.",
+  "clues": [
+    {
+      "id": "tunnel",
+      "x": 19,
+      "z": -46.6,
+      "label": "Regarder l'éboulement",
+      "lines": [
+        "La seule route qui sort du village. Un éboulement la ferme.",
+        "Les pierres sont couvertes de mousse. Elles sont là depuis longtemps.",
+        "De l'autre côté, on n'entend rien. Pas même le vent."
+      ]
+    },
+    {
+      "id": "cabine",
+      "x": 3.2,
+      "z": -5.3,
+      "label": "Décrocher le téléphone",
+      "lines": [
+        "Pas de tonalité.",
+        "Seulement un souffle, lent, régulier. Quelqu'un qui dort, très loin.",
+        "Tu raccroches. Tu ne sais pas pourquoi tu as retenu ta respiration."
+      ]
+    },
+    {
+      "id": "boite",
+      "x": -10.2,
+      "z": -5.2,
+      "label": "Regarder la boîte aux lettres",
+      "lines": [
+        "Elle déborde. Personne ne relève le courrier.",
+        "Des dizaines d'enveloppes, de la même écriture. Toutes pour « Yann ».",
+        "Aucune n'a de timbre. Aucune n'a d'adresse."
+      ]
+    },
+    {
+      "id": "plate",
+      "x": -14,
+      "z": 3.1,
+      "label": "Examiner la barque retournée",
+      "lines": [
+        "Une plate. Trop petite pour un homme.",
+        "La peinture de la coque est fraîche. Le bois, dessous, est pourri.",
+        "Quelqu'un la repeint. Souvent."
+      ]
+    },
+    {
+      "id": "horloge",
+      "x": -6,
+      "z": -33.8,
+      "label": "Lever les yeux vers le clocher",
+      "lines": [
+        "L'horloge marque 4 h 12.",
+        "Elle marquait 4 h 12 à ton réveil. Elle marquait 4 h 12 hier.",
+        "Pourtant, tu jurerais entendre son mécanisme. Un battement, puis un autre."
+      ]
+    },
+    {
+      "id": "avis",
+      "x": 12.6,
+      "z": -7.7,
+      "label": "Lire les avis sur la porte",
+      "lines": [
+        "Des avis de la criée, délavés. Les prix sont en anciens francs.",
+        "Le dernier annonce un coup de vent. « Sortie déconseillée. » La date a coulé avec l'encre.",
+        "Dessous, à la craie, une main a ajouté : « On l'attend. »"
+      ]
+    },
+    {
+      "id": "registre",
+      "x": -22.4,
+      "z": -6.4,
+      "label": "Feuilleter le registre de l'hôpital",
+      "lines": [
+        "Un registre des entrées, posé sur le rebord de la fenêtre.",
+        "Une seule ligne par page. La même, recopiée. Même date, même heure.",
+        "Les premières pages ont jauni. La dernière est d'aujourd'hui."
+      ]
+    },
+    {
+      "id": "fontaine",
+      "x": -8,
+      "z": -15.2,
+      "label": "Toucher l'eau de la fontaine",
+      "lines": [
+        "L'eau coule sans bruit.",
+        "Elle n'est ni froide ni tiède. Tu ne sens rien du tout.",
+        "Ta main en ressort sèche."
+      ]
+    }
+  ]
+}

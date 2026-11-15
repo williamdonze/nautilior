@@ -103,110 +103,121 @@ export class Radar {
   }
 
   /**
-   * Sonar volumétrique : le relief et tout ce qui bouge autour du sous-marin, en nuage de points,
-   * vus de trois quarts arrière. Le fond est sondé en éventail ; rochers et piliers ressortent ;
-   * les bêtes sont des grappes de points rouges (hostiles) ou bleutées, avec leur trace.
+   * Sonar volumétrique : le relief devant le sous-marin, dessiné en lignes de niveau (fil de fer
+   * avec faces cachées), vu de trois quarts arrière. Tout ce qui dépasse la hauteur du sous-marin
+   * passe à l'ambre : c'est un obstacle. Les bêtes ont une tige jusqu'au fond et leur distance.
+   * Pas de fond : seules les lignes et les marqueurs sont dessinés par-dessus l'image.
    */
   update3d(dt, sub, contacts, colliders) {
     const range = stats.radarRange ?? 45;
     if (range !== this.lastRange) { this.lastRange = range; this.rangeEl.textContent = `${range} m`; }
-    this.sweep = (this.sweep + dt * 0.55) % 1; // onde qui part du sous-marin
+    this.sweep = (this.sweep + dt * 0.45) % 1;
     const sin = Math.sin(sub.yaw), cos = Math.cos(sub.yaw), P = sub.position;
-    // Relief : re-sondé quelques fois par seconde (points en repère local : droite, haut, avant)
+    const NR = 24, NC = 26, F0 = -range * 0.22, F1 = range, HW = range * 0.45;
+    // Relief sondé quelques fois par seconde : hauteurs relatives au sous-marin, rochers et piliers compris
     this.scanTimer = (this.scanTimer ?? 0) - dt;
-    if (this.scanTimer <= 0) {
-      this.scanTimer = 0.2;
-      const pts = (this.cloud ??= []);
-      pts.length = 0;
-      const NR = 15, NA = 44;
-      for (let i = 1; i <= NR; i++) {
-        const r = range * Math.pow(i / NR, 1.25);
-        for (let j = 0; j < NA; j++) {
-          const a = ((j + (i % 2) * 0.5) / NA) * Math.PI * 2, lr = Math.sin(a) * r, lf = Math.cos(a) * r;
-          const wx = P.x + lf * sin - lr * cos, wz = P.z + lf * cos + lr * sin;
-          pts.push(lr, getFloorHeight(wx, wz) - P.y, lf, 0);
-        }
+    if (this.scanTimer <= 0 || !this.heights) {
+      this.scanTimer = 0.18;
+      const Hh = (this.heights ??= new Float32Array((NR + 1) * (NC + 1)));
+      for (let i = 0; i <= NR; i++) for (let j = 0; j <= NC; j++) {
+        const lf = F1 + (F0 - F1) * (i / NR), lr = -HW + 2 * HW * (j / NC);
+        Hh[i * (NC + 1) + j] = getFloorHeight(P.x + lf * sin - lr * cos, P.z + lf * cos + lr * sin) - P.y;
       }
-      // Rochers, piliers, arches : leur sommet et leur ceinture
+      const cw = (2 * HW) / NC, ch = (F1 - F0) / NR;
       for (const c of colliders) {
         const dx = c.x - P.x, dz = c.z - P.z;
-        if (dx * dx + dz * dz > range * range || c.r < 1.2) continue;
-        const lf = dx * sin + dz * cos, lr = -dx * cos + dz * sin, y = c.y - P.y;
-        pts.push(lr, y + c.r, lf, 1);
-        for (let k = 0; k < 5; k++) { const a = k * 1.2566 + c.x; pts.push(lr + Math.cos(a) * c.r, y + c.r * 0.3, lf + Math.sin(a) * c.r, 1); }
+        if (c.r < 1.5 || dx * dx + dz * dz > range * range * 1.5) continue;
+        const lf = dx * sin + dz * cos, lr = -dx * cos + dz * sin, top = c.y + c.r - P.y;
+        const i0 = Math.round(((lf - F1) / (F0 - F1)) * NR), j0 = Math.round(((lr + HW) / (2 * HW)) * NC), n = Math.ceil(c.r / Math.min(cw, ch));
+        for (let i = i0 - n; i <= i0 + n; i++) for (let j = j0 - n; j <= j0 + n; j++) {
+          if (i < 0 || i > NR || j < 0 || j > NC) continue;
+          const k = i * (NC + 1) + j, d = Math.hypot((i - i0) * ch, (j - j0) * cw);
+          if (d <= c.r) Hh[k] = Math.max(Hh[k], top - (d / c.r) * c.r * 0.4);
+        }
       }
     }
-    // Traces des contacts mobiles
-    const trails = (this.trails ??= new Map());
-    for (const c of contacts) {
-      if (c.kind !== 'creature' && c.kind !== 'fish') continue;
-      let t = trails.get(c.id);
-      if (!t) trails.set(c.id, (t = { pts: [], seen: 0 }));
-      t.seen = 0;
-      t.pts.push(c.x, c.y, c.z);
-      if (t.pts.length > 36) t.pts.splice(0, 3);
-    }
-    for (const [id, t] of trails) if ((t.seen += dt) > 0.5) trails.delete(id);
-
-    const { ctx, canvas } = this, W = canvas.width, H = canvas.height;
+    const Hh = this.heights, { ctx, canvas } = this, W = canvas.width, H = canvas.height;
     ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = 'rgba(3, 12, 12, 0.82)';
-    ctx.fillRect(0, 0, W, H);
-    // Projection : caméra derrière et au-dessus du sous-marin, inclinée vers l'avant
-    const T = 0.62, cT = Math.cos(T), sT = Math.sin(T), sc = (W * 0.46) / range, cx = W / 2, cy = H * 0.6;
+    // Caméra : derrière et au-dessus du sous-marin, plongeant vers l'avant
+    // (cadrée sur la hauteur moyenne du fond ; le relief est accentué pour se lire d'un coup d'œil)
+    let mean = 0;
+    for (let k = 0; k < Hh.length; k++) mean += Hh[k];
+    mean /= Hh.length;
+    const T = 0.85, cT = Math.cos(T), sT = Math.sin(T), camY = mean + range * 0.55, camZ = -range * 0.95, FOC = W * 1.05, cx = W / 2, cy = H * 1.12, EX = 1.6;
     const proj = (lr, u, lf) => {
-      const d = lf * cT - u * sT, k = 1 / (1 + (d / range) * 0.45);
-      return [cx + lr * sc * k, cy - (u * cT + lf * sT) * sc * k, k];
+      const ry = mean + (u - mean) * EX - camY, rz = lf - camZ, d = Math.max(1, rz * cT - ry * sT);
+      return [cx + (lr * FOC) / d, cy - ((ry * cT + rz * sT) * FOC) / d, d];
     };
-    const wave = this.sweep * range * 1.15, px = Math.max(1.5, W * 0.009);
-    const pts = this.cloud ?? [];
-    for (let i = 0; i < pts.length; i += 4) {
-      const lr = pts[i], u = pts[i + 1], lf = pts[i + 2], rock = pts[i + 3];
-      const r = Math.hypot(lr, lf), [x, y, k] = proj(lr, u, lf);
-      if (x < 0 || x > W || y < 0 || y > H) continue;
-      // l'onde illumine les points qu'elle traverse ; la couleur dit la hauteur par rapport au sous-marin
-      const lit = Math.max(0, 1 - Math.abs(r - wave) / (range * 0.12));
-      const h = Math.max(0, Math.min(1, (u + range * 0.5) / (range * 0.75)));
-      const a = (0.45 + 0.55 * lit) * (1 - (r / range) * 0.45) * (rock ? 1 : 0.85);
-      ctx.fillStyle = rock ? `rgba(${150 + 80 * lit}, ${225}, ${190}, ${a})` : `rgba(${60 + 90 * h}, ${150 + 90 * h}, ${130 + 60 * h}, ${a})`;
-      const s = px * k * (rock ? 1.5 : 1) * (1 + lit * 0.8);
-      ctx.fillRect(x - s / 2, y - s / 2, s, s);
-    }
-    // Contacts
-    for (const c of contacts) {
-      const dx = c.x - P.x, dz = c.z - P.z;
-      if (dx * dx + dz * dz > range * range) continue;
-      const lf = dx * sin + dz * cos, lr = -dx * cos + dz * sin, u = c.y - P.y;
-      const [x, y, k] = proj(lr, u, lf);
-      const st = STYLE[c.kind] ?? STYLE.item, hostile = c.kind === 'creature';
-      ctx.fillStyle = ctx.strokeStyle = hostile ? '#ff6a4a' : c.kind === 'fish' ? '#8fd0e0' : st.color;
-      // tige jusqu'au fond : situe le contact en hauteur
-      const [fx, fy] = proj(lr, getFloorHeight(c.x, c.z) - P.y, lf);
-      ctx.globalAlpha = 0.3; ctx.lineWidth = Math.max(1, px * 0.5);
-      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(fx, fy); ctx.stroke();
-      const t = trails.get(c.id);
-      if (t) {
-        ctx.globalAlpha = 0.5; ctx.beginPath();
-        for (let i = 0; i < t.pts.length; i += 3) {
-          const ddx = t.pts[i] - P.x, ddz = t.pts[i + 2] - P.z, q = proj(-ddx * cos + ddz * sin, t.pts[i + 1] - P.y, ddx * sin + ddz * cos);
-          if (i) ctx.lineTo(q[0], q[1]); else ctx.moveTo(q[0], q[1]);
-        }
+    const px = Math.max(1, W / 420);
+    ctx.lineJoin = 'round';
+    const wave = F0 + this.sweep * (F1 - F0) * 1.1;
+    const pts = (this._pts ??= new Float32Array((NC + 1) * 2)), prev = (this._prev ??= new Float32Array((NC + 1) * 2));
+    for (let i = 0; i <= NR; i++) {
+      const lf = F1 + (F0 - F1) * (i / NR);
+      for (let j = 0; j <= NC; j++) {
+        const q = proj(-HW + 2 * HW * (j / NC), Hh[i * (NC + 1) + j], lf);
+        pts[j * 2] = q[0]; pts[j * 2 + 1] = q[1];
+      }
+      if (i > 0) {
+        // face cachée : la bande entre deux lignes masque ce qui est derrière
+        ctx.beginPath();
+        ctx.moveTo(prev[0], prev[1]);
+        for (let j = 1; j <= NC; j++) ctx.lineTo(prev[j * 2], prev[j * 2 + 1]);
+        for (let j = NC; j >= 0; j--) ctx.lineTo(pts[j * 2], pts[j * 2 + 1]);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(2, 12, 14, 0.62)';
+        ctx.fill();
+      }
+      const near = i / NR, lit = Math.max(0, 1 - Math.abs(lf - wave) / (range * 0.1));
+      ctx.lineWidth = px * (0.9 + near * 0.9 + lit * 0.8);
+      for (let j = 0; j < NC; j++) {
+        // ambre si le relief arrive à la hauteur du sous-marin, turquoise sinon
+        const h = Math.max(Hh[i * (NC + 1) + j], Hh[i * (NC + 1) + j + 1]);
+        const danger = Math.max(0, Math.min(1, (h + 7) / 7));
+        const a = (0.3 + 0.6 * near + 0.4 * lit) * (1 - Math.abs(j / NC - 0.5) * 0.7);
+        ctx.strokeStyle = `rgba(${Math.round(90 + 165 * danger)}, ${Math.round(225 - 70 * danger)}, ${Math.round(200 - 150 * danger)}, ${Math.min(1, a)})`;
+        ctx.beginPath(); ctx.moveTo(pts[j * 2], pts[j * 2 + 1]); ctx.lineTo(pts[j * 2 + 2], pts[j * 2 + 3]); ctx.stroke();
+      }
+      // lignes de fuite, discrètes
+      if (i > 0) {
+        ctx.strokeStyle = `rgba(110, 215, 195, ${0.1 + 0.16 * near})`; ctx.lineWidth = px * 0.7;
+        ctx.beginPath();
+        for (let j = 0; j <= NC; j += 2) { ctx.moveTo(prev[j * 2], prev[j * 2 + 1]); ctx.lineTo(pts[j * 2], pts[j * 2 + 1]); }
         ctx.stroke();
       }
-      ctx.globalAlpha = 1;
-      const n = hostile || c.kind === 'fish' ? 9 : 1, sp = (c.size ?? 3) * sc * k * 0.5;
-      for (let j = 0; j < n; j++) {
-        const a = j * 2.4 + c.x, s = px * k * (hostile ? 2 : 1.6) * (j ? 1 : 1.6);
-        ctx.fillRect(x + (j ? Math.cos(a) * sp * ((j % 3) / 3 + 0.3) : 0) - s / 2, y + (j ? Math.sin(a * 1.3) * sp * 0.5 : 0) - s / 2, s, s);
-      }
-      if (c.kind === 'fragment' || c.kind === 'wreck') { ctx.beginPath(); ctx.arc(x, y, px * 3.5 * k, 0, Math.PI * 2); ctx.stroke(); }
+      prev.set(pts);
     }
-    // Le sous-marin, et l'onde de l'impulsion
+    // Contacts : marqueur, tige jusqu'au fond, distance pour ce qui est hostile
+    ctx.font = `500 ${Math.round(W / 26)}px 'Barlow Condensed', sans-serif`;
+    ctx.textAlign = 'center';
+    for (const c of contacts) {
+      const dx = c.x - P.x, dz = c.z - P.z, lf = dx * sin + dz * cos, lr = -dx * cos + dz * sin;
+      if (lf < F0 || lf > F1 || Math.abs(lr) > HW) continue;
+      const u = c.y - P.y, [x, y] = proj(lr, u, lf), [fx, fy] = proj(lr, getFloorHeight(c.x, c.z) - P.y, lf);
+      const hostile = c.kind === 'creature', col = hostile ? '#ff6a4a' : c.kind === 'fish' ? '#9fe0f0' : (STYLE[c.kind] ?? STYLE.item).color;
+      const s = px * (hostile ? 6 + Math.sin(this.sweep * 40) * 1.5 : 4);
+      ctx.strokeStyle = ctx.fillStyle = col;
+      ctx.lineWidth = px; ctx.globalAlpha = 0.55;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(fx, fy); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(fx, fy, s * 0.9, s * 0.35, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.beginPath();
+      if (hostile) { ctx.moveTo(x, y - s); ctx.lineTo(x + s, y + s * 0.8); ctx.lineTo(x - s, y + s * 0.8); ctx.closePath(); ctx.fill(); }
+      else if (c.kind === 'fish') { ctx.arc(x, y, s * 0.8, 0, Math.PI * 2); ctx.fill(); }
+      else if (c.kind === 'wreck') { ctx.lineWidth = px * 1.5; ctx.strokeRect(x - s, y - s, s * 2, s * 2); }
+      else { ctx.lineWidth = px * 1.5; ctx.moveTo(x, y - s); ctx.lineTo(x + s, y); ctx.lineTo(x, y + s); ctx.lineTo(x - s, y); ctx.closePath(); ctx.stroke(); }
+      if (hostile) ctx.fillText(`${Math.round(Math.hypot(dx, dz, u))} m`, x, y - s - px * 3);
+    }
+    // Le sous-marin, sa tige jusqu'au fond, et l'onde de l'impulsion
+    const [sx, sy] = proj(0, 0, 0), [gx, gy] = proj(0, getFloorHeight(P.x, P.z) - P.y, 0);
+    ctx.strokeStyle = 'rgba(239, 227, 187, 0.6)'; ctx.lineWidth = px;
+    ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(gx, gy); ctx.stroke();
     ctx.fillStyle = '#efe3bb';
-    ctx.beginPath(); ctx.moveTo(cx, cy - px * 5); ctx.lineTo(cx + px * 3, cy + px * 3); ctx.lineTo(cx - px * 3, cy + px * 3); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(sx, sy - px * 9); ctx.lineTo(sx + px * 6, sy + px * 5); ctx.lineTo(sx, sy + px * 2); ctx.lineTo(sx - px * 6, sy + px * 5); ctx.closePath(); ctx.fill();
     if (this.pulseT != null) {
-      ctx.strokeStyle = `rgba(127, 208, 192, ${1 - this.pulseT / 1.2})`; ctx.lineWidth = px * 1.5;
-      ctx.beginPath(); ctx.ellipse(cx, cy, (this.pulseT / 1.2) * W * 0.5, (this.pulseT / 1.2) * W * 0.5 * sT, 0, 0, Math.PI * 2); ctx.stroke();
+      const k = this.pulseT / 1.2;
+      ctx.strokeStyle = `rgba(127, 208, 192, ${1 - k})`; ctx.lineWidth = px * 2.5;
+      ctx.beginPath(); ctx.ellipse(sx, sy, k * W * 0.55, k * W * 0.2, 0, 0, Math.PI * 2); ctx.stroke();
     }
   }
 

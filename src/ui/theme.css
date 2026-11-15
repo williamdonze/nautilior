@@ -97,8 +97,11 @@ button { border-radius: 3px; }
 
 /* ---------- Sonar ---------- */
 #radar-canvas { box-shadow: 0 0 0 1px var(--line), 0 0 30px rgba(127, 191, 122, 0.12); }
-#radar.sonar3d { width: 270px; }
-#radar.sonar3d #radar-canvas { border-radius: 6px; aspect-ratio: 4 / 3; height: auto; }
+/* Sonar volumétrique : grand, sans fond (lignes de relief par-dessus l'image) */
+#radar.sonar3d { width: min(560px, 42vw); }
+#radar.sonar3d #radar-canvas { border-radius: 0; aspect-ratio: 4 / 3; height: auto; background: none; box-shadow: none; filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.9)); }
+/* Le viseur de la pince n'existe qu'en plongée */
+body.mode-port #reticle { display: none; }
 .radar-label { font-size: 12px; letter-spacing: 0.3em; }
 
 /* Impulsion de défense : petite jauge sous le sonar */

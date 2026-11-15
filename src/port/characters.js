@@ -111,6 +111,8 @@ export function createCharacter(look) {
   return {
     object: root,
     head,
+    body,
+    arms,
     /**
      * @param {number} dt
      * @param {number} speed vitesse de marche (m/s)

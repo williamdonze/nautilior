@@ -212,8 +212,8 @@ export class Dive {
   }
 
   /** Début d'une plongée : on part du quai, juste sous la surface */
-  enter(seed, foundFragments = []) {
-    this.pickups.reset(seed, foundFragments, this.hold.toIds());
+  enter(seed, foundFragments = [], taken = []) {
+    this.pickups.reset(seed, foundFragments, this.hold.toIds(), taken);
     this.creatures.clear();
     this.wildlife.clear();
     this.guardian.reset();
