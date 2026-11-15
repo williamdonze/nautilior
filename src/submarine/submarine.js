@@ -5,6 +5,7 @@ import { getFloorHeight } from '../world/seabed.js';
 import { createSubmarineModel, spinPropellers } from './subModel.js';
 import { createCockpit } from './cockpit.js';
 import { createBeam } from './beam.js';
+import { stats } from './stats.js';
 
 /**
  * Le Nautiliar : modèle + pilotage avec inertie + phare.
@@ -58,6 +59,10 @@ export class Submarine {
     this.fillLight = new THREE.PointLight('#8fb8c8', 9, 16, 1.4);
     this.fillLight.position.set(1.5, 4.5, -2);
     this.body.add(this.fillLight);
+    // Halo de lumière autour du sous-marin (projecteurs de flanc) : grandit avec le phare
+    this.auraLight = new THREE.PointLight('#e8e0c8', 4, 12, 1.2);
+    this.auraLight.position.set(0, -1.6, 2.5);
+    this.body.add(this.auraLight);
     this.cockpitGroup = new THREE.Group(); // poste de pilotage 3D (vue à la 1re personne)
     this.body.add(this.cockpitGroup);
 
@@ -158,9 +163,10 @@ export class Submarine {
 
     // --- Poussée
     const fwd = this.forward;
-    const accel = thrustInput >= 0 ? S.FORWARD_ACCEL : S.REVERSE_ACCEL;
+    // Les coques améliorées sont plus puissantes (stats.speedMul / liftMul, voir upgrades.json)
+    const accel = (thrustInput >= 0 ? S.FORWARD_ACCEL : S.REVERSE_ACCEL) * (stats.speedMul ?? 1);
     this.velocity.addScaledVector(fwd, thrustInput * accel * dt);
-    this.velocity.y += liftInput * S.VERTICAL_ACCEL * dt;
+    this.velocity.y += liftInput * S.VERTICAL_ACCEL * (stats.liftMul ?? 1) * dt;
 
     // --- Traînée : forte sur les côtés (quille), faible dans l'axe → glisse naturelle
     this._side.set(fwd.z, 0, -fwd.x);
@@ -174,6 +180,7 @@ export class Submarine {
 
     // --- Intégration
     this._prev.copy(this.position);
+    this.contactTimer = (this.contactTimer ?? 0) - dt;
     this.position.addScaledVector(this.velocity, dt);
 
     this.collide();
@@ -209,8 +216,10 @@ export class Submarine {
     let minY = floorAt(p.x, p.z) + S.HULL_RADIUS;
     if (p.y < minY) {
       const moved = Math.hypot(p.x - this._prev.x, p.z - this._prev.z);
-      const rise = minY - p.y;
-      if (moved > 1e-4 && rise / moved > 1.5) {
+      // Pente du terrain entre l'ancienne et la nouvelle position (et non la descente du sous-marin)
+      const rise = minY - (floorAt(this._prev.x, this._prev.z) + S.HULL_RADIUS);
+      // Seules les vraies falaises arrêtent le sous-marin ; les crêtes ordinaires se franchissent
+      if (moved > 1e-4 && rise / moved > 3) {
         // Paroi trop raide (canyon, épave) : on bloque l'avance au lieu de grimper
         this.onImpact?.(this.speed);
         p.x = this._prev.x;
@@ -222,7 +231,9 @@ export class Submarine {
       if (p.y < minY) {
         p.y = minY;
         // Vitesse de choc : verticale + une part de l'horizontale (on racle le fond)
-        if (this.velocity.y < 0) this.onImpact?.(-this.velocity.y + this.speed * 0.3);
+        // Un choc ne compte qu'au premier contact (pas à chaque image passée à racler le fond)
+        if (this.velocity.y < 0 && this.contactTimer <= 0) this.onImpact?.(-this.velocity.y + this.speed * 0.3);
+        this.contactTimer = 0.6;
         if (this.velocity.y < 0) this.velocity.y *= -0.25; // petit rebond mou
         this.velocity.x *= 0.96;
         this.velocity.z *= 0.96;
@@ -279,6 +290,8 @@ export class Submarine {
 
   /** Réglages du phare selon les améliorations */
   applyLight(stats) {
+    this.auraLight.intensity = stats.auraIntensity ?? 4;
+    this.auraLight.distance = stats.auraRange ?? 12;
     // Le rendu HDR permet un phare franchement puissant : il éclaire loin sans tout brûler
     this.spot.intensity = stats.lightIntensity * 1.4;
     this.spot.distance = stats.lightRange;
