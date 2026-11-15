@@ -22,6 +22,7 @@ createDetailTexture(renderer);
 let items;
 if (set === 'guardian') items = [{ name: 'Le gardien — gueule ouverte', make: () => createGuardianPreview(0.85), view: [0.9, 0.25, 1] }, { name: 'Le gardien — de profil, gueule close', make: () => createGuardianPreview(0.08), view: [1, 0.3, 0.25] }];
 else if (set === 'people') items = Object.entries(LOOKS).map(([id, look]) => ({ name: id, make: () => createCharacter(look).object, view: [0.5, 0.25, 1] }));
+else if (set === 'faces') items = Object.entries(LOOKS).map(([id, look]) => ({ name: id, make: () => createCharacter(look).object, view: [0.45, 0.08, 1], focus: [0, 1.66, 0, 0.62] }));
 else items = ABYSS_MODELS.map((m) => ({ ...m, view: m.id === 'glaneuse' ? [0.9, 0.25, 1] : m.id === 'linceul' ? [0.6, 0.5, 1] : m.id === "choeur" ? [0.35, 0.15, 1] : m.id === "chapelet" ? [1, 0.35, 0.5] : [0.8, 0.45, 1] }));
 
 const cols = Math.min(3, items.length), rows = Math.ceil(items.length / cols);
@@ -41,7 +42,7 @@ const tiles = items.map((it, i) => {
   const box = new THREE.Box3().setFromObject(obj), c = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3()).length();
   const cam = new THREE.PerspectiveCamera(32, 1, size * 0.01, size * 20);
   const dir = new THREE.Vector3(...it.view).normalize();
-  cam.position.copy(c).addScaledVector(dir, size * 1.75);
+  if (it.focus) { c.set(it.focus[0], it.focus[1], it.focus[2]); cam.near = 0.05; cam.position.copy(c).addScaledVector(dir, it.focus[3]); } else cam.position.copy(c).addScaledVector(dir, size * 1.75);
   cam.lookAt(c);
   const tag = document.createElement('div');
   tag.className = 'tag';

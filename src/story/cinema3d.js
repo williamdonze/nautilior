@@ -251,15 +251,11 @@ export function createHospital(aspect) {
   add(new THREE.BoxGeometry(0.05, 0.004, 0.035), lam('#f4f6f2'), 0.33, 0.866, -0.68); // sparadrap du cathéter
 
   // Quelqu'un est assis au bord du lit. Elle se penche quand on ouvre les yeux, sa main sur la nôtre.
-  const anna = createCharacter({ coat: '#6f8a99', legs: '#3a3f46', skin: '#e2c0aa', hair: '#4a2e22', long: true });
+  const anna = createCharacter({ coat: '#6f8a99', legs: '#3a3f46', skin: '#e2c0aa', hair: '#4a2e22', long: true, female: true, hairStyle: 'long', eyes: '#5a4632' });
   // (au bord du champ, à contre-jour du néon : une présence plus qu'un portrait)
   anna.object.position.set(1.32, -0.28, -1.2);
   anna.object.rotation.y = Math.atan2(eye.x - 1.32, eye.z + 1.2); // tournée vers notre visage
   scene.add(anna.object);
-  // cheveux mi-longs (le modèle de base a les cheveux courts)
-  const hair = lam('#4a2e22');
-  add(new THREE.SphereGeometry(0.165, 20, 14).scale(1, 1.2, 0.6), hair, 0, -0.07, -0.1, anna.head);
-  for (const s of [-1, 1]) add(new THREE.SphereGeometry(0.05, 10, 8).scale(0.6, 2.4, 0.9), hair, s * 0.155, -0.15, -0.03, anna.head);
   // son bras se tend vers notre main
   for (const a of anna.arms) { a.rotation.x = -1.0; a.rotation.z *= -2.5; }
 
