@@ -1,5 +1,5 @@
 {
-  "_comment": "Disposition du port de Port-Kermor. Le quai longe l'axe X, la mer est côté +Z, le village côté -Z. Tailles en mètres (w = largeur X, d = profondeur Z, h = hauteur des murs). routine (personnages) : points entre lesquels ils vont et viennent, et leur occupation (hammer = marteler, sweep = balayer, ponder = faire les cent pas, mains dans le dos).",
+  "_comment": "Disposition du port de Port-Kermor. Le quai longe l'axe X, la mer est côté +Z, le village côté -Z. Tailles en mètres (w = largeur X, d = profondeur Z, h = hauteur des murs). routine (personnages) : points entre lesquels ils vont et viennent, et leur occupation (hammer = marteler, sweep = balayer, ponder = faire les cent pas, mains dans le dos). yann = la maison de Yann : la seule qui ne se rouvre jamais.",
   "bounds": {
     "minX": -50,
     "maxX": 50,
@@ -173,7 +173,8 @@
       "d": 6,
       "h": 4.8,
       "wall": "#878a85",
-      "roof": "#3a3f44"
+      "roof": "#3a3f44",
+      "yann": true
     },
     {
       "id": "house10",

@@ -97,5 +97,22 @@
       ],
       "truth": "Ton corps, que tu ne sentais plus."
     }
-  ]
+  ],
+  "yannHouse": [
+    [
+      "Les volets sont fermés. Comme partout.",
+      "Sur le seuil, une paire de bottes en caoutchouc. Petite pointure."
+    ],
+    [
+      "Les autres maisons se rouvrent. Pas celle-ci.",
+      "Sur le seuil, une paire de bottes. Elles n'ont pas bougé.",
+      "Tu connais cette porte. Tu y as frappé mille fois."
+    ],
+    [
+      "C'est la seule maison encore fermée.",
+      "Tu lèves la main pour frapper.",
+      "Tu sais déjà que personne ne viendra ouvrir."
+    ]
+  ],
+  "yannHouseTruth": "La maison de ton frère."
 }

@@ -23,6 +23,7 @@ import { gpuMode } from '../gpu/mode.js';
 import { Guardian } from './guardian.js';
 import { PortalFx } from './portalFx.js';
 import { PaleDiver } from './paleDiver.js';
+import { createSunkenRoom } from './sunkenRoom.js';
 import voicesData from '../story/voices.json';
 import { zoneAtDepth } from './zones.js';
 import { createPortal } from './portal.js';
@@ -54,6 +55,7 @@ export class Dive {
     scene.add(this.snow.object);
     this.radiationSource = createRadiationSource(scene);
     this.portal = createPortal(scene);
+    this.sunkenRoom = createSunkenRoom(scene, this.decor.colliders); // la chambre d'hôpital, à l'échelle d'un rêve
     this.portalFx = new PortalFx(scene, this.portal);
     this.radar = new Radar(sound);
     this.radar.setWorld(this.decor.group); // nuage de points du sonar 3D
@@ -542,6 +544,7 @@ export class Dive {
     const portalDist = sub.position.distanceTo(this.portal.center);
     // Effets de la déchirure : de plus en plus forts à l'approche (0 à 300 m … 1 à 25 m)
     this.riftNear = Math.max(0, Math.min(1, (300 - portalDist) / 275));
+    if (this.riftNear > 0) this.sunkenRoom.update(time);
     if (this.portalFx.update(dt, time, this.riftNear) && this.riftNear > 0.15) sound.crackle?.(this.riftNear);
     sound.setRift?.(this.riftNear * this.portal.open, this.bpm ?? 56);
     this.portal.update(time, this.camera.position, pointScale.value);

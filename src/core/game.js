@@ -21,6 +21,8 @@ import { waterUniform } from './waterFog.js';
 import { Menu } from '../ui/menu.js';
 import { hasSave } from '../save/save.js';
 import fragmentsData from '../story/fragments.json';
+import lettersData from '../story/letters.json';
+import cluesData from '../story/clues.json';
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -287,6 +289,7 @@ export class Game {
       }
     }
     waterUniform.y = 0; // pas de reflets d'eau sur le quai
+    this.port.setMemories(storyState.fragments.length); // le village se rouvre avec la mémoire
     this.setMode('port');
     this.port.enter(spot);
     this.pixel.setDistortion(0, 0);
@@ -362,6 +365,8 @@ export class Game {
 
   async interact(it) {
     if (it.kind === 'npc') return this.talk(it.npcId);
+    // La maison de Yann : la seule qui ne se rouvre pas. Elle ne dit ce qu'elle est qu'à mesure qu'on se souvient.
+    if (it.kind === 'house' && it.yann) return this.examine({ id: 'yann_house', lines: cluesData.yannHouse[Math.min(2, Math.floor(storyState.fragments.length / 3))], truth: cluesData.yannHouseTruth });
     if (it.kind === 'house') return this.talk('house');
     if (it.kind === 'clue') return this.examine(it);
     if (it.action === 'openCollection') return this.panels.open('collection');
@@ -374,6 +379,18 @@ export class Game {
   /** Examine un indice du village : quelques lignes de narration, sans explication */
   async examine(clue) {
     if (this.busy || this.dialogue.isOpen) return;
+    if (clue.id === 'clue_boite') {
+      // Une lettre d'Anna par plongée (et selon les souvenirs retrouvés), dans l'ordre
+      const read = storyState.flags.lettersRead ?? 0, next = lettersData.letters[read];
+      if (next && gameState.day - 1 > read && storyState.fragments.length >= next.fragments) {
+        await this.dialogue.narrate(lettersData.intro, false);
+        for (const line of next.lines) await this.dialogue.narrate(line, false);
+        storyState.flags.lettersRead = read + 1;
+        this.persist();
+        return;
+      }
+      if (read > 0) return this.dialogue.narrate(lettersData.none, false);
+    }
     for (const line of clue.lines) await this.dialogue.narrate(line, false);
     // Relecture : après une fin, on sait ce que c'était
     if (getEndings().length && clue.truth) await this.dialogue.narrate(`(${clue.truth})`, false);

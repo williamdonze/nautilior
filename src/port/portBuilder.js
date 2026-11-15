@@ -125,9 +125,12 @@ export function buildPort() {
   // --- Bâtiments
   const ctx = { group, colliders, lights, tagged };
   for (const b of layout.buildings) {
+    const s0 = tagged.shutters.length, w0 = tagged.darkWindows.length;
     buildVillageBuilding(b, ctx);
+    // ce qui appartient à cette maison (le village se rouvre maison par maison : voir Port.setMemories)
+    (tagged.houses ??= []).push({ id: b.id, kind: b.kind, yann: !!b.yann, shutters: tagged.shutters.slice(s0), windows: tagged.darkWindows.slice(w0) });
     if (b.kind === 'house' || b.kind === 'cafe') {
-      interactables.push({ id: b.id, kind: 'house', x: b.x, z: b.z + b.d / 2 + 1.0, label: b.kind === 'cafe' ? 'Pousser la porte du bar' : 'Frapper à la porte' });
+      interactables.push({ id: b.id, kind: 'house', yann: !!b.yann, x: b.x, z: b.z + b.d / 2 + 1.0, label: b.kind === 'cafe' ? 'Pousser la porte du bar' : 'Frapper à la porte' });
     }
   }
   // Phare, chapelle et calvaire, fontaine, cabine, voitures, murets, casiers, filets, goélands…
