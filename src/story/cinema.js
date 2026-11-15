@@ -287,3 +287,39 @@ export function awaken(seconds = 11, onBeat = null) {
   loop();
   return new Promise((res) => setTimeout(res, seconds * 1000));
 }
+
+/**
+ * Paupières par-dessus un plan 3D : le canvas devient transparent et ne dessine que les deux arcs noirs.
+ * Le flou et l'éblouissement du réveil sont appliqués au canvas du jeu (filtre CSS), puis se dissipent.
+ * onFrame(t, temps) est appelé à chaque image, onBeat à chaque battement. Reste actif jusqu'à close().
+ * @returns {Promise} résolue quand les yeux sont grands ouverts
+ */
+export function eyelids(seconds = 12, onFrame = null, onBeat = null) {
+  const c = open(), W = canvas.width, H = canvas.height;
+  canvas.style.background = 'none';
+  const game = document.querySelector('#game canvas');
+  let lastBeat = -1;
+  const keys = [[0, 0], [0.1, 0], [0.18, 0.14], [0.25, 0.03], [0.38, 0.05], [0.48, 0.42], [0.56, 0.1], [0.66, 0.2], [0.86, 1], [1, 1]];
+  const lid = (t) => { for (let i = 1; i < keys.length; i++) if (t <= keys[i][0]) { const f = (t - keys[i - 1][0]) / (keys[i][0] - keys[i - 1][0]), s = f * f * (3 - 2 * f); return keys[i - 1][1] + (keys[i][1] - keys[i - 1][1]) * s; } return 1; };
+  const t0 = performance.now();
+  const loop = () => {
+    if (canvas.style.display === 'none') { if (game) game.style.filter = ''; canvas.style.background = '#000'; return; }
+    const el = (performance.now() - t0) / 1000, t = Math.min(1, el / seconds), o = lid(t), clear = Math.pow(Math.max(0, (t - 0.42) / 0.58), 1.6);
+    if (game) game.style.filter = `blur(${(22 * (1 - clear) + 1.3).toFixed(1)}px) saturate(${(0.45 + clear * 0.55).toFixed(2)})`;
+    c.clearRect(0, 0, W, H);
+    const gap = o * H * 0.66;
+    c.fillStyle = '#000';
+    c.shadowColor = '#000'; c.shadowBlur = 70;
+    c.beginPath(); c.moveTo(-60, -60); c.lineTo(W + 60, -60); c.lineTo(W + 60, H / 2 - gap * 0.5); c.quadraticCurveTo(W / 2, H / 2 - gap * 1.4, -60, H / 2 - gap * 0.5); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(-60, H + 60); c.lineTo(W + 60, H + 60); c.lineTo(W + 60, H / 2 + gap * 0.5); c.quadraticCurveTo(W / 2, H / 2 + gap * 1.25, -60, H / 2 + gap * 0.5); c.closePath(); c.fill();
+    c.shadowBlur = 0;
+    // cils : un voile sombre et irrégulier le long des bords tant que l'œil est mi-clos
+    if (o < 0.9) { const g = c.createLinearGradient(0, H / 2 - gap, 0, H / 2 + gap); g.addColorStop(0, `rgba(0,0,0,${0.6 * (1 - o)})`); g.addColorStop(0.5, 'rgba(0,0,0,0)'); g.addColorStop(1, `rgba(0,0,0,${0.6 * (1 - o)})`); c.fillStyle = g; c.fillRect(0, H / 2 - gap, W, gap * 2); }
+    onFrame?.(t, el);
+    const b = Math.floor(el * 0.93 + 0.7);
+    if (b !== lastBeat) { lastBeat = b; onBeat?.(); }
+    requestAnimationFrame(loop);
+  };
+  loop();
+  return new Promise((res) => setTimeout(res, seconds * 1000));
+}

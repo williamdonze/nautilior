@@ -473,6 +473,14 @@ export class Game {
   render() {
     // Plongée : moteur WebGPU quand il est disponible (le reste du jeu reste en Three.js)
     const gpu = this.gpuDive && !this.gpuDive.lost ? this.gpuDive : null;
+    // Plan de cinéma (fins) : une scène 3D à part, rendue par le moteur Three.js
+    if (this.cine) {
+      gpu?.show(false);
+      this.pixel.setExposure(this.cine.exposure ?? 1);
+      this.pixel.setRays(null);
+      this.pixel.render(this.cine.scene, this.cine.camera);
+      return;
+    }
     gpu?.show(this.mode === 'dive');
     if (gpu && this.mode === 'dive') {
       gpu.render(this.dive, this.time ?? 0);
