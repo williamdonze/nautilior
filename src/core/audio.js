@@ -458,6 +458,59 @@ export class Sound {
     lfo.start(t);
     o.stop(t + dur + 0.05);
     lfo.stop(t + dur + 0.05);
+    this.shriek(volume);
+  }
+
+  /** Hurlement strident qui accompagne la charge : il glace, puis s'effondre dans le grave */
+  shriek(volume = 1) {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime, dur = 0.9;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.16 * volume, t + 0.06);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    const bp = this.ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.Q.value = 6;
+    bp.frequency.setValueAtTime(1900, t);
+    bp.frequency.exponentialRampToValueAtTime(420, t + dur);
+    bp.connect(g).connect(this.muffle);
+    g.connect(this.echo);
+    for (const [f0, f1, type] of [[1250, 300, 'sawtooth'], [1330, 310, 'sawtooth'], [2100, 520, 'square']]) {
+      const o = this.ctx.createOscillator();
+      o.type = type;
+      o.frequency.setValueAtTime(f0, t);
+      o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+      const vib = this.ctx.createOscillator();
+      vib.frequency.value = 27;
+      const vg = this.ctx.createGain();
+      vg.gain.value = 90;
+      vib.connect(vg).connect(o.frequency);
+      o.connect(bp);
+      o.start(t); vib.start(t);
+      o.stop(t + dur + 0.05); vib.stop(t + dur + 0.05);
+    }
+    this.noiseBurst(t, 0.35 * volume, 0.5, 'bandpass', 2600, 3);
+  }
+
+  /** Impulsion de défense : un coup de sonar assourdissant, puis l'onde qui s'éloigne */
+  pulse() {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    for (const [f0, f1, vol, dur] of [[1500, 380, 0.3, 1.6], [760, 190, 0.2, 2.0], [95, 38, 0.5, 1.1]]) {
+      const o = this.ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(f0, t);
+      o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(vol, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g).connect(this.muffle);
+      g.connect(this.echo);
+      o.start(t);
+      o.stop(t + dur + 0.05);
+    }
+    this.noiseBurst(t, 0.5, 0.35, 'lowpass', 500, 0.7);
   }
 
   /** Morsure : craquement et choc */
@@ -468,6 +521,19 @@ export class Sound {
     this.noiseBurst(t + 0.06, 0.4, 0.1, 'bandpass', 1400, 2);
     this.thunk(60);
     this.creak(1.2);
+    // la tôle qui hurle sous les mâchoires, et le coup sourd qui fait trembler la cabine
+    this.noiseBurst(t, 0.9, 0.3, 'lowpass', 220, 0.8);
+    this.noiseBurst(t + 0.02, 0.5, 0.45, 'bandpass', 3200, 5);
+    const o = this.ctx.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(2400, t);
+    o.frequency.exponentialRampToValueAtTime(260, t + 0.5);
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.12, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+    o.connect(g).connect(this.muffle);
+    o.start(t);
+    o.stop(t + 0.6);
   }
 
   /** Appel d'un fragment de mémoire tout proche : accord lointain, presque une voix */

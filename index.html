@@ -8,7 +8,7 @@
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div id="game"></div>
@@ -74,7 +74,7 @@
     </div>
 
     <div id="hint" class="dive-only">
-      ZQSD / WASD : piloter &nbsp;·&nbsp; ESPACE : monter &nbsp;·&nbsp; MAJ : descendre &nbsp;·&nbsp; SOURIS : regarder &nbsp;·&nbsp; CLIC : pince (vue cockpit) &nbsp;·&nbsp; ÉCHAP : pause &nbsp;·&nbsp; I / TAB : soute &nbsp;·&nbsp; V : vue
+      ZQSD / WASD : piloter &nbsp;·&nbsp; ESPACE : monter &nbsp;·&nbsp; MAJ : descendre &nbsp;·&nbsp; SOURIS : regarder &nbsp;·&nbsp; CLIC : pince (vue cockpit) &nbsp;·&nbsp; ÉCHAP : pause &nbsp;·&nbsp; I / TAB : soute &nbsp;·&nbsp; V : vue &nbsp;·&nbsp; F : impulsion
     </div>
 
     <!-- HUD du port -->
@@ -121,7 +121,8 @@
     <!-- Radar / sonar -->
     <div id="radar" class="dive-only">
       <canvas id="radar-canvas"></canvas>
-      <div class="radar-label"><span>SONAR</span><span id="radar-range">45 m</span></div>
+      <div class="radar-label"><span id="radar-title">SONAR</span><span id="radar-range">45 m</span></div>
+      <div id="pulse"><span class="key">F</span><span>IMPULSION</span><div class="bar"><div class="fill"></div></div></div>
     </div>
 
     <!-- Bandeau d'entrée de zone -->

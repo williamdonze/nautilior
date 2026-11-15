@@ -171,6 +171,7 @@ export class Dive {
   /** Vue à la 1re personne (poste de pilotage) ou vue extérieure */
   setView(view) {
     this.view = view;
+    document.body.classList.toggle('view-first', view === 'first'); // l'interface s'efface en vue cockpit
     if (view === 'third') this.pointer.unlock();
     this.sub.setHullVisible(view === 'third');
     this.aim.camera = this.camera;
@@ -252,7 +253,7 @@ export class Dive {
       if (near(m.pos.x, m.pos.z)) C.push({ id: m.object.id, kind: 'creature', x: m.pos.x, y: m.pos.y, z: m.pos.z });
     }
     for (const a of this.wildlife.animals) {
-      if (near(a.pos.x, a.pos.z)) C.push({ id: a.object.id, kind: a.spec.damage > 0 ? 'creature' : 'fish', x: a.pos.x, y: a.pos.y, z: a.pos.z });
+      if (near(a.pos.x, a.pos.z)) C.push({ id: a.object.id, kind: a.spec.damage > 0 ? 'creature' : 'fish', x: a.pos.x, y: a.pos.y, z: a.pos.z, size: a.size });
     }
     for (const l of this.landmarkContacts) if (near(l.x, l.z)) C.push(l);
     return C;
@@ -446,7 +447,7 @@ export class Dive {
     }
 
     // --- Radar : objets, fragments, créatures, bancs, épaves dans le rayon du sonar
-    if (!survival.dead) this.radar.update(dt, sub, this.gatherContacts());
+    if (!survival.dead) this.radar.update(dt, sub, this.gatherContacts(), this.decor.colliders);
     sound.setSonar(!survival.dead);
 
     // --- Un fragment de mémoire tout proche « appelle »

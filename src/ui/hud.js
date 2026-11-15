@@ -159,6 +159,13 @@ export class Hud {
    *  - « far »    : objet trop loin
    *  - « busy »   : la pince travaille
    */
+  /** Recharge de l'impulsion de défense (0..1) */
+  setPulse(v) {
+    this.pulseEl ??= document.getElementById('pulse');
+    this.pulseEl.querySelector('.fill').style.width = `${Math.round(Math.min(1, v) * 100)}%`;
+    this.pulseEl.classList.toggle('ready', v >= 1);
+  }
+
   /** Rappel : la pince ne se commande que depuis le poste de pilotage */
   needCockpit() {
     this.needCockpitUntil = performance.now() + 2200;
