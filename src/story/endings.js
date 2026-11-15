@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import * as cinema from './cinema.js';
+import { createTunnel, createHospital } from './cinema3d.js';
 import texts from './endings.json';
 import { storyState } from './state.js';
 import { gameState } from '../save/gameState.js';
@@ -151,23 +152,38 @@ export async function playEnding(game, kind) {
     dive.sub.ghost = false;
     P.group.scale.setScalar(1);
     dive.leave();
-    const tun = cinema.tunnel(9, sound);
+    // Tunnel : une vraie scène 3D, le Nautiliar à contre-jour (voir cinema3d.js)
+    const tunnel = createTunnel(gameState.upgrades.hull ?? 0, game.pixel.aspect);
+    game.cine = tunnel;
+    const t0 = performance.now();
+    const drive = setInterval(() => {
+      const el = (performance.now() - t0) / 1000;
+      tunnel.update(1 / 60, Math.min(1, el / 10), el);
+      if (Math.random() < 0.02 + el * 0.012) sound.crackle?.(0.3 + el * 0.06);
+    }, 1000 / 60);
     await wait(200);
     await fadeIn(0.8);
-    await tun;
-    await cinema.blackout(1.8);
+    await wait(8600);
+    await fadeOut('#f2fff6', 1.2); // tout se dissout dans le blanc
+    clearInterval(drive);
+    game.cine = { scene: new THREE.Scene(), camera: tunnel.camera, exposure: 1 };
+    game.cine.scene.background = new THREE.Color('#000000');
+    await cinema.blackout(0.1);
+    await fadeIn(1.8);
     await wait(1200);
     await cinema.synapses(7, sound);
     await wait(900);
-    // Les paupières : le bip n'a pas cessé, mais ce n'est plus un sonar
-    const opening = cinema.awaken(12, () => sound.sonarBeep(1.1));
-    await wait(5200);
+    // Les paupières s'ouvrent sur la chambre (scène 3D) : le bip n'a pas cessé, mais ce n'est plus un sonar
+    const room = createHospital(game.pixel.aspect);
+    game.cine = room;
+    const opening = cinema.eyelids(13, (t, el) => room.update(1 / 60, t, el), () => sound.sonarBeep(1.1));
+    await wait(6000);
     for (const line of T.pulse ?? []) await dialogue.narrate(line);
     await opening;
     await wait(2500);
-    await cinema.blackout(2.5);
-    await fadeOut('#020407', 0.1);
+    await fadeOut('#020407', 3);
     cinema.close();
+    game.cine = null;
   }
 
   /*
