@@ -126,6 +126,21 @@ export const DEFENSE = {
   COOLDOWN: 18, // recharge (s)
 };
 
+/** Le gardien du portail (créature colossale des abysses) */
+export const GUARDIAN = {
+  SEGMENTS: 46, // tronçons du corps
+  RADIUS: 6.5, // rayon du corps près de la tête (m) ; longueur ≈ SEGMENTS × RADIUS × 1,25
+  ORBIT: 95, // rayon de sa ronde autour de la déchirure (m)
+  VISIBLE: 330, // elle apparaît quand le sous-marin est à cette distance du portail
+  DOMAIN: 175, // en deçà, elle attaque
+  SPEED: 11, // ronde (m/s)
+  LUNGE_SPEED: 27, // attaque (m/s)
+  LUNGE_TIME: 5, // durée maximale d'une attaque (s)
+  REST: 7, // répit entre deux attaques (s)
+  BITE: 34, // dégâts d'une morsure
+  BODY: 9, // dégâts quand on heurte son corps
+};
+
 export const RADIATION = {
   SOURCE: { x: 0, z: -1060 }, // emplacement du portail
   RADIUS: 280, // rayon d'influence (m)

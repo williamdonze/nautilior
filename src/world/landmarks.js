@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createNoise2D } from './noise.js';
 import { WORLD } from '../config/settings.js';
 import { createRandom, paintFaces } from '../core/utils.js';
 import { getFloorHeight, canyonCenter } from './seabed.js';
@@ -34,57 +35,149 @@ function weathered(geo, base, rust = '#63321b', amount = 0.4) {
   return geo;
 }
 
-/** Profil de coque extrudé : pont large, quille étroite, proue effilée */
-function hullGeometry(length, beam, depth) {
-  const shape = new THREE.Shape();
-  shape.moveTo(-length / 2, 0);
-  shape.lineTo(length / 2 - beam, 0);
-  shape.quadraticCurveTo(length / 2 + beam * 0.2, depth * 0.3, length / 2 + beam * 0.4, depth);
-  shape.lineTo(-length / 2 - beam * 0.1, depth);
-  shape.lineTo(-length / 2, 0);
-  const geo = new THREE.ExtrudeGeometry(shape, { depth: beam, bevelEnabled: false, curveSegments: 3 });
-  geo.translate(0, 0, -beam / 2);
+const wnoise = createNoise2D(WORLD.SEED + 313);
+
+/** Couleur par sommet : peinture écaillée, rouille en coulures, concrétions (surfaces lisses) */
+function rusted(geo, base, rust, amount, seed = 0) {
+  if (!geo.attributes.normal) geo.computeVertexNormals();
+  const b = new THREE.Color(base), r = new THREE.Color(rust), dark = new THREE.Color('#1c1410'), c = new THREE.Color();
+  const p = geo.attributes.position, col = new Float32Array(p.count * 3);
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    const v = wnoise(x * 0.5 + seed, y * 0.9 + z * 0.4) * 0.5 + 0.5, drip = wnoise(x * 1.7 + z, seed + 3) * 0.5 + 0.5;
+    c.copy(b).lerp(r, Math.max(0, Math.min(1, (v + drip * 0.3 - (1 - amount)) / 0.2))).lerp(dark, Math.max(0, wnoise(x * 0.23, z * 0.23 + seed)) * 0.5);
+    c.multiplyScalar(0.85 + 0.3 * (wnoise(x * 3.1, y * 3.1 + z * 2.3) * 0.5 + 0.5));
+    col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
   return geo;
 }
 
-/** Une épave de chalutier ou de cargo */
+/**
+ * Coque de navire lisse, le long de X (proue vers +X), pont à y = 0.
+ * Des pans de bordé manquent (déchirures) : on voit les membrures à l'intérieur.
+ * Renvoie { geo, half(t) } où half(t) est la demi-largeur à la position t (0 poupe … 1 proue).
+ */
+function shipHull(L, B, D, seed) {
+  const NT = 48, NA = 18;
+  const half = (t) => (B / 2) * Math.pow(Math.min(1, (1 - t) * 3.2), 0.6) * Math.pow(Math.min(1, t * 9), 0.4);
+  const sheer = (t) => D * 0.16 * Math.pow(Math.abs(2 * t - 1), 2.2);
+  const pos = [], idx = [];
+  for (let i = 0; i <= NT; i++) {
+    const t = i / NT, w = half(t), d = D * (0.55 + 0.45 * Math.min(1, w / (B * 0.4)));
+    for (let k = 0; k <= NA; k++) {
+      const a = (k / NA) * Math.PI, ca = Math.cos(a), sa = Math.sin(a);
+      // section en U qui se pince vers la quille
+      pos.push((t - 0.5) * L, sheer(t) - Math.pow(sa, 0.75) * d, Math.sign(ca) * Math.pow(Math.abs(ca), 0.6) * w);
+    }
+  }
+  for (let i = 0; i < NT; i++) for (let k = 0; k < NA; k++) {
+    const t = i / NT;
+    // déchirures : au milieu de la coque seulement, jamais sur la quille
+    if (t > 0.18 && t < 0.86 && Math.abs(k - NA / 2) > 2 && wnoise(t * 7 + seed, k * 0.45 + seed) > 0.42) continue;
+    const a = i * (NA + 1) + k, b = a + NA + 1;
+    idx.push(a, b, a + 1, a + 1, b, b + 1);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+  return { geo, half, sheer };
+}
+
+/** Une épave de chalutier ou de cargo : coque éventrée, membrures, passerelle, cheminée, mâts, bastingage */
 function wreck(x, z, size, colliders) {
   const g = new THREE.Group();
   const floor = getFloorHeight(x, z);
-  g.position.set(x, floor - size * 0.6, z);
+  const L = 18 * size, B = 5 * size, D = 4 * size, seed = x * 0.37 + z * 0.11;
+  g.position.set(x, floor + D * 0.45, z);
   g.rotation.set(rand.range(-0.15, 0.15), rand() * Math.PI * 2, rand.range(0.2, 0.5));
+  const add = (geo, mat, px = 0, py = 0, pz = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(px, py, pz); g.add(m); return m; };
+  const steel = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
+  steel.userData.detail = 'metal';
+  const dark = new THREE.MeshLambertMaterial({ color: '#1a1512' });
+  const bar = (a, b, r, mat = dark) => {
+    const va = new THREE.Vector3(...a), dir = new THREE.Vector3(...b).sub(va), len = dir.length();
+    const m = add(new THREE.CylinderGeometry(r, r, len, 8), mat);
+    m.position.copy(va).addScaledVector(dir, 0.5);
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+    return m;
+  };
 
-  const L = 18 * size, B = 5 * size, D = 4 * size;
-  g.add(new THREE.Mesh(weathered(hullGeometry(L, B, D), '#3f4446', '#63321b', 0.45), vmat));
-  // Pont et cabine
-  const deck = new THREE.Mesh(weathered(new THREE.BoxGeometry(L * 0.9, 0.3, B * 0.95), '#3e2114', '#22140d', 0.5), woodMat);
-  deck.position.set(-L * 0.02, D, 0);
-  g.add(deck);
-  const cabin = new THREE.Mesh(weathered(new THREE.BoxGeometry(L * 0.22, D * 0.7, B * 0.7), '#5f6564', '#63321b', 0.5), vmat);
-  cabin.position.set(-L * 0.22, D + D * 0.35, 0);
-  g.add(cabin);
-  // Hublots noirs de la cabine
-  for (let i = -1; i <= 1; i++) {
-    const w = new THREE.Mesh(new THREE.BoxGeometry(0.6 * size, 0.5 * size, 0.1), new THREE.MeshBasicMaterial({ color: '#020407' }));
-    w.position.set(-L * 0.22 + i * 1.3 * size, D * 1.45, B * 0.36);
-    g.add(w);
+  const { geo: hull, half, sheer } = shipHull(L, B, D, seed);
+  add(rusted(hull, '#3a4244', '#6a3a1e', 0.55, seed), steel);
+  // Membrures : arceaux visibles par les déchirures
+  for (let t = 0.1; t < 0.92; t += 0.055) {
+    const w = half(t), d = D * (0.55 + 0.45 * Math.min(1, w / (B * 0.4)));
+    const rib = new THREE.TorusGeometry(1, 0.035 / Math.max(0.3, w / B), 6, 20, Math.PI).rotateZ(Math.PI).rotateY(Math.PI / 2).scale(1, d * 0.96, w * 0.95);
+    add(rib, dark, (t - 0.5) * L, sheer(t), 0);
   }
-  // Mât brisé, penché
-  const mast = new THREE.Mesh(weathered(new THREE.CylinderGeometry(0.15 * size, 0.2 * size, D * 2.2, 5), '#3e2114'), woodMat);
-  mast.position.set(L * 0.15, D * 2, 0);
-  mast.rotation.z = rand.range(-0.6, 0.6);
-  g.add(mast);
-  // Filet affaissé (fil de fer)
-  const net = new THREE.Mesh(new THREE.PlaneGeometry(L * 0.35, D * 1.3, 6, 4), new THREE.MeshLambertMaterial({ color: '#83a39a', wireframe: true }));
-  net.position.set(L * 0.3, D * 0.9, B * 0.52);
-  net.rotation.y = 0.1;
-  g.add(net);
+  // Pont : planches gondolées, panneau de cale béant
+  const deck = new THREE.PlaneGeometry(L * 0.94, 1, 60, 8).rotateX(-Math.PI / 2);
+  const dp = deck.attributes.position, di = [];
+  for (let i = 0; i < dp.count; i++) {
+    const t = dp.getX(i) / L + 0.5;
+    dp.setZ(i, dp.getZ(i) * 2 * half(t) * 0.97);
+    dp.setY(i, sheer(t) - 0.05 + wnoise(dp.getX(i) * 0.4 + seed, dp.getZ(i) * 0.5) * 0.12 * size);
+  }
+  for (let i = 0; i < deck.index.count; i += 3) {
+    const a = deck.index.array[i], cx = dp.getX(a) / L, cz = dp.getZ(a);
+    if ((cx > 0.02 && cx < 0.2 && Math.abs(cz) < B * 0.22) || wnoise(cx * 30 + seed, cz * 0.8) > 0.62) continue; // cale ouverte, planches arrachées
+    di.push(deck.index.array[i], deck.index.array[i + 1], deck.index.array[i + 2]);
+  }
+  deck.setIndex(di);
+  deck.computeVertexNormals();
+  const wood = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
+  wood.userData.detail = 'wood';
+  add(rusted(deck, '#4a3320', '#221610', 0.4, seed + 5), wood);
+
+  // Passerelle à l'arrière : bloc aux angles arrondis, vitres crevées, toit débordant
+  const bx = -L * 0.24, by = sheer(0.26), bw = B * 0.62, bh = D * 0.62, bl = L * 0.2;
+  const round = (w, h, d, r) => {
+    const sh = new THREE.Shape();
+    sh.moveTo(-w / 2 + r, -d / 2); sh.lineTo(w / 2 - r, -d / 2); sh.quadraticCurveTo(w / 2, -d / 2, w / 2, -d / 2 + r);
+    sh.lineTo(w / 2, d / 2 - r); sh.quadraticCurveTo(w / 2, d / 2, w / 2 - r, d / 2); sh.lineTo(-w / 2 + r, d / 2);
+    sh.quadraticCurveTo(-w / 2, d / 2, -w / 2, d / 2 - r); sh.lineTo(-w / 2, -d / 2 + r); sh.quadraticCurveTo(-w / 2, -d / 2, -w / 2 + r, -d / 2);
+    return new THREE.ExtrudeGeometry(sh, { depth: h, bevelEnabled: false, curveSegments: 6, steps: 4 }).rotateX(-Math.PI / 2);
+  };
+  add(rusted(round(bl, bh, bw, 0.5 * size), '#6a7272', '#6a3a1e', 0.5, seed + 9), steel, bx, by, 0);
+  add(rusted(round(bl * 1.12, 0.14 * size, bw * 1.14, 0.5 * size), '#3a4244', '#6a3a1e', 0.4, seed + 2), steel, bx, by + bh, 0);
+  const pane = new THREE.MeshBasicMaterial({ color: '#020407' });
+  for (let i = -2; i <= 2; i++) {
+    add(new THREE.PlaneGeometry(0.55 * size, 0.5 * size).rotateY(Math.PI / 2), pane, bx + bl / 2 + 0.02, by + bh * 0.68, i * bw * 0.17);
+    for (const s of [-1, 1]) add(new THREE.CircleGeometry(0.2 * size, 14).rotateY(s > 0 ? 0 : Math.PI), pane, bx + i * bl * 0.17, by + bh * 0.6, s * (bw / 2 + 0.02));
+  }
+  // Cheminée couchée par le temps, cerclée
+  const funnel = add(rusted(new THREE.CylinderGeometry(0.42 * size, 0.5 * size, D * 0.8, 20, 3, true), '#5a2e1c', '#2a1810', 0.5, seed), steel, bx - bl * 0.15, by + bh + D * 0.38, 0);
+  funnel.rotation.z = rand.range(0.1, 0.35);
+  add(new THREE.TorusGeometry(0.47 * size, 0.04 * size, 6, 20).rotateX(Math.PI / 2), dark, funnel.position.x - 0.1 * size, funnel.position.y + D * 0.2, 0).rotation.z = funnel.rotation.z;
+
+  // Mât de charge brisé, haubans pendants, treuil
+  const mx = L * 0.14, my = sheer(0.64), mt = [mx + rand.range(-1.5, 1.5) * size, my + D * 1.7, rand.range(-1, 1) * size];
+  bar([mx, my, 0], mt, 0.12 * size);
+  bar([mx, my + D * 0.9, 0], [mx + L * 0.16, my + D * 0.5, rand.range(-0.5, 0.5) * size], 0.07 * size);
+  for (const s of [-1, 1]) bar(mt, [mx - L * 0.06, sheer(0.58), s * half(0.58) * 0.95], 0.02 * size);
+  add(new THREE.CylinderGeometry(0.4 * size, 0.4 * size, 1.1 * size, 16).rotateX(Math.PI / 2), dark, L * 0.3, sheer(0.8) + 0.4 * size, 0);
+  bar([L * 0.3, sheer(0.8) + 0.4 * size, 0], [L * 0.47, sheer(0.97) - 0.2 * size, 0], 0.03 * size);
+
+  // Bastingage : chandeliers et lisse, par tronçons (certains ont disparu)
+  for (const s of [-1, 1]) {
+    let prev = null;
+    for (let t = 0.06; t < 0.97; t += 0.045) {
+      const gone = wnoise(t * 9 + seed + s, s * 3) > 0.35;
+      const p = [(t - 0.5) * L, sheer(t), s * half(t) * 0.98], top = [p[0], p[1] + 0.9 * size, p[2]];
+      if (!gone) { bar(p, top, 0.025 * size); if (prev) bar(prev, top, 0.022 * size); }
+      prev = gone ? null : top;
+    }
+  }
+  // Chaîne d'ancre qui pend de la proue
+  bar([L * 0.47, sheer(0.97), half(0.97) * 0.6], [L * 0.44, -D * 0.9, half(0.9) + 0.6 * size], 0.045 * size);
 
   // Collisions : quelques sphères le long de la coque
   g.updateMatrixWorld(true);
   const p = new THREE.Vector3();
   for (let i = -2; i <= 2; i++) {
-    p.set(i * L * 0.2, D * 0.6, 0).applyMatrix4(g.matrixWorld);
+    p.set(i * L * 0.2, -D * 0.4, 0).applyMatrix4(g.matrixWorld);
     colliders.push({ x: p.x, y: p.y, z: p.z, r: B * 0.65 });
   }
   return g;
