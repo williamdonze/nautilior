@@ -514,6 +514,30 @@ export class Sound {
    * Bourdonnement continu du portail (0 = silence).
    * Deux oscillateurs graves légèrement désaccordés, créés à la première utilisation.
    */
+  /** Sonar : un ronronnement léger et continu, qui palpite doucement */
+  setSonar(on) {
+    if (!this.ready) return;
+    if (!this.sonarHum) {
+      const g = this.ctx.createGain();
+      g.gain.value = 0;
+      const o = this.ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = 540;
+      const trem = this.ctx.createGain();
+      trem.gain.value = 0.6;
+      const lfo = this.ctx.createOscillator();
+      lfo.frequency.value = 1.3;
+      const depth = this.ctx.createGain();
+      depth.gain.value = 0.4;
+      lfo.connect(depth).connect(trem.gain);
+      o.connect(trem).connect(g).connect(this.muffle);
+      o.start();
+      lfo.start();
+      this.sonarHum = g;
+    }
+    this.sonarHum.gain.setTargetAtTime(on ? 0.012 : 0, this.ctx.currentTime, 0.4);
+  }
+
   setDrone(level) {
     if (!this.ready) return;
     if (!this.drone) {

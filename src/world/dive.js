@@ -200,6 +200,7 @@ export class Dive {
   leave() {
     this.pixel.setRays(null);
     this.sound.setDrone(0);
+    this.sound.setSonar(false);
     this.sound.stopEngine();
     this.inventory.close();
     this.claw.reset();
@@ -413,6 +414,7 @@ export class Dive {
 
     // --- Radar : objets, fragments, créatures, bancs, épaves dans le rayon du sonar
     if (!survival.dead) this.radar.update(dt, sub, this.gatherContacts());
+    sound.setSonar(!survival.dead);
 
     // --- Un fragment de mémoire tout proche « appelle »
     this.whisperTimer -= dt;

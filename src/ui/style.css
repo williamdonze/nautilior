@@ -248,6 +248,7 @@ html, body, canvas { cursor: none; }
 #inventory.open { opacity: 1; pointer-events: auto; }
 #inventory, #inventory * { cursor: default; }
 body.inventory-open #reticle { display: none; }
+#reticle.hidden { display: none; }
 
 .inv-panel {
   width: min(760px, 94vw);
