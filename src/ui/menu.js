@@ -12,7 +12,8 @@ export class Menu {
     Object.assign(this, deps);
     this.root = document.getElementById('menu');
     this.screen = null;
-    this.back = null; // écran auquel revenir depuis les réglages
+    this.back = null;
+    this.qualityAtStart = preferences.qualityLevel; // le niveau de détail s'applique au lancement
 
     this.root.addEventListener('pointerdown', (e) => e.stopPropagation());
     this.root.addEventListener('click', (e) => {
@@ -24,6 +25,7 @@ export class Menu {
       if (!el.dataset.pref) return;
       const v = Number(el.value);
       preferences[el.dataset.pref] = el.dataset.pref === 'qualityLevel' ? v : v / 100;
+      if (el.dataset.pref === 'qualityLevel') preferences.autoScale = 1;
       savePreferences();
       this.applySettings();
       this.updateLabels();
@@ -67,6 +69,7 @@ export class Menu {
       case 'back': this.show(this.back ?? 'main'); break;
       case 'resume': this.hide(); this.onResume(); break;
       case 'title': this.onQuitToTitle(); break;
+      case 'reload': this.onQuitToTitle(); break;
     }
   }
 
@@ -117,9 +120,12 @@ export class Menu {
         ${slider('master', 'Volume général')}
         ${slider('music', 'Musique')}
         ${slider('sfx', 'Effets')}
-        <label class="setting"><span>Qualité graphique</span>
+        <label class="setting"><span>Niveau de détail</span>
           <input type="range" min="0" max="${QUALITY_LEVELS.length - 1}" value="${preferences.qualityLevel}" data-pref="qualityLevel">
           <em data-label="qualityLevel"></em></label>
+        <p class="setting-note" id="quality-note">${this.qualityAtStart !== undefined && this.qualityAtStart !== preferences.qualityLevel ? 'Appliqué au prochain lancement : <button data-menu="reload">RELANCER</button>' : 'Basse : moins de flore, pas d\'ombres ni de rayons de soleil.'}</p>
+        <label class="setting toggle"><span>Résolution auto (60 i/s)</span>
+          <input type="checkbox" data-toggle="autoRes" ${preferences.autoRes ? 'checked' : ''}><em></em></label>
         <label class="setting toggle"><span>Afficher les images/s</span>
           <input type="checkbox" data-toggle="showFps" ${preferences.showFps ? 'checked' : ''}><em></em></label>
       </div>
@@ -132,7 +138,11 @@ export class Menu {
       const k = el.dataset.label;
       if (k === 'qualityLevel') {
         const lvl = QUALITY_LEVELS[preferences.qualityLevel] ?? QUALITY_LEVELS[2];
-        el.textContent = `${lvl.label} (${Math.round(lvl.scale * 100)} %)`;
+        el.textContent = lvl.label;
+        const note = this.root.querySelector('#quality-note');
+        if (note && preferences.qualityLevel !== this.qualityAtStart) {
+          note.innerHTML = 'Appliqué au prochain lancement : <button data-menu="reload">RELANCER</button>';
+        }
       } else el.textContent = `${Math.round(preferences[k] * 100)} %`;
     }
   }

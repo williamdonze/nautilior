@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
+import { quality, preferences, savePreferences } from '../save/preferences.js';
 
 /**
  * Renderer du jeu, rendu en HDR (inspiré d'Abyssal Garden et de Web Ocean) :
@@ -16,7 +17,8 @@ import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 /** Échelle partagée des particules (neige marine, bulles…) : leur taille suit la résolution */
 export const pointScale = { value: 1 };
 
-const BLOOM_LEVELS = 6;
+const Q = quality();
+const BLOOM_LEVELS = Q.bloom;
 
 const FS_VERT = /* glsl */ `
   varying vec2 vUv;
@@ -128,10 +130,10 @@ const RaysShader = {
       float sigma = uDensity * 0.9;
 
       // --- Rayons du soleil (jusqu'à 90 m, et jamais au-dessus de la surface)
-      if (uSun > 0.001) {
+      if (RAY_SUN > 0 && uSun > 0.001) {
         float tm = min(sceneDist, 90.0);
         if (rd.y > 1e-4) tm = min(tm, -uCamPos.y / rd.y);
-        const int N = 14;
+        const int N = RAY_SUN;
         float dt = tm / float(N);
         for (int n = 0; n < N; n++) {
           float t = (float(n) + j) * dt;
@@ -146,7 +148,7 @@ const RaysShader = {
       // --- Faisceau du phare (jusqu'à 60 m)
       if (uSpot > 0.001) {
         float tm = min(sceneDist, 60.0);
-        const int M = 16;
+        const int M = RAY_SPOT;
         float dt = tm / float(M);
         vec3 beam = vec3(0.0);
         for (int n = 0; n < M; n++) {
@@ -246,19 +248,28 @@ export class GameRenderer {
   constructor(container) {
     this.renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
     container.appendChild(this.renderer.domElement);
-    this.renderer.shadowMap.enabled = true;
+    // Résolution : plafond du niveau de détail × facteur dynamique (résolution auto)
+    this.baseScale = Q.scale;
+    this.dynScale = Math.min(1, Math.max(0.5, preferences.autoScale ?? 1));
+    this.autoRes = true;
+    this.frameAcc = 0;
+    this.frameCount = 0;
+    this.cooldown = 2;
+    this.initGpuTimer();
+    this.renderer.shadowMap.enabled = Q.shadows > 0;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    this.quality = 1;
+    this.quality = this.baseScale * this.dynScale;
     this.exposure = 1;
 
     // Cible pleine résolution, multi-échantillonnée (antialiasing), HalfFloat : la scène est en HDR.
     // La profondeur est conservée pour la lumière volumétrique.
-    this.target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 });
+    this.target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: Q.msaa });
     this.target.depthTexture = new THREE.DepthTexture(1, 1, THREE.UnsignedIntType);
 
     // Lumière volumétrique, en demi-résolution
     this.raysTarget = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, depthBuffer: false });
     this.raysMat = makeMaterial(RaysShader);
+    this.raysMat.defines = { RAY_SUN: Q.raySun, RAY_SPOT: Math.max(1, Q.raySpot) };
     this.rays = null; // paramètres fournis par la plongée (null = pas de lumière volumétrique)
 
     // Chaîne du bloom
@@ -279,10 +290,88 @@ export class GameRenderer {
     window.addEventListener('resize', () => this.resize());
   }
 
-  /** Qualité de rendu (0.5 à 1) : résolution relative à l'écran */
+  /** Qualité de rendu (0.3 à 1) : résolution relative à l'écran */
   setQuality(q) {
     this.quality = q;
     this.resize();
+  }
+
+  /* ------------------------------------------------------------ Mesure du temps GPU */
+
+  /** Requêtes de minutage GPU (si le navigateur les propose) */
+  initGpuTimer() {
+    const gl = this.renderer.getContext();
+    this.gl = gl;
+    this.timerExt = gl.getExtension('EXT_disjoint_timer_query_webgl2');
+    this.queries = [];
+    this.gpuMs = null;
+  }
+
+  beginGpu() {
+    if (!this.timerExt || this.queries.length > 4) return;
+    const q = this.gl.createQuery();
+    this.gl.beginQuery(this.timerExt.TIME_ELAPSED_EXT, q);
+    this.currentQuery = q;
+  }
+
+  endGpu() {
+    const gl = this.gl;
+    if (this.currentQuery) {
+      gl.endQuery(this.timerExt.TIME_ELAPSED_EXT);
+      this.queries.push(this.currentQuery);
+      this.currentQuery = null;
+    }
+    // Lit les résultats disponibles (avec quelques images de retard)
+    while (this.queries.length) {
+      const q = this.queries[0];
+      if (!gl.getQueryParameter(q, gl.QUERY_RESULT_AVAILABLE)) break;
+      const ns = gl.getQueryParameter(q, gl.QUERY_RESULT);
+      if (!gl.getParameter(this.timerExt.GPU_DISJOINT_EXT)) {
+        const ms = ns / 1e6;
+        this.gpuMs = this.gpuMs == null ? ms : this.gpuMs * 0.9 + ms * 0.1;
+      }
+      gl.deleteQuery(q);
+      this.queries.shift();
+    }
+  }
+
+  /* ------------------------------------------------------------ Résolution auto */
+
+  /**
+   * Vise 60 images/s : si les images sont trop lentes, la résolution baisse par petits pas ;
+   * s'il reste de la marge (temps GPU bas, ou images régulières), elle remonte doucement.
+   * @param {number} dt durée de la dernière image (s)
+   */
+  adapt(dt) {
+    if (!this.autoRes || dt <= 0 || dt > 0.25) return;
+    this.frameAcc += dt;
+    this.frameCount++;
+    this.cooldown -= dt;
+    if (this.frameAcc < 1.5) return;
+    const ms = (this.frameAcc / this.frameCount) * 1000;
+    this.frameAcc = 0;
+    this.frameCount = 0;
+    if (this.cooldown > 0) return;
+    let next = this.dynScale;
+    if (ms > 18.5) next -= ms > 28 ? 0.12 : 0.06;
+    else if (this.gpuMs != null ? this.gpuMs < 9 : ms < 17.2) next += 0.04;
+    next = Math.min(1, Math.max(0.5, next));
+    if (Math.abs(next - this.dynScale) > 0.001) {
+      this.cooldown = next < this.dynScale ? 1.5 : 4;
+      this.dynScale = next;
+      this.setQuality(this.baseScale * next);
+      preferences.autoScale = next;
+      savePreferences();
+    }
+  }
+
+  /** Résolution auto activée ou non (désactivée : pleine résolution du niveau de détail) */
+  setAutoRes(on) {
+    this.autoRes = on;
+    if (!on && this.dynScale !== 1) {
+      this.dynScale = 1;
+      this.setQuality(this.baseScale);
+    }
   }
 
   /** Exposition (1 = neutre) : suit la profondeur, comme l'œil qui s'adapte */
@@ -376,6 +465,7 @@ export class GameRenderer {
 
   render(scene, camera) {
     const r = this.renderer;
+    this.beginGpu();
     r.setRenderTarget(this.target);
     r.render(scene, camera);
     const raysOn = !!this.rays && (this.rays.sun > 0.001 || this.rays.spot > 0.001);
@@ -390,5 +480,6 @@ export class GameRenderer {
     u.uRaysOn.value = raysOn ? 1 : 0;
     this.quad.material = this.material;
     this.quad.render(r);
+    this.endGpu();
   }
 }

@@ -6,6 +6,7 @@ import { createNoise2D } from './noise.js';
 import { getFloorHeight } from './seabed.js';
 import { tileKey, registerSmall } from './tiles.js';
 import { applySkin } from './detail.js';
+import { quality } from '../save/preferences.js';
 
 /**
  * Flore marine : forêts de laminaires, herbiers, fucus des épaves, gorgones, éponges.
@@ -330,7 +331,10 @@ function floraMaterial(sway, push, sparkle) {
 
 /* ------------------------------------------------------------ Placement */
 
-function placeSpecies(sp, rand, noise) {
+function placeSpecies(sp0, rand, noise) {
+  // Densité selon le niveau de détail (les grandes laminaires sont moins réduites : elles font le décor)
+  const k = quality().flora;
+  const sp = { ...sp0, count: Math.round(sp0.count * (sp0.shape === 'kelp' ? Math.sqrt(k) : k)) };
   const out = [];
   const zTop = SEABED.Z_START - 10, zBottom = SEABED.Z_END + 10;
   const halfW = SEABED.WIDTH / 2 - 15;
