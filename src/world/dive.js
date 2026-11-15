@@ -17,6 +17,7 @@ import { CaptureFx } from '../loot/captureFx.js';
 import { Inventory } from '../ui/inventory.js';
 import { SURVIVAL, SUBMARINE, RADIATION } from '../config/settings.js';
 import { Creatures } from './creatures.js';
+import { Wildlife } from './wildlife.js';
 import { zoneAtDepth } from './zones.js';
 import { createPortal } from './portal.js';
 import { pointScale } from '../core/renderer.js';
@@ -105,6 +106,16 @@ export class Dive {
         this.sub.velocity.addScaledVector(dir, 6); // le choc repousse le sous-marin
       },
     });
+    // Grande faune : raies, tortues, requins… et leurs cousins décharnés des profondeurs
+    this.wildlife = new Wildlife(scene, {
+      hit: (animal, dir) => {
+        sound.bite();
+        this.shake(0.45);
+        hud.damageFlash(0.8);
+        this.bubbles.burst(this.sub.position, 22, 3);
+        this.sub.velocity.addScaledVector(dir, 4);
+      },
+    });
     this.zoneId = null;
     this.whisperTimer = 0;
 
@@ -174,6 +185,7 @@ export class Dive {
   enter(seed, foundFragments = []) {
     this.pickups.reset(seed, foundFragments, this.hold.toIds());
     this.creatures.clear();
+    this.wildlife.clear();
     this.zoneId = null;
     this.claw.reset();
     this.sub.applyLight(stats);
@@ -233,6 +245,9 @@ export class Dive {
     this.creatures.fish.schools.forEach((s, i) => {
       if (s.active && near(s.center.x, s.center.z)) C.push({ id: `school${i}`, kind: 'fish', x: s.center.x, y: s.center.y, z: s.center.z });
     });
+    for (const a of this.wildlife.animals) {
+      if (near(a.pos.x, a.pos.z)) C.push({ id: a.object.id, kind: a.spec.damage > 0 ? 'creature' : 'fish', x: a.pos.x, y: a.pos.y, z: a.pos.z });
+    }
     for (const l of this.landmarkContacts) if (near(l.x, l.z)) C.push(l);
     return C;
   }
@@ -391,6 +406,9 @@ export class Dive {
     if (!survival.dead) {
       const damage = this.creatures.update(dt, time, sub, zone);
       if (damage > 0 && !this.autopilot) survival.damage(damage, 'creature');
+      this.wildlife.calm = this.creatures.calm;
+      const hit = this.wildlife.update(dt, time, sub, zone.id);
+      if (hit > 0 && !this.autopilot) survival.damage(hit, 'creature');
     }
 
     // --- Radar : objets, fragments, créatures, bancs, épaves dans le rayon du sonar
