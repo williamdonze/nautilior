@@ -15,9 +15,10 @@ import { Claw } from '../claw/claw.js';
 import { Aim } from '../claw/aim.js';
 import { CaptureFx } from '../loot/captureFx.js';
 import { Inventory } from '../ui/inventory.js';
-import { SURVIVAL, SUBMARINE, RADIATION, DEFENSE } from '../config/settings.js';
+import { SURVIVAL, SUBMARINE, RADIATION, DEFENSE, ECHO } from '../config/settings.js';
 import { Creatures } from './creatures.js';
 import { Wildlife } from './wildlife.js';
+import { gpuMode } from '../gpu/mode.js';
 import { Guardian } from './guardian.js';
 import { zoneAtDepth } from './zones.js';
 import { createPortal } from './portal.js';
@@ -114,6 +115,8 @@ export class Dive {
     // Grande faune : raies, tortues, requins… et leurs cousins décharnés des profondeurs
     this.wildlife = new Wildlife(scene, {
       charge: () => sound.growl(1.2),
+      // le Linceul se plaque sur la bulle : on n'y voit presque plus rien
+      veil: (on) => hud.setShroud(on),
       hit: (animal, dir) => {
         sound.bite();
         sound.impact(1.2);
@@ -316,6 +319,7 @@ export class Dive {
     if (code === 'KeyI' || code === 'Tab') this.inventory.toggle();
     else if (code === 'Escape') this.inventory.close();
     else if (code === 'KeyF') this.pulse();
+    else if (code === 'KeyR') this.echo();
     else if (code === 'KeyV') this.setView(this.view === 'first' ? 'third' : 'first');
     else if (code === 'KeyE' && this.survival.atSurface && !this.claw.busy) this.onReturn();
     else if (code === 'KeyE' && this.nearPortal && !this.claw.busy) this.onPortal();
@@ -364,6 +368,19 @@ export class Dive {
     this.portal.setBeat((this.beatPhase + 0.3) % 1);
   }
 
+  /**
+   * Écho (sonar volumétrique seulement) : une onde part du sous-marin et dessine en points, à travers
+   * l'obscurité, la vraie forme de ce qu'elle touche — rochers, épaves, bêtes. L'image tient quelques secondes.
+   */
+  echo() {
+    if (!stats.sonar3d) return this.hud.notice('Écho : il faut le sonar volumétrique');
+    if (!gpuMode.active) return this.hud.notice('Écho indisponible avec ce rendu');
+    if (this.echoAge != null && this.echoAge < ECHO.COOLDOWN) return;
+    this.echoAge = 0;
+    this.sound.sonarBeep(2.2);
+    this.sound.sonarEcho?.();
+  }
+
   /** Sons et effets liés à la survie */
   survivalEffects(dt) {
     const S = this.survival;
@@ -405,6 +422,7 @@ export class Dive {
     const { sub, survival, follow, hud, scene, sound } = this;
     this.pulseCooldown = Math.max(0, this.pulseCooldown - dt);
     this.pulseFx = Math.max(0, this.pulseFx - dt * 0.9);
+    if (this.echoAge != null && (this.echoAge += dt) > ECHO.DURATION) this.echoAge = null;
     hud.setPulse?.(1 - this.pulseCooldown / DEFENSE.COOLDOWN);
     // Pendant une cinématique, ni l'air ni la coque ne s'épuisent
     if (!this.autopilot) survival.update(dt, sub);

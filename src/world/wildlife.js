@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import data from '../config/wildlife.json';
 import { WILDLIFE_MODELS } from './wildlifeModels.js';
+import { ABYSS_MODELS } from './abyssModels.js';
 import { getFloorHeight } from './seabed.js';
 import { WORLD } from '../config/settings.js';
 
@@ -12,12 +13,13 @@ import { WORLD } from '../config/settings.js';
  */
 const SPAWN_MIN = 55, SPAWN_MAX = 85, DESPAWN = 140;
 const _v = new THREE.Vector3();
+const MODELS = { ...WILDLIFE_MODELS, ...Object.fromEntries(ABYSS_MODELS.map((m) => [m.id, m.make])) };
 
 class Animal {
   constructor(id, scene) {
     this.id = id;
     this.spec = data.species[id];
-    this.object = WILDLIFE_MODELS[id]();
+    this.object = MODELS[id]();
     this.size = this.spec.size[0] + Math.random() * (this.spec.size[1] - this.spec.size[0]);
     this.object.scale.setScalar(this.size);
     this.object.traverse((o) => { if (o.isMesh) o.raycast = () => {}; });
@@ -39,13 +41,72 @@ class Animal {
     const x = THREE.MathUtils.clamp(sub.position.x + Math.cos(a) * d, WORLD.BOUNDS.minX, WORLD.BOUNDS.maxX);
     const z = THREE.MathUtils.clamp(sub.position.z + Math.sin(a) * d, WORLD.BOUNDS.minZ, WORLD.BOUNDS.maxZ);
     const floor = getFloorHeight(x, z);
-    this.pos.set(x, Math.min(-4, Math.max(floor + this.spec.altitude[0], sub.position.y + (Math.random() - 0.5) * 20)), z);
+    this.pos.set(x, this.spec.behavior === 'walker' ? floor : Math.min(-4, Math.max(floor + this.spec.altitude[0], sub.position.y + (Math.random() - 0.5) * 20)), z);
   }
 
   /** Effrayée (impulsion du sous-marin) : elle fuit pendant `time` secondes */
   scare(time) {
+    if (this.state === 'stuck') this.events?.veil?.(false);
     this.state = 'scared';
     this.timer = time;
+  }
+
+  /** La Glaneuse : elle marche sur le fond, vers le sous-marin, et frappe ce qui passe entre ses pattes */
+  walker(dt, time, sub, calm) {
+    const S = this.spec, dx = sub.position.x - this.pos.x, dz = sub.position.z - this.pos.z, hd = Math.hypot(dx, dz);
+    this.hitCooldown -= dt;
+    const scared = this.state === 'scared';
+    if (scared && this.timer <= 0) this.state = 'roam';
+    let want = Math.sin(this.wander * 0.2 + this.size), speed = S.speed * 0.5;
+    if (!calm && hd < 70) { const d = Math.atan2(dx, dz) + (scared ? Math.PI : 0) - this.yaw; want = Math.atan2(Math.sin(d), Math.cos(d)) * 2; speed = S.speed * (scared ? 2 : 1); }
+    this.turn += (THREE.MathUtils.clamp(want, -1, 1) * S.turn - this.turn) * Math.min(1, dt * 2);
+    this.yaw += this.turn * dt;
+    this.pos.x += Math.sin(this.yaw) * speed * dt;
+    this.pos.z += Math.cos(this.yaw) * speed * dt;
+    const floor = getFloorHeight(this.pos.x, this.pos.z);
+    // le corps monte et descend à chaque pas ; elle s'accroupit avant de frapper
+    const above = sub.position.y - floor, inReach = !calm && !scared && hd < this.size * 0.5 && above < this.size * 1.15;
+    this.crouch = (this.crouch ?? 0) + ((inReach ? 0.35 : 0) - (this.crouch ?? 0)) * Math.min(1, dt * 3);
+    this.pos.y = floor - this.size * this.crouch * 0.5 + Math.abs(Math.sin(this.wander * 1.7)) * this.size * 0.03;
+    this.object.rotation.set(Math.sin(this.wander * 1.7) * 0.04, this.yaw, Math.cos(this.wander * 0.85) * 0.05);
+    this.object.scale.set(this.size * (1 + this.crouch * 0.25), this.size * (1 - this.crouch * 0.4), this.size * (1 + this.crouch * 0.25));
+    if (inReach && this.hitCooldown <= 0 && this.crouch > 0.25) { this.hitCooldown = 3.5; return S.damage; }
+    return 0;
+  }
+
+  /** Le Linceul : il dérive vers le sous-marin, se plaque sur la bulle du cockpit et ne lâche que sous l'impulsion */
+  veil(dt, time, sub, calm, events) {
+    const S = this.spec, dx = sub.position.x - this.pos.x, dy = sub.position.y - this.pos.y, dz = sub.position.z - this.pos.z, dist = Math.hypot(dx, dy, dz) || 1;
+    if (this.state === 'stuck') {
+      const f = sub.forward;
+      this.pos.set(sub.position.x + f.x * 2.2, sub.position.y + 0.4, sub.position.z + f.z * 2.2);
+      this.object.rotation.set(Math.PI / 2, sub.yaw, 0);
+      if (this.timer <= 0 || calm) { this.state = 'scared'; this.timer = 5; events.veil?.(false); }
+      return S.damage * dt;
+    }
+    const away = this.state === 'scared';
+    if (away && this.timer <= 0) this.state = 'roam';
+    const speed = calm ? 0.4 : away ? 5 : dist < 30 ? S.speed * 3 : S.speed, k = (away ? -1 : 1) * (dist < 90 || away ? 1 : 0);
+    this.pos.x += ((dx / dist) * k + Math.sin(this.wander * 0.3) * 0.3) * speed * dt;
+    this.pos.y += ((dy / dist) * k + Math.sin(this.wander * 0.9) * 0.25) * speed * dt;
+    this.pos.z += ((dz / dist) * k + Math.cos(this.wander * 0.27) * 0.3) * speed * dt;
+    this.pos.y = Math.min(-4, Math.max(getFloorHeight(this.pos.x, this.pos.z) + 3, this.pos.y));
+    // il ondule comme un drap dans le courant
+    this.object.rotation.set(Math.sin(this.wander * 0.7) * 0.35, this.wander * 0.15, Math.cos(this.wander * 0.6) * 0.35);
+    const pulse = 1 + Math.sin(this.wander * 1.6) * 0.08;
+    this.object.scale.set(this.size * pulse, this.size * (2 - pulse), this.size * pulse);
+    if (!calm && !away && dist < 3.2) { this.state = 'stuck'; this.timer = 9; events.veil?.(true); }
+    return 0;
+  }
+
+  /** Le Chapelet enroulé : il colle à la coque, la serre et la freine, jusqu'à lâcher ou être chassé */
+  cling(dt, time, sub) {
+    const a = this.wander * 2.2;
+    this.pos.set(sub.position.x + Math.cos(a) * 1.6, sub.position.y + Math.sin(a * 1.3) * 0.9, sub.position.z + Math.sin(a) * 1.6);
+    this.object.rotation.set(Math.sin(a) * 0.9, a + Math.PI / 2, Math.cos(a) * 0.9);
+    sub.velocity.multiplyScalar(Math.exp(-1.4 * dt));
+    if (this.timer <= 0) { this.state = 'pass'; this.timer = 1.5; }
+    return this.spec.damage * 0.45 * dt;
   }
 
   /**
@@ -56,6 +117,7 @@ class Animal {
    */
   update(dt, time, sub, calm, events = {}) {
     const S = this.spec, hostile = S.damage > 0 && !calm;
+    this.events = events;
     this.wander += dt;
     this.timer -= dt;
     // apparition en fondu
@@ -64,6 +126,9 @@ class Animal {
     const dx = sub.position.x - this.pos.x, dy = sub.position.y - this.pos.y, dz = sub.position.z - this.pos.z;
     const dist = Math.hypot(dx, dy, dz), to = Math.atan2(dx, dz);
     const turnTo = (a) => { const d = a - this.yaw; return Math.atan2(Math.sin(d), Math.cos(d)); };
+    if (S.behavior === 'walker') return this.walker(dt, time, sub, calm);
+    if (S.behavior === 'veil') return this.veil(dt, time, sub, calm, events);
+    if (this.state === 'cling') return calm ? ((this.state = 'roam'), 0) : this.cling(dt, time, sub);
     let want = Math.sin(this.wander * 0.23 + this.size) * 0.6 + Math.sin(this.wander * 0.071) * 0.5;
     let speed = S.speed * (1 + 0.15 * Math.sin(this.wander * 0.7)), agility = S.turn;
     let targetY = getFloorHeight(this.pos.x, this.pos.z) + this.altitude;
@@ -116,6 +181,7 @@ class Animal {
     const reach = 2.4 + this.size * 0.3;
     if (hostile && this.state === 'charge' && dist < reach) {
       // Percute la coque, puis file sur son élan avant de revenir
+      if (S.behavior === 'cling') { this.state = 'cling'; this.timer = 5; return S.damage * 0.5; }
       this.state = 'pass';
       this.timer = 1.1;
       return S.damage;
@@ -144,6 +210,7 @@ export class Wildlife {
   }
 
   clear() {
+    this.events.veil?.(false);
     for (const a of this.animals) a.dispose(this.scene);
     this.animals = [];
     this.calm = false;
@@ -164,7 +231,7 @@ export class Wildlife {
   /** @returns {number} dégâts subis par le sous-marin */
   update(dt, time, sub, zoneId) {
     for (let i = this.animals.length - 1; i >= 0; i--) {
-      if (this.animals[i].pos.distanceTo(sub.position) > DESPAWN) {
+      if (this.animals[i].pos.distanceTo(sub.position) > DESPAWN && this.animals[i].state !== 'stuck') {
         this.animals[i].dispose(this.scene);
         this.animals.splice(i, 1);
       }
@@ -184,7 +251,8 @@ export class Wildlife {
       const d = a.update(dt, time, sub, this.calm, this.events);
       if (d > 0) {
         damage += d;
-        this.events.hit?.(a, _v.subVectors(sub.position, a.pos).normalize());
+        // (les dégâts continus — étreinte, voile — ne rejouent pas le choc à chaque image)
+        if (d >= 1) this.events.hit?.(a, _v.subVectors(sub.position, a.pos).normalize());
       }
     }
     return damage;

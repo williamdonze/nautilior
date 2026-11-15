@@ -16,6 +16,7 @@ const INST = 28; // flottants par instance
 const VERT = 13; // flottants par sommet
 const MAX_SINGLE = 6000; // maillages non instanciés par image
 const MAX_LIGHTS = 6;
+export const MAX_PTS = 26000; // particules + points de l'écho du sonar
 const KIND = { rock: 1, sand: 2, wood: 3, metal: 4, glass: 10, hull: 11, coral: 12, sponge: 13 };
 
 export const VERTEX_LAYOUT = {
@@ -46,7 +47,7 @@ export class Bridge {
     this.singleBuf = device.createBuffer({ size: this.single.byteLength, usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST });
     this.nSingle = 0;
     // Particules : position + taille, couleur + type (voir vsPt)
-    this.pts = new Float32Array(8000 * 8);
+    this.pts = new Float32Array(MAX_PTS * 8);
     this.nPts = 0;
     // Listes de dessin, par passe
     this.lists = { rock: [], opaque: [], alpha: [], add: [] };
@@ -268,7 +269,7 @@ export class Bridge {
   points(o) {
     const cfg = o.userData.gpuPoints, A = o.geometry.attributes, pos = A.position.array, out = this.pts, e = o.matrixWorld.elements;
     const life = A.aLife?.array, col = A.aColor?.array, seed = A.aSeed?.array, n = A.position.count;
-    for (let i = 0; i < n && this.nPts < 8000; i++) {
+    for (let i = 0; i < n && this.nPts < MAX_PTS; i++) {
       let x = pos[i * 3], y = pos[i * 3 + 1], z = pos[i * 3 + 2], r = 0.5, g = 0.6, b = 0.6, a = 1, kind = 0, size = cfg.size;
       if (cfg.kind === 'bubble') { if (life[i] <= 0) continue; a = Math.min(1, life[i] * 2); size *= 0.6 + 0.4 * ((i * 7) % 5) / 4; }
       else if (cfg.kind === 'spark') { if (life[i] <= 0) continue; a = Math.min(1, life[i] * 1.5) * 3; r = col[i * 3]; g = col[i * 3 + 1]; b = col[i * 3 + 2]; kind = 1; }
@@ -282,6 +283,41 @@ export class Bridge {
       const k = this.nPts++ * 8;
       out[k] = e[0] * x + e[4] * y + e[8] * z + e[12]; out[k + 1] = e[1] * x + e[5] * y + e[9] * z + e[13]; out[k + 2] = e[2] * x + e[6] * y + e[10] * z + e[14];
       out[k + 3] = size; out[k + 4] = r * a; out[k + 5] = g * a; out[k + 6] = b * a; out[k + 7] = kind;
+    }
+  }
+
+  /**
+   * Écho du sonar : ajoute aux particules les points du relevé (rochers, épaves, un peu de fond)
+   * et ceux du corps de chaque bête. Le shader les allume au passage de l'onde.
+   * @param {Float32Array|number[]} cloud points monde du relevé (x, y, z) ; nFloor = fin des points du fond
+   */
+  addEcho(cloud, nFloor, movers) {
+    const out = this.pts;
+    const put = (x, y, z, size, r, g, b) => {
+      if (this.nPts >= MAX_PTS) return;
+      const k = this.nPts++ * 8;
+      out[k] = x; out[k + 1] = y; out[k + 2] = z; out[k + 3] = size; out[k + 4] = r; out[k + 5] = g; out[k + 6] = b; out[k + 7] = 2;
+    };
+    if (cloud) {
+      for (let i = 0; i < nFloor; i += 6) put(cloud[i], cloud[i + 1] + 0.7, cloud[i + 2], 0.05, 0.06, 0.26, 0.4);
+      const step = Math.max(1, Math.ceil((cloud.length - nFloor) / 3 / 15000)) * 3;
+      for (let i = nFloor; i < cloud.length; i += step) put(cloud[i], cloud[i + 1], cloud[i + 2], 0.06, 0.2, 0.85, 0.75);
+    }
+    for (const m of movers) {
+      const r = m.hostile ? 1.6 : 0.9, g = m.hostile ? 0.25 : 0.95, b = m.hostile ? 0.15 : 1;
+      m.object.traverse((c) => {
+        const pos = c.isMesh && !c.isInstancedMesh && c.geometry?.attributes.position;
+        if (!pos) return;
+        const e = c.matrixWorld.elements, st = Math.max(1, Math.floor(pos.count / 160));
+        for (let i = 0; i < pos.count; i += st) {
+          const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+          put(e[0] * x + e[4] * y + e[8] * z + e[12], e[1] * x + e[5] * y + e[9] * z + e[13], e[2] * x + e[6] * y + e[10] * z + e[14], 0.07, r, g, b);
+        }
+      });
+      if (m.chain) m.chain.forEach((c, k) => {
+        const rr = m.radius * (1 - 0.7 * Math.pow(k / m.chain.length, 2.2));
+        for (let i = 0; i < 14; i++) { const a = i * 0.449 + k * 0.3; put(c.x + Math.cos(a) * rr, c.y + Math.sin(a) * rr, c.z, 0.12, r, g, b); }
+      });
     }
   }
 
