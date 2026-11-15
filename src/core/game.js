@@ -21,6 +21,7 @@ import { waterUniform } from './waterFog.js';
 import { Menu } from '../ui/menu.js';
 import { hasSave } from '../save/save.js';
 import fragmentsData from '../story/fragments.json';
+import { playNetMemory } from '../story/netMemory.js';
 import lettersData from '../story/letters.json';
 import cluesData from '../story/clues.json';
 
@@ -426,7 +427,11 @@ export class Game {
     if (!storyState.fragments.includes(id)) storyState.fragments.push(id);
     this.persist();
     // Petit délai : on voit d'abord l'objet rentrer dans le sous-marin
-    setTimeout(() => this.showMemory(id, true), 900);
+    setTimeout(async () => {
+      // le couteau : on revit le moment, avant de s'en souvenir
+      if (id === 'couteau' && this.mode === 'dive' && !this.dive.survival.dead) await playNetMemory(this);
+      this.showMemory(id, true);
+    }, 900);
     return true;
   }
 

@@ -21,6 +21,8 @@ const WRECKS = [
 ];
 /** Positions des épaves (pour y semer plus d'objets) */
 export const WRECK_SPOTS = WRECKS.map(([x, z]) => [x, z]);
+/** La Marie-Morgane : le chalutier dont les filets ont pris le Nautiliar. Elle repose dans le Canyon ; on y entre. */
+export const MARIE = { z: -700, dx: -17, size: 2.6 };
 // Épaves : métal rouillé ; aiguilles du canyon : roche (détail triplanaire)
 const vmat = applyDetail(new THREE.MeshLambertMaterial({ vertexColors: true }), 'metal', 1.4);
 const rockMat = applyDetail(new THREE.MeshLambertMaterial({ vertexColors: true }), 'rock', 1);
@@ -58,7 +60,7 @@ function rusted(geo, base, rust, amount, seed = 0) {
  * Des pans de bordé manquent (déchirures) : on voit les membrures à l'intérieur.
  * Renvoie { geo, half(t) } où half(t) est la demi-largeur à la position t (0 poupe … 1 proue).
  */
-function shipHull(L, B, D, seed) {
+function shipHull(L, B, D, seed, breach = null) {
   const NT = 48, NA = 18;
   const half = (t) => (B / 2) * Math.pow(Math.min(1, (1 - t) * 3.2), 0.6) * Math.pow(Math.min(1, t * 9), 0.4);
   const sheer = (t) => D * 0.16 * Math.pow(Math.abs(2 * t - 1), 2.2);
@@ -75,6 +77,7 @@ function shipHull(L, B, D, seed) {
     const t = i / NT;
     // déchirures : au milieu de la coque seulement, jamais sur la quille
     if (t > 0.18 && t < 0.86 && Math.abs(k - NA / 2) > 2 && wnoise(t * 7 + seed, k * 0.45 + seed) > 0.42) continue;
+    if (breach && t > breach[0] && t < breach[1] && k >= breach[2] && k <= breach[3]) continue; // brèche : on entre par là
     const a = i * (NA + 1) + k, b = a + NA + 1;
     idx.push(a, b, a + 1, a + 1, b, b + 1);
   }
@@ -86,12 +89,13 @@ function shipHull(L, B, D, seed) {
 }
 
 /** Une épave de chalutier ou de cargo : coque éventrée, membrures, passerelle, cheminée, mâts, bastingage */
-function wreck(x, z, size, colliders) {
+function wreck(x, z, size, colliders, opts = {}) {
   const g = new THREE.Group();
   const floor = getFloorHeight(x, z);
   const L = 18 * size, B = 5 * size, D = 4 * size, seed = x * 0.37 + z * 0.11;
-  g.position.set(x, floor + D * 0.45, z);
+  g.position.set(x, floor + D * (opts.lift ?? 0.45), z);
   g.rotation.set(rand.range(-0.15, 0.15), rand() * Math.PI * 2, rand.range(0.2, 0.5));
+  if (opts.rot) g.rotation.set(...opts.rot);
   const add = (geo, mat, px = 0, py = 0, pz = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(px, py, pz); g.add(m); return m; };
   const steel = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
   steel.userData.detail = 'metal';
@@ -104,7 +108,7 @@ function wreck(x, z, size, colliders) {
     return m;
   };
 
-  const { geo: hull, half, sheer } = shipHull(L, B, D, seed);
+  const { geo: hull, half, sheer } = shipHull(L, B, D, seed, opts.breach);
   add(rusted(hull, '#3a4244', '#6a3a1e', 0.55, seed), steel);
   // Membrures : arceaux visibles par les déchirures
   for (let t = 0.1; t < 0.92; t += 0.055) {
@@ -176,6 +180,42 @@ function wreck(x, z, size, colliders) {
   // Collisions : quelques sphères le long de la coque
   g.updateMatrixWorld(true);
   const p = new THREE.Vector3();
+  if (opts.hollow) {
+    // Épave où l'on entre : des sphères le long du bordé et de la quille, l'intérieur reste libre
+    const br = opts.breach, r = 0.55 * size;
+    for (let t = 0.05; t < 0.97; t += 0.05) {
+      const w = half(t), d = D * (0.55 + 0.45 * Math.min(1, w / (B * 0.4)));
+      for (const f of [0.18, 0.5, 0.8, 1]) {
+        const sa = Math.pow(f, 1 / 0.75), ca = Math.sqrt(Math.max(0, 1 - sa * sa));
+        for (const sd of f === 1 ? [0] : [-1, 1]) {
+          if (br && sd > 0 && t > br[0] && t < br[1] && f < 0.8) continue;
+          p.set((t - 0.5) * L, sheer(t) - f * d, sd * Math.pow(ca, 0.6) * w).applyMatrix4(g.matrixWorld);
+          colliders.push({ x: p.x, y: p.y, z: p.z, r });
+        }
+      }
+    }
+    // la passerelle
+    p.set(bx, by + bh * 0.5, 0).applyMatrix4(g.matrixWorld);
+    colliders.push({ x: p.x, y: p.y, z: p.z, r: bw * 0.55 });
+    if (opts.name) {
+      // le nom, sous les vitres de la passerelle et au tableau arrière
+      const cv = document.createElement('canvas');
+      cv.width = 512; cv.height = 96;
+      const k = cv.getContext('2d');
+      k.fillStyle = '#1c2224'; k.fillRect(0, 0, 512, 96);
+      k.fillStyle = '#b9c2b8'; k.font = '600 54px "Barlow Condensed", sans-serif'; k.textAlign = 'center'; k.fillText(opts.name, 256, 66);
+      // la peinture est partie par plaques
+      for (let i = 0; i < 260; i++) { k.fillStyle = `rgba(28,34,36,${0.3 + Math.random() * 0.6})`; k.fillRect(Math.random() * 512, Math.random() * 96, 2 + Math.random() * 14, 1 + Math.random() * 4); }
+      const tex = new THREE.CanvasTexture(cv);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      const board = new THREE.MeshBasicMaterial({ map: tex, color: '#8a8f88' });
+      add(new THREE.PlaneGeometry(bw * 0.8, bw * 0.15).rotateY(Math.PI / 2), board, bx + bl / 2 + 0.04, by + bh * 0.3, 0);
+      add(new THREE.PlaneGeometry(B * 0.5, B * 0.094).rotateY(-Math.PI / 2), board, -L * 0.492, sheer(0) - D * 0.16, 0);
+    }
+    g.userData.hold = new THREE.Vector3(L * 0.11, sheer(0.6) - D * 0.3, 0).applyMatrix4(g.matrixWorld); // sous le panneau de cale
+    g.userData.stern = new THREE.Vector3(-L * 0.5, sheer(0) + D * 0.2, 0).applyMatrix4(g.matrixWorld);
+    return g;
+  }
   for (let i = -2; i <= 2; i++) {
     p.set(i * L * 0.2, -D * 0.4, 0).applyMatrix4(g.matrixWorld);
     colliders.push({ x: p.x, y: p.y, z: p.z, r: B * 0.65 });
@@ -268,6 +308,14 @@ function glowStalks(count, uniforms) {
   return g;
 }
 
+const MARIE_OPTS = { hollow: true, lift: 0.82, rot: [0.04, Math.PI / 2 - 0.22, 0.26], breach: [0.5, 0.7, 1, 6], name: 'MARIE-MORGANE' };
+/** Aperçu (page de développement) */
+export function createMariePreview() {
+  const g = wreck(0, MARIE.z, MARIE.size, [], { ...MARIE_OPTS, rot: [0, 0, 0] });
+  g.position.set(0, 0, 0);
+  return g;
+}
+
 export function createLandmarks(colliders, uniforms) {
   const group = new THREE.Group();
 
@@ -282,6 +330,9 @@ export function createLandmarks(colliders, uniforms) {
     group.add(spire(x, z, rand.range(15, 45)));
   }
   group.add(whale(canyonCenter(-760) + 8, -760, colliders));
+  const mm = wreck(canyonCenter(MARIE.z) + MARIE.dx, MARIE.z, MARIE.size, colliders, MARIE_OPTS);
+  group.add(mm);
+  group.userData.marie = mm;
 
   // Abysses
   group.add(glowStalks(160, uniforms));

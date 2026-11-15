@@ -4,7 +4,8 @@ import { WORLD } from '../config/settings.js';
 import { damp } from '../core/utils.js';
 import { applySkin } from './detail.js';
 import { getFloorHeight } from './seabed.js';
-import { createEel, createLantern, createJelly, createFishGeometry, FISH_SPECIES } from './creatureModels.js';
+import { createFishGeometry, FISH_SPECIES } from './creatureModels.js';
+import { createSonde, createOeil, createSoufflet } from './dreamModels.js';
 
 /**
  * Faune : bancs de poissons ordinaires près de la surface,
@@ -177,7 +178,7 @@ class Mutant {
   constructor(type, scene) {
     this.type = type;
     this.cfg = TYPES[type];
-    this.model = type === 'eel' ? createEel() : type === 'lantern' ? createLantern() : createJelly();
+    this.model = type === 'eel' ? createSonde() : type === 'lantern' ? createOeil() : createSoufflet();
     this.object = this.model.root;
     scene.add(this.object);
     this.pos = new THREE.Vector3();
@@ -281,6 +282,7 @@ class Mutant {
     const t = time + this.phase;
     const charging = this.state === 'charge';
     const k = Math.min(1, dt * 6);
+    m.tick?.(t, charging); // lueurs, pupille : propres à chaque modèle
     if (this.type === 'eel') {
       // La tête mène, les segments suivent en chaîne
       m.head.position.copy(this.pos);

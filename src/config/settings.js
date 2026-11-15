@@ -157,6 +157,32 @@ export const AIR_BELLS = {
   SPOTS: [[-30, -200], [60, -350], [-70, -500], [20, -640], [-25, -790], [40, -930], [-55, -1010]],
 };
 
+/** La Baleine du Canyon (paisible) */
+export const WHALE = {
+  LENGTH: 34, // m
+  SPEED: 3.2, // m/s : le sous-marin peut la suivre
+  TURN: 0.22, // rad/s
+  HEIGHT: 48, // hauteur de nage au-dessus du lit du Canyon (m)
+  Z_START: -575, // elle va et vient entre ces deux Z
+  Z_END: -860,
+  CALM_RADIUS: 70, // en deçà, le pouls s'apaise
+  LEAD_RADIUS: 60, // en deçà, elle emmène le sous-marin vers un souvenir
+  LEAD_RANGE: 420, // … s'il en reste un à cette distance d'elle (m)
+  WATCH_HEIGHT: 26, // hauteur à laquelle elle tourne au-dessus du souvenir (m)
+  WATCH_TIME: 55, // s
+  SONG_RADIUS: 420, // distance jusqu'où porte le chant (m)
+  CALM: 16, // battements par minute en moins tout près d'elle
+};
+
+/** La forêt de filets du Canyon (autour de la Marie-Morgane) */
+export const NETS = {
+  COUNT: 15, // nappes en travers du Canyon
+  REACH: 2.3, // distance à laquelle le sous-marin s'y prend (m)
+  DRAG: 5, // freinage quand on est pris
+  CUTS: 3, // coups de pince pour couper une nappe
+  BLAST: 16, // rayon dans lequel l'impulsion arrache les filets (m)
+};
+
 /** Le gardien du portail (créature colossale des abysses) */
 export const GUARDIAN = {
   SEGMENTS: 44, // tronçons du corps

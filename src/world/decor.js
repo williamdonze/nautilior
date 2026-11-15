@@ -102,6 +102,7 @@ export function createDecor() {
   group.add(rocks);
   const landmarks = createLandmarks(colliders, uniforms);
   group.add(landmarks);
+  group.userData.marie = landmarks.userData.marie;
   // En WebGPU, les plantes sont dessinées par le jardin (src/gpu/garden.js)
   if (!gpuMode.active) group.add(createFlora());
   group.add(createBottomFauna());
