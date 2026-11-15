@@ -231,7 +231,7 @@ function describe(catId, s) {
     case 'hull': return `${s.crushDepth} m max`;
     case 'claw': return `portée ${s.clawRange} m, vitesse ×${s.clawSpeed}`;
     case 'hold': return `${s.holdCapacity} emplacements`;
-    case 'sonar': return s.sonar3d ? 'relief et faune en nuage de points' : 'balayage circulaire';
+    case 'sonar': return s.sonar3d ? 'écho (touche R) : révèle le relief et les bêtes hors de vue' : 'balayage circulaire';
     case 'light': return `phare ${s.lightRange} m, sonar ${s.radarRange} m`;
     default: return '';
   }

@@ -16,7 +16,7 @@ const INST = 28; // flottants par instance
 const VERT = 13; // flottants par sommet
 const MAX_SINGLE = 6000; // maillages non instanciés par image
 const MAX_LIGHTS = 6;
-export const MAX_PTS = 26000; // particules + points de l'écho du sonar
+export const MAX_PTS = 60000; // particules + points de l'écho du sonar
 const KIND = { rock: 1, sand: 2, wood: 3, metal: 4, glass: 10, hull: 11, coral: 12, sponge: 13 };
 
 export const VERTEX_LAYOUT = {
@@ -299,9 +299,12 @@ export class Bridge {
       out[k] = x; out[k + 1] = y; out[k + 2] = z; out[k + 3] = size; out[k + 4] = r; out[k + 5] = g; out[k + 6] = b; out[k + 7] = 2;
     };
     if (cloud) {
-      for (let i = 0; i < nFloor; i += 6) put(cloud[i], cloud[i + 1] + 0.7, cloud[i + 2], 0.05, 0.06, 0.26, 0.4);
-      const step = Math.max(1, Math.ceil((cloud.length - nFloor) / 3 / 15000)) * 3;
-      for (let i = nFloor; i < cloud.length; i += step) put(cloud[i], cloud[i + 1], cloud[i + 2], 0.06, 0.2, 0.85, 0.75);
+      // même densité partout ; si le relevé dépasse la place disponible, on l'éclaircit uniformément
+      const step = Math.max(1, Math.ceil(cloud.length / 3 / (MAX_PTS - 3000))) * 3;
+      for (let i = 0; i < cloud.length; i += step) {
+        if (i < nFloor) put(cloud[i], cloud[i + 1] + 0.5, cloud[i + 2], 0.05, 0.08, 0.42, 0.55);
+        else put(cloud[i], cloud[i + 1], cloud[i + 2], 0.06, 0.2, 0.85, 0.75);
+      }
     }
     for (const m of movers) {
       const r = m.hostile ? 1.6 : 0.9, g = m.hostile ? 0.25 : 0.95, b = m.hostile ? 0.15 : 1;
