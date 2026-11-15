@@ -1,5 +1,15 @@
 import * as THREE from 'three';
-import { paintFaces, createRandom } from '../core/utils.js';
+import { paintFaces, paintVertices, createRandom } from '../core/utils.js';
+import { createNoise2D } from '../world/noise.js';
+import { applyDetail } from '../world/detail.js';
+
+/** Matériau au grain de pierre ou de bois (texture de détail), en gardant les arêtes franches des volumes */
+function textured(material, kind, scale) {
+  applyDetail(material, kind, scale);
+  material.flatShading = true;
+  return material;
+}
+
 
 /**
  * Le village de Port-Kermor en détail : maisons bretonnes (granit ou chaux, toits d'ardoise,
@@ -9,22 +19,23 @@ import { paintFaces, createRandom } from '../core/utils.js';
  * bouées, linge qui flotte, arbres tordus et goélands.
  */
 const rand = createRandom(1984);
-const vmat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
-const lambert = (color, extra = {}) => new THREE.MeshLambertMaterial({ color, flatShading: true, ...extra });
+const patina = createNoise2D(4211);
+const vmat = textured(new THREE.MeshLambertMaterial({ vertexColors: true }), 'stone', 1.1);
+const lambert = (color, extra = {}) => textured(new THREE.MeshLambertMaterial({ color, ...extra }), 'stone', 1.6);
 const GLASS = lambert('#17191a');
 const GLOW = new THREE.MeshBasicMaterial({ color: '#cdb57c' });
 const GRANITE = '#878a85';
 const SHUTTER_COLORS = ['#2f4a66', '#3c7048', '#8a3a2a', '#5b7a8a', '#e8ece2'];
 
-/** Peint chaque face d'une variation de teinte (pierre, ardoise, crépi) */
+/** Patine (pierre, ardoise, crépi) : teinte qui varie en douceur, salissures qui remontent du sol */
 function paint(geo, hex, variation = 0.12, dirt = null) {
   geo = geo.index ? geo.toNonIndexed() : geo;
   geo.computeVertexNormals();
   const base = new THREE.Color(hex), d = dirt ? new THREE.Color(dirt) : null, c = new THREE.Color();
-  paintFaces(geo, (p) => {
-    c.copy(base).multiplyScalar(1 - variation + rand() * variation * 2);
-    // Salissures et humidité qui remontent du sol
-    if (d && p.y < 0.9 + rand() * 0.6) c.lerp(d, 0.45);
+  paintVertices(geo, (p) => {
+    const n = patina(p.x * 0.4 + p.y * 0.25, p.z * 0.4 - p.y * 0.2) * 0.5 + 0.5;
+    c.copy(base).multiplyScalar(1 - variation * 0.7 + n * variation * 1.4);
+    if (d) c.lerp(d, Math.max(0, Math.min(1, (1.3 + n * 0.8 - p.y) / 1.6)) * 0.45);
     return c;
   });
   return geo;
@@ -402,7 +413,7 @@ function upturnedBoat(group, x, z, ry, color) {
   hull.rotateZ(Math.PI / 2);
   hull.rotateX(Math.PI / 2);
   hull.scale(1, 0.6, 1);
-  mesh(paint(hull, color, 0.15, '#3e2114'), new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide }), 0, 0.05, 0, g);
+  mesh(paint(hull, color, 0.15, '#3e2114'), textured(new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }), 'wood', 1), 0, 0.05, 0, g);
   for (const s of [-1, 1]) mesh(new THREE.BoxGeometry(0.15, 0.3, 0.15), lambert('#3e2114'), s * 1.4, 0.15, 0, g);
 }
 

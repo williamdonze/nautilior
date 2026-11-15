@@ -123,7 +123,7 @@ export class Menu {
         <label class="setting"><span>Niveau de détail</span>
           <input type="range" min="0" max="${QUALITY_LEVELS.length - 1}" value="${preferences.qualityLevel}" data-pref="qualityLevel">
           <em data-label="qualityLevel"></em></label>
-        <p class="setting-note" id="quality-note">${this.qualityAtStart !== undefined && this.qualityAtStart !== preferences.qualityLevel ? 'Appliqué au prochain lancement : <button data-menu="reload">RELANCER</button>' : 'Basse : moins de flore, pas d\'ombres ni de rayons de soleil.'}</p>
+        <p class="setting-note" id="quality-note">${this.qualityAtStart !== undefined && this.qualityAtStart !== preferences.qualityLevel ? 'Appliqué au prochain lancement : <button data-menu="reload">RELANCER</button>' : 'Règle la densité des algues, les ombres, les rayons de lumière et la finesse de l\'image.'}</p>
         <label class="setting toggle"><span>Résolution auto (60 i/s)</span>
           <input type="checkbox" data-toggle="autoRes" ${preferences.autoRes ? 'checked' : ''}><em></em></label>
         <label class="setting toggle"><span>Afficher les images/s</span>

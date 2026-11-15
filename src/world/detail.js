@@ -96,7 +96,7 @@ export function createDetailTexture(renderer) {
  *  wood  : bois d'épave (veines, planches, mousses)
  *  metal : métal rouillé (coulures, plaques)
  */
-const KINDS = { rock: 0, sand: 1, wood: 2, metal: 3 };
+const KINDS = { rock: 0, sand: 1, wood: 2, metal: 3, stone: 4 };
 
 const PARS = /* glsl */ `
   uniform sampler2D tDetail;
@@ -182,6 +182,11 @@ export function applyDetail(material, kind = 'rock', scale = 1) {
           float plank = fract((P.y + P.z * 0.3) * 1.6);
           alb *= 0.45 + 0.55 * smoothstep(0.0, 0.08, min(plank, 1.0 - plank));
           alb = mix(alb, vec3(0.08, 0.2, 0.14), smoothstep(0.5, 0.72, A.c) * up * 0.7);`
+              : k === 4
+              ? /* glsl */ `
+          // Pierre de taille, ardoise, crépi (village) : grain et joints, un peu de lichen, pas d'algues
+          alb *= 0.72 + 0.5 * hgt;
+          alb = mix(alb, alb * vec3(0.8, 0.9, 0.72), smoothstep(0.62, 0.8, A.c) * 0.35);`
               : /* glsl */ `
           // Métal : coulures de rouille verticales, plaques
           float drip = texture2D(tDetail, vec2((P.x + P.z) * 0.33, P.y * 0.035)).a;

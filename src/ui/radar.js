@@ -158,7 +158,7 @@ export class Radar {
       const d = lf * cT - u * sT, k = 1 / (1 + (d / range) * 0.45);
       return [cx + lr * sc * k, cy - (u * cT + lf * sT) * sc * k, k];
     };
-    const wave = this.sweep * range * 1.15, px = Math.max(1, W * 0.006);
+    const wave = this.sweep * range * 1.15, px = Math.max(1.5, W * 0.009);
     const pts = this.cloud ?? [];
     for (let i = 0; i < pts.length; i += 4) {
       const lr = pts[i], u = pts[i + 1], lf = pts[i + 2], rock = pts[i + 3];
@@ -167,7 +167,7 @@ export class Radar {
       // l'onde illumine les points qu'elle traverse ; la couleur dit la hauteur par rapport au sous-marin
       const lit = Math.max(0, 1 - Math.abs(r - wave) / (range * 0.12));
       const h = Math.max(0, Math.min(1, (u + range * 0.5) / (range * 0.75)));
-      const a = (0.25 + 0.75 * lit) * (1 - (r / range) * 0.55) * (rock ? 1 : 0.8);
+      const a = (0.45 + 0.55 * lit) * (1 - (r / range) * 0.45) * (rock ? 1 : 0.85);
       ctx.fillStyle = rock ? `rgba(${150 + 80 * lit}, ${225}, ${190}, ${a})` : `rgba(${60 + 90 * h}, ${150 + 90 * h}, ${130 + 60 * h}, ${a})`;
       const s = px * k * (rock ? 1.5 : 1) * (1 + lit * 0.8);
       ctx.fillRect(x - s / 2, y - s / 2, s, s);

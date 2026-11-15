@@ -1,6 +1,16 @@
 import * as THREE from 'three';
 import layout from './layout.json';
-import { paintFaces, createRandom } from '../core/utils.js';
+import { paintFaces, paintVertices, createRandom } from '../core/utils.js';
+import { createNoise2D } from '../world/noise.js';
+import { applyDetail } from '../world/detail.js';
+
+/** Matériau au grain de pierre ou de bois (texture de détail), en gardant les arêtes franches des volumes */
+function textured(material, kind, scale) {
+  applyDetail(material, kind, scale);
+  material.flatShading = true;
+  return material;
+}
+
 import { createSubmarineModel } from '../submarine/subModel.js';
 import { buildBuilding as buildVillageBuilding, decorateVillage } from './village.js';
 
@@ -10,19 +20,23 @@ import { buildBuilding as buildVillageBuilding, decorateVillage } from './villag
  * Renvoie aussi les obstacles (boîtes au sol) et les points d'interaction des maisons.
  */
 const rand = createRandom(29);
-const lambert = (color, extra = {}) => new THREE.MeshLambertMaterial({ color, flatShading: true, ...extra });
-const vertexMat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+const lambert = (color, extra = {}) => textured(new THREE.MeshLambertMaterial({ color, ...extra }), 'stone', 1.6);
+const patina = createNoise2D(4107);
+const vertexMat = textured(new THREE.MeshLambertMaterial({ vertexColors: true }), 'stone', 1.1);
 const GLOW = new THREE.MeshBasicMaterial({ color: '#cdb57c' });
 const DARK = lambert('#17191a');
 const WOOD = lambert('#3e2114');
 
-/** Peint une géométrie de petites variations (pierre irrégulière) */
+/** Patine de la pierre : la teinte varie en douceur (humidité, lichens), le grain vient de la texture de détail */
 function stone(geo, hex, variation = 0.12) {
   geo = geo.index ? geo.toNonIndexed() : geo;
   geo.computeVertexNormals();
-  const base = new THREE.Color(hex);
+  const base = new THREE.Color(hex), damp = new THREE.Color('#2a302c');
   const c = new THREE.Color();
-  paintFaces(geo, () => c.copy(base).multiplyScalar(1 - variation + rand() * variation * 2));
+  paintVertices(geo, (p) => {
+    const n = patina(p.x * 0.35 + p.y * 0.2, p.z * 0.35 - p.y * 0.15) * 0.5 + 0.5;
+    return c.copy(base).multiplyScalar(1 - variation * 0.7 + n * variation * 1.4).lerp(damp, Math.max(0, 0.9 - p.y) * 0.25 * n);
+  });
   return geo;
 }
 
