@@ -12,11 +12,12 @@ import { gameState, resetGameState } from '../save/gameState.js';
 import { save, load, clearSave, savePrechoice } from '../save/save.js';
 import { playEnding, showEndScreen } from '../story/endings.js';
 import { applyUpgrades, stats } from '../submarine/stats.js';
-import { SURVIVAL } from '../config/settings.js';
+import { PICKUPS, SURVIVAL } from '../config/settings.js';
 import { MemoryView } from '../ui/memoryView.js';
 import { createDetailTexture } from '../world/detail.js';
 import { Soundscape } from './soundscape.js';
 import { Music } from './music.js';
+import { waterUniform } from './waterFog.js';
 import { Menu } from '../ui/menu.js';
 import { hasSave } from '../save/save.js';
 import fragmentsData from '../story/fragments.json';
@@ -53,7 +54,11 @@ export class Game {
       pixel, input, pointer, sound, hud,
       hold: this.hold,
       thumbnails: this.thumbnails,
-      onCapture: (pickup) => (pickup.item.fragment ? this.foundFragment(pickup.item.fragmentId) : this.addToCollection(pickup.item)),
+      onCapture: (pickup) => {
+        // Ce qui est remonté ne reparaît pas avant la prochaine marée
+        if (pickup.index != null && !gameState.taken.includes(pickup.index)) gameState.taken.push(pickup.index);
+        return this.captureResult(pickup);
+      },
       onDeath: (cause) => this.death(cause),
       onReturn: () => this.goPort('quay', true),
       onPortal: () => this.facePortal(),
@@ -237,7 +242,7 @@ export class Game {
       // « Revenir devant le portail » : on reprend juste avant le choix
       delete gameState.resumeAt;
       this.setMode('dive');
-      this.dive.enter(gameState.day, storyState.fragments);
+      this.dive.enter(gameState.tide, storyState.fragments, gameState.taken);
       const c = this.dive.portal.center;
       this.dive.sub.teleport(c.x, c.y - 4, c.z + 26, Math.PI);
       this.dive.follow.snap(this.dive.sub);
@@ -270,7 +275,16 @@ export class Game {
 
   /** Passe au port immédiatement (sans fondu) */
   enterPort(spot, newDay) {
-    if (newDay) gameState.day++;
+    if (newDay) {
+      gameState.day++;
+      // Marée : tous les TIDE_DIVES retours, la mer brasse les fonds (nouveaux objets, ailleurs)
+      if (++gameState.tideDives >= PICKUPS.TIDE_DIVES) {
+        gameState.tideDives = 0;
+        gameState.tide++;
+        gameState.taken = [];
+      }
+    }
+    waterUniform.y = 0; // pas de reflets d'eau sur le quai
     this.setMode('port');
     this.port.enter(spot);
     this.pixel.setDistortion(0, 0);
@@ -293,7 +307,7 @@ export class Game {
   goDive() {
     this.transition(() => {
       this.setMode('dive');
-      this.dive.enter(gameState.day, storyState.fragments);
+      this.dive.enter(gameState.tide, storyState.fragments, gameState.taken);
       this.persist();
     }, 'Le Nautiliar s\'enfonce sous la surface.');
   }
@@ -347,11 +361,18 @@ export class Game {
   async interact(it) {
     if (it.kind === 'npc') return this.talk(it.npcId);
     if (it.kind === 'house') return this.talk('house');
+    if (it.kind === 'clue') return this.examine(it);
     if (it.action === 'openCollection') return this.panels.open('collection');
     if (it.action === 'dive') {
       if (!storyState.flags.subGiven) return this.talk('sub');
       this.goDive();
     }
+  }
+
+  /** Examine un indice du village : quelques lignes de narration, sans explication */
+  async examine(clue) {
+    if (this.busy || this.dialogue.isOpen) return;
+    for (const line of clue.lines) await this.dialogue.narrate(line, false);
   }
 
   /** Lance la conversation adaptée avec un personnage, puis l'action éventuelle */
@@ -443,6 +464,10 @@ export class Game {
       const f = this.port.focus;
       this.hud.setPrompt(f && this.portControls ? f.label : '');
     }
+  }
+
+  captureResult(pickup) {
+    return pickup.item.fragment ? this.foundFragment(pickup.item.fragmentId) : this.addToCollection(pickup.item);
   }
 
   render() {

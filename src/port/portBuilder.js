@@ -13,6 +13,7 @@ function textured(material, kind, scale) {
 
 import { createSubmarineModel } from '../submarine/subModel.js';
 import { buildBuilding as buildVillageBuilding, decorateVillage } from './village.js';
+import { buildSurroundings } from './surroundings.js';
 
 /**
  * Construit le décor du port : quai de granit, maisons fermées, hôpital, boutique,
@@ -131,6 +132,8 @@ export function buildPort() {
   }
   // Phare, chapelle et calvaire, fontaine, cabine, voitures, murets, casiers, filets, goélands…
   const village = decorateVillage(group, colliders, tagged);
+  // Falaises tout autour, tunnel éboulé : on ne sort pas du village
+  buildSurroundings(group, colliders);
 
   // --- Réverbères (deux seulement allumés)
   lampPost(group, -24, 3.6, false, lights);
@@ -190,7 +193,9 @@ export function buildPort() {
       sub = createSubmarineModel(level);
       subRoot.add(sub.group);
       // Les plus gros modèles flottent un peu plus haut
-      subRoot.position.y = level === 4 ? 0.2 : level >= 5 ? -0.2 : -0.75;
+      // Les grands modèles s'amarrent plus au large (ils ne mordent plus sur le quai) et flottent selon leur forme
+      subRoot.position.y = [-0.75, -0.75, -0.8, -0.85, -1.0, -0.35, -0.55][level] ?? -0.75;
+      subRoot.position.z = layout.sub.z + ([0, 0, 0.2, 1.0, 1.6, 2.4, 2.6][level] ?? 0);
     },
     lighthouseLantern: village.lighthouseLantern,
     water,

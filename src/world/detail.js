@@ -184,9 +184,37 @@ export function applyDetail(material, kind = 'rock', scale = 1) {
           alb = mix(alb, vec3(0.08, 0.2, 0.14), smoothstep(0.5, 0.72, A.c) * up * 0.7);`
               : k === 4
               ? /* glsl */ `
-          // Pierre de taille, ardoise, crépi (village) : grain et joints, un peu de lichen, pas d'algues
-          alb *= 0.72 + 0.5 * hgt;
-          alb = mix(alb, alb * vec3(0.8, 0.9, 0.72), smoothstep(0.62, 0.8, A.c) * 0.35);`
+          // Village : la même matière ne suffit pas, alors la surface dit ce qu'elle est.
+          //  - sol (face vers le haut, bas)  : pavés en quinconce, clairs
+          //  - toits (pans inclinés, hauts)  : rangs d'ardoises sombres
+          //  - murs (faces verticales)       : moellons en assises, joints creux
+          pn = mix(wn, pn, 0.3); // relief adouci : rien d'agressif à la lumière rasante
+          float gF = smoothstep(0.8, 0.95, wn.y) * (1.0 - smoothstep(0.6, 1.4, P.y));
+          float rF = smoothstep(0.2, 0.45, wn.y) * (1.0 - smoothstep(0.9, 0.98, wn.y)) * smoothstep(1.8, 2.6, P.y);
+          float wF = (1.0 - smoothstep(0.2, 0.45, abs(wn.y))) ;
+          // pavés
+          float prow = floor(P.z / 0.34);
+          vec2 pc = vec2(fract(P.x / 0.42 + mod(prow, 2.0) * 0.5 + dhash(prow) * 0.2), fract(P.z / 0.34));
+          float pj = 1.0 - smoothstep(0.03, 0.1, min(min(pc.x, 1.0 - pc.x), min(pc.y, 1.0 - pc.y)));
+          float pt = dhash(floor(P.x / 0.42 + mod(prow, 2.0) * 0.5 + dhash(prow) * 0.2) * 3.1 + prow * 17.0);
+          vec3 paved = alb * vec3(1.22, 1.17, 1.08) * (0.86 + 0.3 * pt) * (0.8 + 0.3 * hgt) * (1.0 - 0.45 * pj);
+          // ardoises
+          float srow = floor(P.y / 0.28);
+          float su = (abs(wn.x) > abs(wn.z) ? P.z : P.x) / 0.36 + mod(srow, 2.0) * 0.5;
+          float sj = max(1.0 - smoothstep(0.0, 0.12, fract(P.y / 0.28)), (1.0 - smoothstep(0.0, 0.06, min(fract(su), 1.0 - fract(su)))) * 0.6);
+          vec3 slate = alb * vec3(0.8, 0.86, 0.98) * (0.8 + 0.3 * dhash(floor(su) * 1.7 + srow * 9.0)) * (1.0 - 0.4 * sj) * (0.85 + 0.25 * hgt);
+          // moellons
+          float mrow = floor(P.y / 0.45);
+          float mu = (abs(wn.x) > abs(wn.z) ? P.z : P.x) / 0.75 + mod(mrow, 2.0) * 0.5 + dhash(mrow) * 0.35;
+          vec2 mc = vec2(fract(mu), fract(P.y / 0.45));
+          float mj = 1.0 - smoothstep(0.02, 0.07, min(min(mc.x, 1.0 - mc.x) * 1.6, min(mc.y, 1.0 - mc.y)));
+          vec3 wall = alb * (0.9 + 0.22 * dhash(floor(mu) * 2.3 + mrow * 13.0)) * (0.9 + 0.18 * hgt) * (1.0 - 0.3 * mj);
+          wall = mix(wall, wall * vec3(0.82, 0.92, 0.74), smoothstep(0.62, 0.8, A.c) * 0.3); // lichen
+          vec3 plain = alb * (0.85 + 0.25 * hgt);
+          alb = mix(plain, wall, wF);
+          alb = mix(alb, slate, rF);
+          alb = mix(alb, paved, gF);
+          pn += vec3(0.0, 1.0, 0.0) * 0.0;`
               : /* glsl */ `
           // Métal : coulures de rouille verticales, plaques
           float drip = texture2D(tDetail, vec2((P.x + P.z) * 0.33, P.y * 0.035)).a;
@@ -195,7 +223,7 @@ export function applyDetail(material, kind = 'rock', scale = 1) {
           }
           diffuseColor.rgb = alb;
           // Occlusion des creux (hauteur basse) et des dessous
-          dAO = mix(0.45, 1.0, smoothstep(0.12, 0.6, hgt)) * mix(0.7, 1.0, wn.y * 0.5 + 0.5);
+          dAO = mix(${k === 4 ? '0.82' : '0.45'}, 1.0, smoothstep(0.12, 0.6, hgt)) * mix(${k === 4 ? '0.86' : '0.7'}, 1.0, wn.y * 0.5 + 0.5);
           normal = normalize((viewMatrix * vec4(normalize(pn), 0.0)).xyz);
         }
         #endif`

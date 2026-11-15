@@ -3,6 +3,7 @@ import layout from './layout.json';
 import { buildPort } from './portBuilder.js';
 import { Player } from './player.js';
 import { createCharacter, LOOKS } from './characters.js';
+import cluesData from '../story/clues.json';
 import { NPCS } from '../story/dialogue.js';
 import { damp } from '../core/utils.js';
 import { createSeaAndSky } from './sea.js';
@@ -41,13 +42,15 @@ export class Port {
       character.object.position.set(n.x, 0, n.z);
       character.object.rotation.y = n.yaw;
       this.scene.add(character.object);
-      return { ...n, character, yawNow: n.yaw };
+      return { ...n, character, yawNow: n.yaw, home: { x: n.x, z: n.z }, target: 0, pause: 2 + Math.random() * 4, speed: 0 };
     });
 
     // Points d'interaction
+    for (const n of this.npcs) n.interact = { id: n.id, kind: 'npc', npcId: n.id, x: n.x, z: n.z, label: `Parler ${talkLabel(NPCS[n.id].name)}` };
     this.interactables = [
-      ...this.npcs.map((n) => ({ id: n.id, kind: 'npc', npcId: n.id, x: n.x, z: n.z, label: `Parler ${talkLabel(NPCS[n.id].name)}` })),
+      ...this.npcs.map((n) => n.interact),
       ...layout.interactables,
+      ...cluesData.clues.map((c) => ({ id: `clue_${c.id}`, kind: 'clue', x: c.x, z: c.z, label: c.label, lines: c.lines })),
       ...this.world.interactables,
     ];
     this.circles = this.npcs.map((n) => ({ x: n.x, z: n.z, r: 0.45 }));
@@ -73,12 +76,14 @@ export class Port {
 
   /** Les trois villageois réunis sur le quai, face au joueur */
   gatherVillagers() {
+    this.npcsFrozen = true; // cinématique : ils restent où on les place
     const spots = { mechanic: [9.5, -1.5], doctor: [12, -2.2], merchant: [14.5, -1.5] };
     for (const n of this.npcs) {
       const [x, z] = spots[n.id];
       n.x = x;
       n.z = z;
       n.yaw = 0;
+      n.yawNow = 0;
       n.character.object.position.set(x, 0, z);
     }
     this.circles = this.npcs.map((n) => ({ x: n.x, z: n.z, r: 0.45 }));
@@ -185,16 +190,44 @@ export class Port {
       this.camera.lookAt(this.lookAt);
     }
 
-    // Les personnages se tournent vers le joueur quand il approche
-    for (const n of this.npcs) {
-      const dx = p.x - n.x, dz = p.z - n.z;
-      const near = dx * dx + dz * dz < 36;
-      const target = near ? Math.atan2(dx, dz) : n.yaw;
-      let diff = Math.atan2(Math.sin(target - n.yawNow), Math.cos(target - n.yawNow));
-      n.yawNow += diff * damp(3, dt);
-      n.character.object.rotation.y = n.yawNow;
-      n.character.animate(dt, 0, time + n.x);
-    }
+    /*
+     * Les personnages vaquent à leurs occupations : ils vont d'un point à l'autre de leur coin,
+     * s'y arrêtent pour travailler (marteler, balayer, faire les cent pas)… et dès qu'on approche,
+     * ils s'interrompent et se tournent vers nous.
+     */
+    this.npcs.forEach((n, i) => {
+      const dx = p.x - n.x, dz = p.z - n.z, near = dx * dx + dz * dz < 30;
+      const R = n.routine, ch = n.character;
+      let target = n.yaw, speed = 0, working = false;
+      if (near || !R || this.npcsFrozen) target = near ? Math.atan2(dx, dz) : n.yaw;
+      else if (n.pause > 0) {
+        n.pause -= dt;
+        working = true;
+        if (n.pause <= 0) n.target = (n.target + 1 + Math.floor(Math.random() * (R.points.length - 1))) % R.points.length;
+      } else {
+        const [tx, tz] = R.points[n.target], ex = tx - n.x, ez = tz - n.z, d = Math.hypot(ex, ez);
+        if (d < 0.15) { n.pause = 4 + Math.random() * 7; n.yaw = Math.atan2(-ex, -ez) + Math.PI; }
+        else { speed = 0.9; target = Math.atan2(ex, ez); n.x += (ex / d) * speed * dt; n.z += (ez / d) * speed * dt; n.yaw = target; }
+      }
+      n.speed += (speed - n.speed) * damp(6, dt);
+      const diff = Math.atan2(Math.sin(target - n.yawNow), Math.cos(target - n.yawNow));
+      n.yawNow += diff * damp(near ? 5 : 3, dt);
+      ch.object.position.set(n.x, 0, n.z);
+      ch.object.rotation.y = n.yawNow;
+      ch.animate(dt, n.speed, time + i * 7);
+      // Gestes de travail (repris en douceur quand on s'éloigne)
+      n.workK = (n.workK ?? 0) + ((working ? 1 : 0) - (n.workK ?? 0)) * damp(4, dt);
+      const k = n.workK, t = time + i * 3;
+      if (k > 0.01 && R) {
+        const [L, Rr] = ch.arms;
+        if (R.work === 'hammer') { Rr.rotation.x += (-1.5 + Math.max(0, Math.sin(t * 7)) * 1.1 - Rr.rotation.x) * k; L.rotation.x += (-0.6 - L.rotation.x) * k; ch.body.rotation.x = 0.22 * k; }
+        else if (R.work === 'sweep') { const sw = Math.sin(t * 2.6); L.rotation.x += (-0.9 + sw * 0.35 - L.rotation.x) * k; Rr.rotation.x += (-0.6 - sw * 0.35 - Rr.rotation.x) * k; ch.body.rotation.y = sw * 0.25 * k; ch.body.rotation.x = 0.15 * k; }
+        else { L.rotation.x += (0.35 - L.rotation.x) * k; Rr.rotation.x += (0.35 - Rr.rotation.x) * k; ch.head.rotation.x = (0.25 + Math.sin(t * 0.5) * 0.12) * k; ch.head.rotation.y = Math.sin(t * 0.31) * 0.5 * k; }
+      } else { ch.body.rotation.x *= 0.9; ch.body.rotation.y *= 0.9; ch.head.rotation.x *= 0.9; ch.head.rotation.y *= 0.9; }
+      // Le point de dialogue et l'obstacle suivent le personnage
+      n.interact.x = n.x; n.interact.z = n.z;
+      if (this.circles[i]) { this.circles[i].x = n.x; this.circles[i].z = n.z; }
+    });
 
     // Point d'interaction le plus proche
     let best = null, bestD = INTERACT_RADIUS;

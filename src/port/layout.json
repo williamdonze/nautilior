@@ -1,9 +1,9 @@
 {
-  "_comment": "Disposition du port de Port-Kermor. Le quai longe l'axe X, la mer est côté +Z, le village côté -Z. Tailles en mètres (w = largeur X, d = profondeur Z, h = hauteur des murs).",
+  "_comment": "Disposition du port de Port-Kermor. Le quai longe l'axe X, la mer est côté +Z, le village côté -Z. Tailles en mètres (w = largeur X, d = profondeur Z, h = hauteur des murs). routine (personnages) : points entre lesquels ils vont et viennent, et leur occupation (hammer = marteler, sweep = balayer, ponder = faire les cent pas, mains dans le dos).",
   "bounds": {
-    "minX": -36,
-    "maxX": 36,
-    "minZ": -27,
+    "minX": -50,
+    "maxX": 50,
+    "minZ": -48.5,
     "maxZ": 5.3
   },
   "spawns": {
@@ -252,19 +252,70 @@
       "id": "doctor",
       "x": -15.6,
       "z": -6.6,
-      "yaw": 0
+      "yaw": 0,
+      "routine": {
+        "points": [
+          [
+            -15.6,
+            -6.6
+          ],
+          [
+            -12.6,
+            -5.2
+          ],
+          [
+            -20.5,
+            -5.4
+          ]
+        ],
+        "work": "ponder"
+      }
     },
     {
       "id": "merchant",
       "x": -2.2,
       "z": -6.2,
-      "yaw": -0.3
+      "yaw": -0.3,
+      "routine": {
+        "points": [
+          [
+            -2.2,
+            -6.2
+          ],
+          [
+            -5.6,
+            -5.9
+          ],
+          [
+            -0.4,
+            -5.6
+          ]
+        ],
+        "work": "sweep"
+      }
     },
     {
       "id": "mechanic",
       "x": 19.5,
       "z": 2.4,
-      "yaw": 2.6
+      "yaw": 2.6,
+      "routine": {
+        "points": [
+          [
+            19.5,
+            2.4
+          ],
+          [
+            16.2,
+            3.4
+          ],
+          [
+            22.6,
+            1.2
+          ]
+        ],
+        "work": "hammer"
+      }
     }
   ],
   "interactables": [

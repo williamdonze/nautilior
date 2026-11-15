@@ -96,6 +96,7 @@ export const PICKUPS = {
   // Le nombre d'objets par zone est dans config/zones.json
   NEAR_SPAWN: 28, // objets supplémentaires placés près du point de départ
   NEAR_RADIUS: 60,
+  TIDE_DIVES: 3, // toutes les 3 plongées, la marée redistribue les objets (ailleurs) ; entre-temps, ce qui est pris est pris
   NEAR_RENDER: 70, // seuls les objets à moins de cette distance sont visés (performance)
 };
 

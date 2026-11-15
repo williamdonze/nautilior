@@ -31,7 +31,9 @@ export class Pickups {
    * Nouvelle plongée : le fond est repeuplé (tirage différent selon le jour),
    * et les fragments de mémoire pas encore trouvés sont reposés à leur place.
    */
-  reset(seed, foundFragments = [], ownedIds = []) {
+  reset(seed, foundFragments = [], ownedIds = [], taken = []) {
+    this.taken = new Set(taken);
+    this.seedBase = WORLD.SEED + 5003 + seed * 104729;
     for (const p of [...this.list]) this.dispose(p);
     this.list = [];
     this.highlighted = null;
@@ -48,10 +50,19 @@ export class Pickups {
 
   /** Pose un objet tiré au sort selon la profondeur du fond en (x, z) */
   spawnRandom(x, z) {
-    return this.spawn(rollItem(-getFloorHeight(x, z), this.rand), x, z);
+    // Chaque emplacement a son numéro et son propre tirage : retirer un objet ne déplace pas les autres
+    const index = this.counter++;
+    if (this.taken?.has(index)) return null;
+    const main = this.rand;
+    this.rand = createRandom((this.seedBase ?? 1) + index * 131);
+    const p = this.spawn(rollItem(-getFloorHeight(x, z), this.rand), x, z);
+    this.rand = main;
+    if (p) p.index = index;
+    return p;
   }
 
   spawnAll() {
+    this.counter = 0;
     const B = WORLD.BOUNDS;
     const sp = SUBMARINE.SPAWN;
     // Près du départ, pour trouver vite de quoi ramasser

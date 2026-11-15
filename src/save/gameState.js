@@ -7,6 +7,9 @@ export const gameState = {
   upgrades: { oxygen: 0, hull: 0, claw: 0, hold: 0, light: 0 },
   collection: [], // identifiants des objets déjà remontés au moins une fois
   hold: [], // identifiants des objets dans la soute
+  tide: 1, // numéro de marée : décide où reposent les objets au fond
+  tideDives: 0, // plongées faites pendant cette marée
+  taken: [], // objets déjà remontés pendant cette marée (ils ne reparaissent pas)
 };
 
 const DEFAULTS = JSON.stringify(gameState);
