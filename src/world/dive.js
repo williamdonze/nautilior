@@ -240,6 +240,11 @@ export class Dive {
   /** Clic gauche : la pince (en vue cockpit, le premier clic capture la souris) */
   click() {
     if (this.inventory.isOpen || this.survival.dead) return;
+    // La pince se commande aux manettes : uniquement depuis le poste de pilotage
+    if (this.view === 'third') {
+      this.hud.needCockpit();
+      return;
+    }
     if (this.view === 'first' && !this.pointer.locked) {
       this.pointer.lock();
       return;
@@ -320,9 +325,10 @@ export class Dive {
     // Vue cockpit : on vise au centre de l'écran ; vue extérieure : sous le curseur
     const aimPointer = this.view === 'first' ? CENTER_POINTER : this.pointer;
     this.aim.update(aimPointer, this.claw.root);
-    this.pickups.setHighlighted(!this.claw.busy && this.aim.inRange ? this.aim.pickup : null);
+    const canGrab = this.view === 'first';
+    this.pickups.setHighlighted(canGrab && !this.claw.busy && this.aim.inRange ? this.aim.pickup : null);
     this.pickups.update(time, camera.position);
-    hud.updateReticle(aimPointer, this.aim, this.claw.busy, this.hold.full);
+    hud.updateReticle(aimPointer, this.aim, this.claw.busy, this.hold.full, canGrab);
     this.captureFx.update(dt, camera);
 
     this.ambience.update(this.cameraDepth, sub.position, time);

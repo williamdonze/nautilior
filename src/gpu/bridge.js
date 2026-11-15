@@ -16,7 +16,7 @@ const INST = 28; // flottants par instance
 const VERT = 13; // flottants par sommet
 const MAX_SINGLE = 6000; // maillages non instanciés par image
 const MAX_LIGHTS = 6;
-const KIND = { rock: 1, sand: 2, wood: 3, metal: 4 };
+const KIND = { rock: 1, sand: 2, wood: 3, metal: 4, glass: 10, hull: 11, coral: 12, sponge: 13 };
 
 export const VERTEX_LAYOUT = {
   arrayStride: VERT * 4,
@@ -148,8 +148,10 @@ export class Bridge {
       if (kind === 8) z = u.skin;
       if (mat.flatShading || geo.flat) flags |= 1;
       if (u.swim) flags |= 2;
+      if (u.flap) flags |= 16;
       const e = mat.emissive, ei = mat.emissiveIntensity ?? 1;
       if (e) { P.emi[0] = e.r * ei; P.emi[1] = e.g * ei; P.emi[2] = e.b * ei; }
+      if (u.flap) P.emi[3] = u.flap; // amplitude du battement d'ailes
       P.tex = mat.map;
       if (kind === 1) P.col[0] = P.col[1] = P.col[2] = 1; // la roche a sa propre couleur ; seule la teinte d'instance compte
     }
@@ -170,7 +172,7 @@ export class Bridge {
     out[o + 20] = P.emi[0]; out[o + 21] = P.emi[1]; out[o + 22] = P.emi[2]; out[o + 23] = P.emi[3];
     out[o + 24] = P.par[0]; out[o + 25] = P.par[1]; out[o + 26] = P.par[2];
     // Graine par objet (variation de la texture de roche)
-    out[o + 27] = P.par[0] === 1 ? (Math.abs(e[12] * 0.731 + e[14] * 0.317) % 1) : P.par[3];
+    out[o + 27] = P.par[0] === 1 || P.par[0] === 12 || P.par[0] === 13 ? (Math.abs(e[12] * 0.731 + e[14] * 0.317) % 1) : P.par[3];
   }
 
   /** InstancedMesh : tampon d'instances persistant, refait seulement si les matrices changent */
