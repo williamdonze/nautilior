@@ -225,12 +225,18 @@ export function createCharacter(look) {
   if (look.hat !== 'scarf') add(head, hairGeometry(style, female), hair);
   if (look.beard) add(head, beardGeometry(), mat(look.beard));
   if (look.glasses) {
-    const wire = mat('#2a2622');
+    // Lunettes rondes : posées DEVANT le visage (ni dans l'arcade ni dans la joue), pont par-dessus le nez
+    const wire = mat('#2a2622'), gz = 0.1155;
     for (const side of [-1, 1]) {
-      add(head, new THREE.TorusGeometry(0.02, 0.0025, 6, 22), wire, side * 0.031, 0, 0.1);
-      add(head, new THREE.CylinderGeometry(0.002, 0.002, 0.1, 5).rotateX(Math.PI / 2), wire, side * 0.052, 0.002, 0.052).rotation.y = side * 0.32;
+      add(head, new THREE.TorusGeometry(0.019, 0.0018, 8, 28), wire, side * 0.033, 0.012, gz);
+      // branche : du bord du verre jusqu'à l'oreille
+      const from = new THREE.Vector3(side * 0.052, 0.014, gz), to = new THREE.Vector3(side * 0.093, 0.006, -0.004), d = new THREE.Vector3().subVectors(to, from);
+      const t = add(head, new THREE.CylinderGeometry(0.0015, 0.0015, d.length(), 5), wire);
+      t.position.copy(from).addScaledVector(d, 0.5);
+      t.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize());
     }
-    add(head, new THREE.CylinderGeometry(0.002, 0.002, 0.022, 5).rotateZ(Math.PI / 2), wire, 0, 0.004, 0.102);
+    // pont : un petit arc qui passe par-dessus l'arête du nez
+    add(head, new THREE.TorusGeometry(0.014, 0.0016, 6, 14, Math.PI).rotateX(-Math.PI / 2).scale(1, 1, 1.25), wire, 0, 0.014, gz);
   }
 
   // Couvre-chef
