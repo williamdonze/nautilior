@@ -159,11 +159,22 @@ export class Hud {
    *  - « far »    : objet trop loin
    *  - « busy »   : la pince travaille
    */
-  updateReticle(pointer, aim, busy, holdFull) {
+  /** Rappel : la pince ne se commande que depuis le poste de pilotage */
+  needCockpit() {
+    this.needCockpitUntil = performance.now() + 2200;
+  }
+
+  updateReticle(pointer, aim, busy, holdFull, canGrab = true) {
     this.reticle.style.transform = `translate(${pointer.x}px, ${pointer.y}px)`;
     let state = '';
     let label = '';
-    if (busy) state = 'busy';
+    if (!canGrab) {
+      // Vue extérieure : on repère les objets, mais il faut être aux manettes pour les saisir
+      if (aim.pickup || performance.now() < (this.needCockpitUntil ?? 0)) {
+        state = 'far';
+        label = 'PINCE : POSTE DE PILOTAGE (V)';
+      }
+    } else if (busy) state = 'busy';
     else if (aim.pickup && aim.inRange && holdFull && !aim.pickup.item.fragment) {
       state = 'full';
       label = 'SOUTE PLEINE';
@@ -174,8 +185,8 @@ export class Hud {
       state = 'far';
       label = 'TROP LOIN';
     }
-    if (state !== this.reticleState) {
-      this.reticleState = state;
+    if (state + label !== this.reticleState) {
+      this.reticleState = state + label;
       this.reticle.className = state;
       this.reticleLabel.textContent = label;
     }

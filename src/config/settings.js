@@ -37,7 +37,7 @@ export const SEABED = {
 };
 
 export const DECOR = {
-  ROCKS: 900,
+  ROCKS: 1800,
   MARINE_SNOW: 1800,
   MARINE_SNOW_BOX: 60, // taille du cube de particules autour de la caméra
 };

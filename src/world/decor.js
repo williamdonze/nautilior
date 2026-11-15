@@ -11,6 +11,7 @@ import { createFlora } from './flora.js';
 import { createBottomFauna } from './bottomFauna.js';
 import { createProps } from './props.js';
 import { gpuMode } from '../gpu/mode.js';
+import { createFormations } from './formations.js';
 
 const rand = createRandom(WORLD.SEED + 7);
 const noise = createNoise2D(WORLD.SEED + 3);
@@ -106,8 +107,11 @@ export function createDecor() {
   group.add(createBottomFauna());
   const props = createProps(colliders);
   group.add(props);
+  // Relief sculpté (arches, piliers, surplombs), coraux et éponges
+  const formations = createFormations(colliders);
+  group.add(formations);
   // Ombres : rochers, épaves et débris en portent et en reçoivent ; la flore en reçoit seulement
-  for (const g of [rocks, landmarks, props]) g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  for (const g of [rocks, landmarks, props, formations]) g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   group.traverse((o) => { if (o.isMesh) o.receiveShadow = true; });
   return {
     group,

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { paintFaces } from '../core/utils.js';
+import { gpuMode } from '../gpu/mode.js';
 import { createNoise2D } from '../world/noise.js';
 
 /**
@@ -12,45 +12,24 @@ import { createNoise2D } from '../world/noise.js';
  *    et pour les modèles récents des écrans dont le texte se met à jour.
  */
 const noise = createNoise2D(7);
-const vmat = () => new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
-const lambert = (color) => new THREE.MeshLambertMaterial({ color, flatShading: true });
+const vmat = () => new THREE.MeshLambertMaterial({ vertexColors: true });
+const lambert = (color) => new THREE.MeshLambertMaterial({ color });
 const glow = (color) => new THREE.MeshBasicMaterial({ color });
 
-/** Peinture irrégulière (taches, rouille) */
+/** Peinture irrégulière (taches, rouille), par sommet : les surfaces restent lisses */
 function paint(geo, base, rust = 0.2, rustColor = '#4a2615') {
-  geo = geo.index ? geo.toNonIndexed() : geo;
-  geo.computeVertexNormals();
+  if (!geo.attributes.normal) geo.computeVertexNormals();
   const b = new THREE.Color(base), r = new THREE.Color(rustColor), c = new THREE.Color();
-  paintFaces(geo, (p, n, i) => {
-    const v = noise(p.x * 3 + p.z * 2, p.y * 3) * 0.5 + 0.5;
-    c.copy(v > 1 - rust ? r : b).multiplyScalar(0.85 + (i % 5) * 0.06);
-    return c;
-  });
-  return geo;
-}
-
-/**
- * Paroi plane percée de trous, extrudée vers +Z.
- * holes : { type: 'circle', x, y, r } | { type: 'ellipse', x, y, rx, ry } | { type: 'poly', points: [[x, y]…] }
- */
-function wallWithHoles(w, h, holes, depth = 0.08) {
-  const shape = new THREE.Shape();
-  shape.moveTo(-w / 2, -h / 2);
-  shape.lineTo(w / 2, -h / 2);
-  shape.lineTo(w / 2, h / 2);
-  shape.lineTo(-w / 2, h / 2);
-  shape.closePath();
-  for (const hole of holes) {
-    const p = new THREE.Path();
-    if (hole.type === 'circle') p.absarc(hole.x, hole.y, hole.r, 0, Math.PI * 2, true);
-    else if (hole.type === 'ellipse') p.absellipse(hole.x, hole.y, hole.rx, hole.ry, 0, Math.PI * 2, true);
-    else {
-      hole.points.forEach(([x, y], i) => (i ? p.lineTo(x, y) : p.moveTo(x, y)));
-      p.closePath();
-    }
-    shape.holes.push(p);
+  const pos = geo.attributes.position, col = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const v = noise(x * 3 + z * 2, y * 3) * 0.5 + 0.5;
+    const k = Math.max(0, Math.min(1, (v - (1 - rust) + 0.06) / 0.12));
+    c.copy(b).lerp(r, k).multiplyScalar(0.9 + 0.1 * noise(x * 9, y * 9 + z * 7));
+    col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
   }
-  return new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 28 });
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  return geo;
 }
 
 function add(group, geo, material, x = 0, y = 0, z = 0) {
@@ -152,217 +131,152 @@ function lever(group, x, y, z, color = '#26292b', knob = '#8a2a1a') {
   return pivot;
 }
 
-/* ================================================================== Cabines */
+/* ================================================================== Poste de pilotage */
 
 /**
- * Cabine commune : parois, plafond, plancher, tableau de bord, tuyaux.
- * cfg : couleurs et hublots propres au modèle.
+ * Styles par niveau de coque : même architecture (bulle de verre, console basse en arc),
+ * mais matières, instruments et finitions propres à chaque sous-marin.
  */
-function cabin(cfg) {
+const STYLES = [
+  { frame: '#4a3424', rust: 0.4, desk: '#3a2a1e', trim: '#6b5a46', face: '#e8dcc0', bolt: '#7a6650', lamp: '#efe3bb', struts: 8, screens: 0 },
+  { frame: '#5a4630', rust: 0.15, desk: '#3e2114', trim: '#b08a50', face: '#e8dcc0', bolt: '#c8a870', lamp: '#efe3bb', struts: 8, screens: 0 },
+  { frame: '#3f4a54', rust: 0.05, desk: '#2f3840', trim: '#8a96a0', face: '#e8ece2', bolt: '#a8b0b2', lamp: '#ccd8cc', struts: 6, screens: 0, switches: true },
+  { frame: '#3a4a4c', rust: 0.04, desk: '#24302f', trim: '#5f7072', face: '#ccd8cc', bolt: '#8a9a9c', lamp: '#ccd8cc', struts: 6, screens: 1, tint: '#7fbf7a' },
+  { frame: '#b0902e', rust: 0.06, desk: '#45484a', trim: '#a8b0b2', face: '#e8ece2', bolt: '#d8d2b0', lamp: '#efe3bb', struts: 6, screens: 1, tint: '#e0b050' },
+  { frame: '#8a9396', rust: 0.02, desk: '#3a4044', trim: '#c08850', face: '#e8ece2', bolt: '#d0d6d8', lamp: '#efe3bb', struts: 4, screens: 2, tint: '#e0b050' },
+  { frame: '#1c2124', rust: 0, desk: '#14181b', trim: '#30363a', face: '#e8ece2', bolt: '#30363a', lamp: '#bfe8e0', struts: 4, screens: 3, tint: '#7fd0c0', led: '#7fd0c0' },
+];
+const DOME_R = 1.25; // rayon de la bulle
+const DOME_ANGLE = 1.82; // ouverture de la bulle depuis l'axe avant (≈ 104°)
+const DESK_R = 0.74; // rayon où sont posés les instruments
+const DESK_Y = -0.55;
+
+/** Verre de la bulle : presque invisible de face, reflets sur les bords (type « glass » du moteur WebGPU) */
+function glassMaterial() {
+  const m = new THREE.MeshLambertMaterial({ color: '#cfe8e6', transparent: true, opacity: 0.07, side: THREE.DoubleSide, depthWrite: false });
+  m.userData.detail = 'glass';
+  m.visible = gpuMode.active; // le rendu Three.js n'a pas de shader de verre : on ne le dessine pas
+  return m;
+}
+
+/** Support orienté vers le pilote, posé sur l'arc de la console (angle a autour de la verticale) */
+function mount(group, a, r = DESK_R, y = DESK_Y) {
+  const h = new THREE.Group();
+  h.rotation.y = a;
+  group.add(h);
+  const slot = new THREE.Group();
+  slot.position.set(0, y, r);
+  h.add(slot);
+  return slot;
+}
+
+/** La cabine : bulle de verre, cerclages, coque arrière et console en arc */
+function cabin(st) {
   const g = new THREE.Group();
-  const W = 2.4, H = 1.8;
-  const zFront = cfg.frontZ ?? 0.75;
+  const frameMat = vmat();
+  const metal = lambert(st.trim);
 
-  // Paroi avant percée
-  add(g, paint(wallWithHoles(W, H, cfg.holes, cfg.wallDepth ?? 0.08), cfg.wall, cfg.rust ?? 0.15, cfg.rustColor), vmat(), 0, -0.05, zFront);
-  // Côtés, plafond, plancher (légèrement resserrés vers l'avant)
-  for (const s of [-1, 1]) {
-    const side = add(g, paint(new THREE.BoxGeometry(0.06, H, 1.8), cfg.wall, cfg.rust ?? 0.15, cfg.rustColor), vmat(), s * W / 2, -0.05, -0.1);
-    side.rotation.y = s * 0.08;
+  // Bulle de verre (calotte tournée vers l'avant) : le champ de vision reste entièrement dégagé
+  add(g, new THREE.SphereGeometry(DOME_R, 56, 28, 0, Math.PI * 2, 0, DOME_ANGLE).rotateX(Math.PI / 2), glassMaterial());
+  // Coque arrière, vue de l'intérieur
+  add(g, paint(new THREE.SphereGeometry(DOME_R + 0.02, 32, 12, 0, Math.PI * 2, DOME_ANGLE, Math.PI - DOME_ANGLE).rotateX(Math.PI / 2), st.frame, st.rust), frameMat);
+
+  // Cerclages : un à la base de la bulle, un à la limite du regard ; rien au centre
+  const ring = (angle, tube, mat) => add(g, new THREE.TorusGeometry(DOME_R * Math.sin(angle), tube, 10, 72), mat, 0, 0, DOME_R * Math.cos(angle));
+  add(g, paint(new THREE.TorusGeometry(DOME_R * Math.sin(DOME_ANGLE), 0.07, 10, 72), st.frame, st.rust), frameMat, 0, 0, DOME_R * Math.cos(DOME_ANGLE));
+  ring(1.2, 0.022, metal);
+  // Montants courts entre les deux cerclages, et leurs boulons
+  for (let i = 0; i < st.struts; i++) {
+    const a = ((i + 0.5) / st.struts) * Math.PI * 2;
+    // arc de méridien, de l'angle 1.2 à la base de la bulle (angles mesurés depuis l'axe avant)
+    const arc = new THREE.TorusGeometry(DOME_R, 0.018, 8, 16, DOME_ANGLE - 1.2).rotateZ(1.2);
+    arc.applyMatrix4(new THREE.Matrix4().makeBasis(new THREE.Vector3(0, 0, 1), new THREE.Vector3(Math.cos(a), Math.sin(a), 0), new THREE.Vector3(-Math.sin(a), Math.cos(a), 0)));
+    add(g, arc, metal);
   }
-  add(g, paint(new THREE.BoxGeometry(W, 0.06, 1.8), cfg.ceiling ?? cfg.wall, 0.1, cfg.rustColor), vmat(), 0, H / 2 - 0.05, -0.1);
-  add(g, paint(new THREE.BoxGeometry(W, 0.06, 1.8), cfg.floor ?? '#26292b', 0.05), vmat(), 0, -H / 2 - 0.05, -0.1);
-
-  // Tableau de bord incliné sous le hublot
-  const dash = add(g, paint(new THREE.BoxGeometry(W - 0.2, 0.06, 0.5), cfg.dash, 0.08), vmat(), 0, -0.52, 0.48);
-  dash.rotation.x = -0.55;
-  add(g, paint(new THREE.BoxGeometry(W - 0.2, 0.42, 0.06), cfg.dash, 0.05), vmat(), 0, -0.76, 0.66);
-
-  // Tuyaux le long des parois et du plafond
-  const pc = cfg.pipe ?? '#5f6564';
-  for (const s of [-1, 1]) {
-    pipe(g, new THREE.Vector3(s * 1.1, 0.75, 0.7), new THREE.Vector3(s * 1.1, 0.75, -0.9), 0.035, pc);
-    pipe(g, new THREE.Vector3(s * 1.08, -0.85, 0.6), new THREE.Vector3(s * 1.08, 0.7, 0.6), 0.025, pc);
+  bolts(g, 0, 0, DOME_R * Math.cos(DOME_ANGLE) + 0.06, DOME_R * Math.sin(DOME_ANGLE) - 0.09, st.struts * 4, st.bolt, 0.02);
+  if (st.led) {
+    add(g, new THREE.TorusGeometry(DOME_R * Math.sin(1.2) - 0.03, 0.006, 6, 72), glow(st.led), 0, 0, DOME_R * Math.cos(1.2));
   }
-  pipe(g, new THREE.Vector3(-0.9, 0.82, 0.3), new THREE.Vector3(0.9, 0.82, 0.3), 0.03, pc);
+
+  // Console basse en arc (profil tourné autour de la verticale), plancher
+  const prof = [[0.42, -0.98], [0.42, -0.66], [0.47, -0.62], [1.0, -0.52], [1.04, -0.56], [1.04, -0.98]].map(([r, y]) => new THREE.Vector2(r, y));
+  add(g, paint(new THREE.LatheGeometry(prof, 40, -1.25, 2.5), st.desk, st.rust * 0.3), vmat());
+  add(g, new THREE.TorusGeometry(1.0, 0.014, 6, 40, 2.5).rotateX(Math.PI / 2).rotateY(Math.PI / 2 + 1.25), metal, 0, -0.52, 0);
+  add(g, paint(new THREE.CircleGeometry(1.1, 24).rotateX(-Math.PI / 2), '#1c1f21', 0.05), vmat(), 0, -0.97, 0);
+
+  // Plafonnier
+  add(g, new THREE.SphereGeometry(0.04, 12, 8), glow(st.lamp), 0, 0.95, -0.35);
+  add(g, new THREE.CylinderGeometry(0.07, 0.05, 0.04, 12), metal, 0, 0.99, -0.35);
   return g;
 }
 
-/** Ampoule de cabine (lumière chaude, non éclairée) */
-function bulb(group, x, y, z, color = '#efe3bb') {
-  add(group, new THREE.CylinderGeometry(0.004, 0.004, 0.12, 4), lambert('#26292b'), x, y + 0.06, z);
-  add(group, new THREE.SphereGeometry(0.035, 8, 6), glow(color), x, y, z);
-}
-
-/** Instruments analogiques classiques : cadrans + manette + voyant */
-function analogPanel(g, cfg, needles, extra = {}) {
-  const y = -0.48, z = 0.52;
-  needles.depth = dial(g, -0.42, y, z, 0.11, cfg.face, cfg.rim);
-  needles.oxygen = dial(g, -0.15, y, z, 0.09, cfg.face, cfg.rim);
-  needles.hull = dial(g, 0.12, y, z, 0.09, cfg.face, cfg.rim);
-  if (extra.compass !== false) {
-    const comp = dial(g, 0.4, y, z, 0.1, '#26292b', cfg.rim);
-    needles.compass = comp;
-  }
-  needles.throttle = lever(g, 0.75, -0.55, 0.42);
-  // Voyant d'alerte (oxygène)
-  needles.warn = add(g, new THREE.SphereGeometry(0.025, 8, 6), glow('#3a1a10'), -0.7, -0.44, 0.5);
+/** Boîtier d'instrument posé sur la console */
+function pod(slot, r, color) {
+  const body = new THREE.CylinderGeometry(r * 1.12, r * 1.2, 0.09, 20).rotateX(Math.PI / 2);
+  const m = add(slot, body, lambert(color), 0, 0, 0.05);
+  m.rotation.x = 0.55;
 }
 
 function makeCockpit(level) {
+  const st = STYLES[Math.max(0, Math.min(STYLES.length - 1, level))];
+  const g = cabin(st);
   const needles = {};
-  let screens = [];
-  let g;
-  switch (level) {
-    case 0:
-    case 1: {
-      const brass = level === 1;
-      g = cabin({
-        wall: brass ? '#4a3a28' : '#3a2a20', rust: brass ? 0.15 : 0.35, rustColor: '#63321b',
-        dash: '#3e2114', pipe: brass ? '#8a6a3a' : '#5a4a3a',
-        holes: [{ type: 'circle', x: 0, y: 0.1, r: 0.46 }],
-      });
-      add(g, new THREE.TorusGeometry(0.47, 0.045, 6, 28), lambert(brass ? '#b08a50' : '#5a3a22'), 0, 0.05, 0.74);
-      add(g, new THREE.TorusGeometry(0.53, 0.025, 4, 28), lambert(brass ? '#8a6a3a' : '#3e2a1a'), 0, 0.05, 0.73);
-      bolts(g, 0, 0.05, 0.72, 0.53, brass ? 20 : 14, brass ? '#c8a870' : '#7a6650');
-      if (brass) {
-        // Plaques de réparation boulonnées sur la paroi
-        for (const [x, y] of [[-0.85, 0.45], [0.8, -0.2]]) {
-          add(g, paint(new THREE.BoxGeometry(0.32, 0.26, 0.02), '#6b6e6c', 0.1), vmat(), x, y, 0.69);
-          bolts(g, x, y, 0.68, 0.17, 6, '#a8b0b2', 0.012);
-        }
-      }
-      analogPanel(g, { face: '#e8dcc0', rim: brass ? '#b08a50' : '#6b5a46' }, needles);
-      valve(g, -1.05, 0.2, 0.2, 0.12, '#8a2a1a', Math.PI / 2);
-      bulb(g, 0.35, 0.68, 0.2);
-      break;
-    }
-    case 2: {
-      g = cabin({
-        wall: '#3f4a54', rust: 0.05, dash: '#2f3840', pipe: '#6b7680',
-        holes: [{ type: 'circle', x: -0.38, y: 0.08, r: 0.32 }, { type: 'circle', x: 0.38, y: 0.08, r: 0.32 }],
-      });
-      for (const x of [-0.38, 0.38]) {
-        add(g, new THREE.TorusGeometry(0.33, 0.04, 6, 24), lambert('#6b7680'), x, 0.03, 0.74);
-        bolts(g, x, 0.03, 0.72, 0.38, 12, '#a8b0b2');
-      }
-      analogPanel(g, { face: '#e8ece2', rim: '#6b7680' }, needles);
-      // Rangée d'interrupteurs
-      for (let i = 0; i < 6; i++) {
-        add(g, new THREE.BoxGeometry(0.03, 0.05, 0.03), lambert(i % 2 ? '#26292b' : '#a8b0b2'), -0.3 + i * 0.12, -0.66, 0.62).rotation.x = 0.4;
-        add(g, new THREE.SphereGeometry(0.012, 6, 4), glow(i < 4 ? '#7fbf7a' : '#3a1a10'), -0.3 + i * 0.12, -0.6, 0.6);
-      }
-      bulb(g, 0, 0.7, 0.15, '#ccd8cc');
-      valve(g, 1.05, 0.25, 0.1, 0.1, '#3f4a54', Math.PI / 2);
-      break;
-    }
-    case 3: {
-      g = cabin({
-        wall: '#2f3d40', rust: 0.05, dash: '#24302f', pipe: '#5f6564',
-        holes: [{ type: 'ellipse', x: 0, y: 0.08, rx: 0.82, ry: 0.42 }],
-      });
-      add(g, new THREE.BoxGeometry(0.05, 0.86, 0.05), lambert('#4a5658'), 0, 0.08, 0.77); // montant central
-      const frame = new THREE.Mesh(new THREE.TorusGeometry(1, 0.035, 5, 32), lambert('#4a5658'));
-      frame.scale.set(0.83, 0.43, 1);
-      frame.position.set(0, 0.08, 0.74);
-      g.add(frame);
-      analogPanel(g, { face: '#ccd8cc', rim: '#4a5658' }, needles, { compass: false });
-      screens.push(
-        screen(g, 0.42, -0.5, 0.5, 0.26, 0.16, (c, w, h, s) => {
-          c.font = '26px monospace';
-          c.fillText(`PROF ${String(Math.round(s.depth)).padStart(4, '0')} m`, 10, 40);
-          c.fillText(`CAP  ${String(Math.round(s.heading)).padStart(3, '0')}°`, 10, 80);
-          c.fillText(`O2   ${Math.round(s.oxygen * 100)} %`, 10, 120);
-        }, -0.55, '#7fbf7a')
-      );
-      bulb(g, 0, 0.72, 0.1, '#ccd8cc');
-      break;
-    }
-    case 4: {
-      g = cabin({
-        wall: '#5f6564', rust: 0.04, dash: '#45484a', pipe: '#878a85', wallDepth: 0.18,
-        holes: [{ type: 'circle', x: 0, y: 0.1, r: 0.32 }],
-      });
-      // Hublot épais du bathyscaphe : cône de verre et grosse couronne boulonnée
-      add(g, new THREE.CylinderGeometry(0.42, 0.33, 0.2, 24, 1, true).rotateX(Math.PI / 2), new THREE.MeshLambertMaterial({ color: '#45484a', side: THREE.DoubleSide, flatShading: true }), 0, 0.05, 0.78);
-      add(g, new THREE.TorusGeometry(0.44, 0.06, 6, 28), lambert('#878a85'), 0, 0.05, 0.72);
-      bolts(g, 0, 0.05, 0.69, 0.52, 16, '#a8b0b2', 0.03);
-      analogPanel(g, { face: '#e8ece2', rim: '#878a85' }, needles);
-      // Instruments entassés autour du hublot
-      for (const [x, y] of [[-0.7, 0.35], [0.7, 0.35], [-0.72, -0.05], [0.72, -0.05]]) {
-        const n = dial(g, x, y, 0.69, 0.08, '#e8ece2', '#878a85', 0);
-        n.rotation.z = Math.random() * 3;
-      }
-      valve(g, -1.05, -0.2, 0.3, 0.13, '#b8963a', Math.PI / 2);
-      bulb(g, 0.4, 0.7, 0.1);
-      break;
-    }
-    case 5: {
-      g = cabin({
-        wall: '#8a9396', rust: 0.02, dash: '#45484a', pipe: '#c08850', floor: '#3f4446',
-        holes: [{ type: 'circle', x: 0, y: 0.15, r: 0.62 }],
-      });
-      add(g, new THREE.TorusGeometry(0.63, 0.03, 5, 36), lambert('#45484a'), 0, 0.1, 0.74);
-      analogPanel(g, { face: '#e8ece2', rim: '#45484a' }, needles, { compass: false });
-      screens.push(
-        screen(g, 0.45, -0.5, 0.5, 0.3, 0.18, (c, w, h, s) => {
-          c.font = '24px monospace';
-          c.fillText(`PROFONDEUR`, 10, 30);
-          c.font = '44px monospace';
-          c.fillText(`${String(Math.round(s.depth)).padStart(4, '0')} m`, 10, 80);
-          c.font = '20px monospace';
-          c.fillText(`LIMITE ${Math.round(s.crushDepth)} m`, 10, 115);
-        }, -0.55, '#e0b050')
-      );
-      bulb(g, 0, 0.72, 0.0, '#efe3bb');
-      break;
-    }
-    default: {
-      // 6 : coque abyssale — baie panoramique anguleuse, écrans, liserés lumineux
-      const pts = [[-0.95, -0.12], [-0.8, 0.42], [-0.5, 0.52], [0.5, 0.52], [0.8, 0.42], [0.95, -0.12], [0.7, -0.3], [-0.7, -0.3]];
-      g = cabin({ wall: '#24292c', rust: 0, dash: '#1a1e21', pipe: '#30363a', floor: '#14181b', ceiling: '#1a1e21', holes: [{ type: 'poly', points: pts }] });
-      // Liserés autour de la baie et le long des parois
-      for (let i = 0; i < pts.length; i++) {
-        const a = new THREE.Vector3(pts[i][0], pts[i][1] - 0.05, 0.73);
-        const b = new THREE.Vector3(pts[(i + 1) % pts.length][0], pts[(i + 1) % pts.length][1] - 0.05, 0.73);
-        const strip = pipe(g, a, b, 0.008, '#000');
-        strip.material = glow('#7fd0c0');
-      }
-      for (const s of [-1, 1]) {
-        const led = pipe(g, new THREE.Vector3(s * 1.08, 0.55, 0.65), new THREE.Vector3(s * 1.08, 0.55, -0.9), 0.008, '#000');
-        led.material = glow('#7fd0c0');
-      }
-      needles.throttle = lever(g, 0.8, -0.55, 0.42, '#30363a', '#7fd0c0');
-      needles.warn = add(g, new THREE.SphereGeometry(0.02, 8, 6), glow('#3a1a10'), -0.8, -0.46, 0.5);
-      screens.push(
-        screen(g, -0.45, -0.5, 0.5, 0.36, 0.2, (c, w, h, s) => {
-          c.font = '22px monospace';
-          c.fillText('PROFONDEUR', 12, 30);
-          c.font = '50px monospace';
-          c.fillText(`${String(Math.round(s.depth)).padStart(4, '0')}`, 12, 90);
-          c.fillRect(12, 110, (w - 24) * Math.min(1, s.depth / s.crushDepth), 8);
-        }),
-        screen(g, 0, -0.5, 0.52, 0.3, 0.2, (c, w, h, s) => {
-          // Mini sonar
-          const cx = w / 2, cy = h / 2 + 6, r = h / 2 - 12;
-          c.lineWidth = 2;
-          c.beginPath(); c.arc(cx, cy, r, 0, Math.PI * 2); c.stroke();
-          c.beginPath(); c.arc(cx, cy, r / 2, 0, Math.PI * 2); c.stroke();
-          const a = s.time * 2.4;
-          c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r); c.stroke();
-        }),
-        screen(g, 0.45, -0.5, 0.5, 0.36, 0.2, (c, w, h, s) => {
-          c.font = '22px monospace';
-          c.fillText(`O2    ${Math.round(s.oxygen * 100)} %`, 12, 36);
-          c.fillText(`COQUE ${Math.round(s.hull * 100)} %`, 12, 72);
-          c.fillText(`CAP   ${String(Math.round(s.heading)).padStart(3, '0')}°`, 12, 108);
-        })
-      );
-      // Boutons lumineux
-      for (let i = 0; i < 8; i++) add(g, new THREE.BoxGeometry(0.035, 0.012, 0.035), glow(i % 3 ? '#2f4a66' : '#7fd0c0'), -0.42 + i * 0.12, -0.66, 0.6).rotation.x = -0.55;
-      break;
+  const screens = [];
+  const gauge = (a, r, face = st.face) => {
+    const slot = mount(g, a, DESK_R, DESK_Y + r * 0.9 + 0.02);
+    pod(slot, r, st.trim);
+    return dial(slot, 0, 0, 0, r, face, st.trim);
+  };
+  const display = (a, w, h, draw) => {
+    const slot = mount(g, a, DESK_R + 0.02, DESK_Y + h * 0.5 + 0.03);
+    return screen(slot, 0, 0, 0, w, h, draw, -0.5, st.tint);
+  };
+  const depthScreen = (c, w, h, s) => {
+    c.font = '24px monospace';
+    c.fillText('PROFONDEUR', 12, 30);
+    c.font = '50px monospace';
+    c.fillText(`${String(Math.round(s.depth)).padStart(4, '0')} m`, 12, 88);
+    c.fillRect(12, 108, (w - 24) * Math.min(1, s.depth / s.crushDepth), 8);
+  };
+  const statusScreen = (c, w, h, s) => {
+    c.font = '24px monospace';
+    c.fillText(`O2    ${Math.round(s.oxygen * 100)} %`, 12, 36);
+    c.fillText(`COQUE ${Math.round(s.hull * 100)} %`, 12, 74);
+    c.fillText(`CAP   ${String(Math.round(s.heading)).padStart(3, '0')}°`, 12, 112);
+  };
+  const sonarScreen = (c, w, h, s) => {
+    const cx = w / 2, cy = h / 2, r = h / 2 - 10;
+    c.lineWidth = 2;
+    c.beginPath(); c.arc(cx, cy, r, 0, Math.PI * 2); c.stroke();
+    c.beginPath(); c.arc(cx, cy, r / 2, 0, Math.PI * 2); c.stroke();
+    const a = s.time * 2.4;
+    c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r); c.stroke();
+  };
+
+  // Instruments : cadrans à aiguille sur les vieux modèles, écrans sur les derniers
+  if (st.screens >= 3) {
+    screens.push(display(-0.42, 0.34, 0.19, depthScreen), display(0, 0.26, 0.19, sonarScreen), display(0.42, 0.34, 0.19, statusScreen));
+  } else {
+    needles.depth = gauge(-0.5, 0.1);
+    needles.oxygen = gauge(-0.22, 0.085);
+    needles.hull = gauge(0.02, 0.085);
+    if (st.screens >= 1) screens.push(display(st.screens >= 2 ? 0.34 : 0.4, 0.3, 0.17, depthScreen));
+    if (st.screens >= 2) screens.push(display(0.72, 0.28, 0.17, statusScreen));
+    if (st.screens === 0) needles.compass = gauge(0.28, 0.095, '#26292b');
+  }
+  // Manette des gaz à droite, manche à gauche, voyant d'alerte
+  const tSlot = mount(g, st.screens >= 2 ? 1.0 : 0.62, 0.62, DESK_Y - 0.05);
+  needles.throttle = lever(tSlot, 0, 0, 0, '#26292b', st.led ?? '#8a2a1a');
+  lever(mount(g, -0.85, 0.62, DESK_Y - 0.05), 0, 0, 0, '#26292b', '#26292b');
+  needles.warn = add(mount(g, -0.72, DESK_R + 0.12, DESK_Y + 0.07), new THREE.SphereGeometry(0.022, 10, 8), glow('#3a1a10'));
+  if (st.switches) {
+    for (let i = 0; i < 6; i++) {
+      const sl = mount(g, 0.5 + i * 0.07, 0.6, DESK_Y - 0.04);
+      add(sl, new THREE.BoxGeometry(0.02, 0.04, 0.02), lambert(i % 2 ? '#26292b' : '#a8b0b2'));
+      add(sl, new THREE.SphereGeometry(0.008, 6, 4), glow(i < 4 ? '#7fbf7a' : '#3a1a10'), 0, 0.01, 0.04);
     }
   }
+  if (st.led) for (let i = 0; i < 9; i++) add(mount(g, -0.5 + i * 0.125, 0.56, DESK_Y - 0.055), new THREE.BoxGeometry(0.03, 0.01, 0.03), glow(i % 3 ? '#2f4a66' : st.led));
   return { group: g, needles, screens };
 }
 
@@ -373,7 +287,7 @@ function makeCockpit(level) {
 export function createCockpit(level) {
   const { group, needles, screens } = makeCockpit(level);
   // L'œil est un peu en retrait et au-dessus du tableau de bord : on voit hublot ET instruments
-  group.position.set(0, -0.04, 0.15);
+  group.position.set(0, -0.04, 0.12);
   group.traverse((o) => {
     if (o.isMesh) o.raycast = () => {};
   });

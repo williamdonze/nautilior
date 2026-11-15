@@ -251,12 +251,17 @@ struct MI { @location(0) p: vec3f, @location(1) n: vec3f, @location(2) c: vec3f,
 struct MO { @builtin(position) cp: vec4f, @location(0) wp: vec3f, @location(1) n: vec3f, @location(2) op: vec3f, @location(3) on: vec3f,
   @location(4) c: vec3f, @location(5) uv: vec2f, @location(6) glow: f32,
   @location(7) @interpolate(flat) col: vec4f, @location(8) @interpolate(flat) emi: vec4f, @location(9) @interpolate(flat) par: vec4f };
-// par : x = type de surface, y = drapeaux (1 facettes, 2 nage, 4 additif, 8 couleurs par sommet), z et w = paramètres du type
+// par : x = type de surface, y = drapeaux (1 facettes, 2 nage, 4 additif, 8 couleurs par sommet, 16 battement d'ailes), z et w = paramètres du type
 @vertex fn vs(i: MI) -> MO {
   var o: MO;
   var lp = i.p;
   let fl = u32(i.par.y + .5);
   if ((fl & 2u) != 0u) { lp.x += sin(g.cam.w * 9. + dot(i.m3.xyz, vec3f(1.3, .7, 1.1)) - i.ax.x * 5.) * (.012 + .16 * i.ax.x * i.ax.x); }
+  // battement d'ailes (raies) : aU = position le long de l'aile (−1..1), l'onde part du corps vers la pointe
+  if ((fl & 16u) != 0u) {
+    let au = abs(i.ax.x); let ph = g.cam.w * 1.5 + dot(i.m3.xyz, vec3f(.37, .21, .29));
+    lp.y += pow(au, 1.5) * sin(ph - au * 1.3) * .42 * i.emi.a;
+  }
   let w = i.m0.xyz * lp.x + i.m1.xyz * lp.y + i.m2.xyz * lp.z + i.m3.xyz;
   o.cp = g.vp * vec4f(w, 1.); o.wp = w;
   o.n = cross(i.m1.xyz, i.m2.xyz) * i.n.x + cross(i.m2.xyz, i.m0.xyz) * i.n.y + cross(i.m0.xyz, i.m1.xyz) * i.n.z;
@@ -355,11 +360,13 @@ fn rift(uv: vec2f, open: f32, beat: f32, near: f32) -> vec3f {
   col += vec3f(.25, .8, .35) * exp(-ax * 7. / max(open, .05)) * profile * .4 * open * bg;
   return col * 2.2;
 }
-// Types : 0 peint, 3 bois, 4 métal, 5 sans éclairage (écrans), 6 déchirure, 7 colonne de lumière, 8 peau, 9 halo
+// Types : 0 peint, 3 bois, 4 métal, 5 sans éclairage (écrans), 6 déchirure, 7 colonne de lumière, 8 peau, 9 halo,
+//         10 verre, 11 coque peinte (tôles, rivets), 12 corail, 13 éponge
 @fragment fn fs(i: MO) -> @location(0) vec4f {
   let kind = i32(i.par.x + .5); let fl = u32(i.par.y + .5);
   let tx = textureSample(tT, sR, i.uv);
   let D = tri(i.op, normalize(i.on + vec3f(1e-4, 2e-4, 3e-4)), .43);
+  let Ws = textureSample(tD, sR, vec2f((i.op.x + i.op.z) * .9, i.op.y * .07));
   let dist = length(i.wp - g.cam.xyz);
   let ca = caus2(i.wp, dist);
   let V = normalize(g.cam.xyz - i.wp);
@@ -369,11 +376,33 @@ fn rift(uv: vec2f, open: f32, beat: f32, near: f32) -> vec3f {
   if (dot(n, V) < 0.) { n = -n; }
   let sh = shadow4(i.wp + n * .3);
   var alb = i.col.rgb * i.c * tx.rgb;
-  var gloss = .12; var bump = .25;
+  var gloss = .12; var bump = .25; var flu = 0.;
   if (kind == 3) { alb *= .55 + .9 * D.h; bump = .7; }
   else if (kind == 4) { alb = mix(alb, vec3f(.20, .09, .04) * (.5 + D.h), ss(.5, .72, D.c) * .45) * (.7 + .5 * D.h); gloss = .5; bump = .5; }
+  else if (kind == 11) {
+    // coque peinte : tôles jointes tous les 1,2 m, rivets le long des joints, coulures verticales
+    let sz = abs(fract(i.op.z / 1.2) - .5) * 1.2;
+    let seam = 1. - ss(0., .02, sz);
+    let riv = ss(.024, .012, length(vec2f(sz - .07, (fract(atan2(i.op.y, i.op.x) * 5.) - .5) * .22)));
+    alb *= (1. - .5 * seam) * (.84 + .3 * D.c) * (.8 + .4 * Ws.b);
+    alb = mix(alb, alb * 1.4 + .015, riv * .7);
+    gloss = .62; bump = .12;
+  }
+  else if (kind == 12) {
+    let hue = fract(i.par.w * 5.73);
+    var cc = mix(vec3f(.80, .08, .10), vec3f(.90, .22, .40), fract(hue * 4.));
+    if (hue > .7) { cc = vec3f(.88, .42, .10); }
+    if (hue > .9) { cc = vec3f(.55, .22, .75); }
+    alb = cc * i.c * (.4 + .8 * D.h); flu = .75; gloss = .25; bump = 1.2;
+  }
+  else if (kind == 13) {
+    let hue = fract(i.par.w * 7.31);
+    var cc = mix(vec3f(.60, .17, .08), vec3f(.64, .35, .10), fract(hue * 3.));
+    if (hue > .75) { cc = vec3f(.44, .18, .42); }
+    alb = cc * i.c * (.45 + .75 * D.h); flu = .55; gloss = .2; bump = 1.1;
+  }
   else { alb *= .92 + .16 * D.h; bump = .08; }
-  let a = i.col.a * tx.a;
+  var a = i.col.a * tx.a;
   var c = vec3f(0.);
   if (kind == 5) { c = alb + i.emi.rgb; }
   else if (kind == 6) { c = rift(i.uv, i.emi.a, i.par.z, i.par.w); }
@@ -386,7 +415,15 @@ fn rift(uv: vec2f, open: f32, beat: f32, near: f32) -> vec3f {
     let ndl = sat(dot(N, L)); let ndv = sat(dot(N, V));
     let am = amb(i.wp, N, 1., 0.) + side(i.wp, N, 1., 0.) * .6;
     let li = lights(i.wp, N, 0.);
-    c = alb * (E * ndl * (.3 + ca) + am + li) + i.emi.rgb + alb * i.glow * 1.4;
+    let dl = E * ndl * (.3 + ca) + am + li;
+    c = alb * dl + i.emi.rgb + alb * i.glow * 1.4 + alb * flu * dot(dl, vec3f(.1, .5, .5));
+    c += (amb(i.wp, reflect(-V, N), 1., 0.) + li * .3) * gloss * pow(1. - ndv, 3.) * .7;
+    if (kind == 10) {
+      // verre : presque invisible de face, reflets rasants et éclats de lumière
+      let fr = pow(1. - ndv, 3.);
+      c = (amb(i.wp, reflect(-V, N), 1., 0.) + li * .5) * (.25 + fr) + E * pow(sat(dot(N, normalize(V + L))), 90.) * 2.;
+      a = .025 + .4 * fr;
+    }
     c += (E * (.3 + ca) * pow(sat(dot(N, normalize(V + L))), mix(10., 60., gloss)) + li * pow(ndv, 6.) * .5) * gloss;
     if (kind == 8) {
       let ir = .5 + .5 * cos(TAU * (vec3f(0., .33, .67) + ndv * 1.1 + i.par.w * 3. + .55));
