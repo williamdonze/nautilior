@@ -353,7 +353,8 @@ export class Dive {
     rp.spotCos = Math.cos(sub.spot.angle);
     // Près de la surface, il fait jour : le phare compte peu ; dans le noir, il devient essentiel
     const beamK = 0.3 + 0.7 * this.ambience.state.beam;
-    sub.spot.intensity = stats.lightIntensity * 1.4 * beamK;
+    sub.spot.intensity = stats.lightIntensity * 1.8 * beamK;
+    sub.spot.distance = stats.lightRange * 1.3;
     rp.spot = beamK * (stats.lightIntensity / 85);
     this.pixel.setRays(rp);
     this.snow.update(time, camera.position, this._lightPos, this._lightDir, this.ambience.state.ambient, rad);
