@@ -437,6 +437,7 @@ export class Game {
   render() {
     // Exposition : en plongée elle suit la profondeur (l'œil s'adapte), au port elle est fixe
     this.pixel.setExposure(this.mode === 'dive' && !this.inMenu ? this.dive.ambience.state.exposure ?? 1 : 1.1);
+    if (this.mode !== 'dive') this.pixel.setRays(null);
     if (this.mode === 'dive') this.pixel.render(this.dive.scene, this.dive.camera);
     else this.pixel.render(this.port.scene, this.port.camera);
   }

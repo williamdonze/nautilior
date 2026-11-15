@@ -126,6 +126,7 @@ export class Dive {
     this._lightDir = new THREE.Vector3();
     this._propPos = new THREE.Vector3();
     this._nose = new THREE.Vector3();
+    this.raysParams = { time: 0, sun: 0, sunColor: new THREE.Color(), density: 0.03, spotPos: new THREE.Vector3(), spotDir: new THREE.Vector3(), spotCos: 0.88, spot: 0 };
     this.radGreen = new THREE.Color(RADIATION.COLOR).multiplyScalar(0.35);
     this.timers = { alarm: 0, heart: 0, creak: 1, flash: 0 };
     this.noInput = { axis: () => 0, is: () => false, anyMovement: false };
@@ -185,6 +186,7 @@ export class Dive {
   }
 
   leave() {
+    this.pixel.setRays(null);
     this.sound.setDrone(0);
     this.sound.stopEngine();
     this.inventory.close();
@@ -340,6 +342,20 @@ export class Dive {
     this._nose.copy(sub.forward).multiplyScalar(5).add(sub.position);
     this.wake.update(dt, time, sub.position, sub.speed, this._nose);
     sub.getLightRay(this._lightPos, this._lightDir);
+    // Lumière volumétrique (rayons du soleil, faisceau du phare) : calculée par le renderer
+    const rp = this.raysParams;
+    rp.time = time;
+    rp.sun = this.ambience.state.sun * (survival.dead ? 0 : 1);
+    rp.sunColor.copy(this.ambience.state.fogColor).multiplyScalar(2.2).addScalar(0.08);
+    rp.density = scene.fog.density;
+    rp.spotPos.copy(this._lightPos);
+    rp.spotDir.copy(this._lightDir);
+    rp.spotCos = Math.cos(sub.spot.angle);
+    // Près de la surface, il fait jour : le phare compte peu ; dans le noir, il devient essentiel
+    const beamK = 0.3 + 0.7 * this.ambience.state.beam;
+    sub.spot.intensity = stats.lightIntensity * 1.4 * beamK;
+    rp.spot = beamK * (stats.lightIntensity / 85);
+    this.pixel.setRays(rp);
     this.snow.update(time, camera.position, this._lightPos, this._lightDir, this.ambience.state.ambient, rad);
 
     // Turbines : un léger ronronnement qui suit la poussée

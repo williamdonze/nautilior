@@ -91,6 +91,9 @@ export class Submarine {
     this.cockpitGroup.add(this.cockpit3d.group);
     this.cockpitGroup.position.copy(model.cockpit);
     this.cabinLight.position.copy(model.cockpit).add({ x: 0.1, y: 0.55, z: 0.1 });
+    model.group.traverse((o) => {
+      if (o.isMesh) o.castShadow = o.receiveShadow = true;
+    });
     this.setHullVisible(this.hullVisible ?? true);
   }
 
@@ -277,13 +280,14 @@ export class Submarine {
   /** Réglages du phare selon les améliorations */
   applyLight(stats) {
     // Le rendu HDR permet un phare franchement puissant : il éclaire loin sans tout brûler
-    this.spot.intensity = stats.lightIntensity * 2.2;
+    this.spot.intensity = stats.lightIntensity * 1.4;
     this.spot.distance = stats.lightRange;
     this.spot.angle = stats.lightAngle;
   }
 
   /** Ajuste l'intensité visuelle du faisceau selon la profondeur */
   setBeamVisibility(v) {
-    this.beam.setOpacity(this.hullVisible ? v * 0.03 : 0);
+    // Le faisceau est désormais volumétrique (calculé par le renderer) : l'ancien cône est éteint
+    this.beam.setOpacity(0);
   }
 }
