@@ -110,6 +110,7 @@ export function createPortal(scene) {
     const plane = new THREE.Mesh(riftGeo, riftMat);
     plane.rotation.y = ry;
     plane.raycast = () => {};
+    plane.userData.gpu = 'rift'; // dessiné nativement par le moteur WebGPU
     rift.add(plane);
   }
   group.add(rift);

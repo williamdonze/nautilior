@@ -16,6 +16,8 @@ import { Hud } from './ui/hud.js';
 import { Game } from './core/game.js';
 import { getFloorHeight } from './world/seabed.js';
 import { preferences, quality } from './save/preferences.js';
+import { gpuMode } from './gpu/mode.js';
+import { GpuDiveRenderer, requestGpu } from './gpu/diveRenderer.js';
 
 const pixel = new GameRenderer(document.getElementById('game'));
 const input = new Input();
@@ -27,13 +29,35 @@ const hud = new Hud();
 window.addEventListener('keydown', () => sound.unlock(), true);
 window.addEventListener('pointerdown', () => sound.unlock(), true);
 
-const game = new Game({ pixel, input, pointer, sound, hud });
+// --- Plongée en WebGPU (rendu façon Abyssal Garden) si le navigateur le permet ; sinon Three.js
+let gpuDive = null;
+let noGpu = new URLSearchParams(location.search).has('webgl');
+try { noGpu ||= sessionStorage.getItem('nautiliar-nogpu') === '1'; } catch { /* rien */ }
+const device = noGpu ? null : await requestGpu();
+if (device) {
+  try {
+    gpuMode.active = true;
+    gpuDive = new GpuDiveRenderer(device, document.getElementById('game'), preferences.qualityLevel);
+    // Carte graphique perdue : on relance le jeu avec le rendu Three.js
+    gpuDive.onLost = () => {
+      try { sessionStorage.setItem('nautiliar-nogpu', '1'); sessionStorage.setItem('nautiliar-autostart', '1'); } catch { /* rien */ }
+      location.reload();
+    };
+  } catch (err) {
+    console.warn('WebGPU indisponible, rendu Three.js :', err);
+    gpuMode.active = false;
+    gpuDive = null;
+  }
+}
+
+const game = new Game({ pixel, input, pointer, sound, hud, gpuDive });
 
 // --- Réglages du joueur
 const fpsEl = document.getElementById('fps');
 function applySettings() {
   sound.setVolumes(preferences);
   pixel.setAutoRes(preferences.autoRes);
+  if (gpuDive) gpuDive.autoRes = preferences.autoRes;
   fpsEl.style.display = preferences.showFps ? 'block' : 'none';
 }
 applySettings();
@@ -55,7 +79,8 @@ let frames = 0, fpsTime = 0;
 startLoop(
   (dt, time) => {
     game.update(dt, time);
-    pixel.adapt(dt);
+    if (gpuDive && game.mode === 'dive') gpuDive.adapt(dt);
+    else pixel.adapt(dt);
     frames++;
     fpsTime += dt;
     if (fpsTime >= 0.5) {
@@ -72,4 +97,4 @@ startLoop(
 );
 
 // Accès console pour le débogage (ex. : nautiliar.game.newGame())
-window.nautiliar = { game, pixel, getFloorHeight, get dive() { return game.dive; }, get port() { return game.port; } };
+window.nautiliar = { game, pixel, gpuDive, getFloorHeight, get dive() { return game.dive; }, get port() { return game.port; } };
