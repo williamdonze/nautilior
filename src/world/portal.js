@@ -172,6 +172,7 @@ export function createPortal(scene) {
   });
   const motes = new THREE.Points(moteGeo, moteMat);
   motes.frustumCulled = false;
+  motes.userData.gpuPoints = { kind: 'mote', size: 0.07, hover: HOVER, open: () => open };
   group.add(motes);
   scene.add(group);
 

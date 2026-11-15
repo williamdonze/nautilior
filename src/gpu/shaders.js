@@ -175,6 +175,16 @@ const S_B = S_G + /*wgsl*/`
 @group(0) @binding(5) var tW: texture_2d<f32>;
 @group(0) @binding(6) var tD: texture_2d<f32>;
 @group(0) @binding(7) var tM: texture_2d<f32>;
+@group(0) @binding(8) var tB: texture_2d<f32>;
+// Flexion d'une algue : chaque tige est une chaîne de 8 points simulée sur le processeur (kelpSim.js).
+// col = numéro de tige + 1 (0 = aucune), h = hauteur le long de la tige (m). Renvoie le déplacement.
+fn bend(col: f32, h: f32) -> vec3f {
+  if (col < .5) { return vec3f(0.); }
+  let id = i32(col + .5) - 1; let base = vec2i((id % 64) * 8, id / 64);
+  let f = clamp(h / max(textureLoad(tB, base, 0).w, .1), 0., 1.) * 7.;
+  let k = i32(min(floor(f), 6.));
+  return mix(textureLoad(tB, base + vec2i(k, 0), 0).xyz, textureLoad(tB, base + vec2i(k + 1, 0), 0).xyz, f - f32(k));
+}
 fn shUV(p: vec3f) -> vec3f { let s = g.sm * vec4f(p, 1.); return vec3f(s.x * .5 + .5, .5 - s.y * .5, select(s.z - .0007, 0., max(abs(s.x), abs(s.y)) > .98)); }
 fn shadow1(p: vec3f) -> f32 { let s = shUV(p); return textureSampleCompareLevel(tSh, sS, s.xy, s.z); }
 fn shadow4(p: vec3f) -> f32 {
@@ -367,6 +377,7 @@ fn rift(uv: vec2f, open: f32, beat: f32, near: f32) -> vec3f {
   let tx = textureSample(tT, sR, i.uv);
   let D = tri(i.op, normalize(i.on + vec3f(1e-4, 2e-4, 3e-4)), .43);
   let Ws = textureSample(tD, sR, vec2f((i.op.x + i.op.z) * .9, i.op.y * .07));
+  let Wk = textureSample(tD, sR, vec2f(i.op.z * .11 + i.op.y * 1.9, i.op.y * 5. + i.op.x * 4.3));
   let dist = length(i.wp - g.cam.xyz);
   let ca = caus2(i.wp, dist);
   let V = normalize(g.cam.xyz - i.wp);
@@ -387,6 +398,12 @@ fn rift(uv: vec2f, open: f32, beat: f32, near: f32) -> vec3f {
     alb *= (1. - .5 * seam) * (.84 + .3 * D.c) * (.8 + .4 * Ws.b);
     alb = mix(alb, alb * 1.4 + .015, riv * .7);
     gloss = .62; bump = .12;
+    // dégâts (g.subv.w = 0 intacte … 1 en ruine) : longues rayures de métal à nu, plaques de suie, tôles cabossées
+    let dmg = g.subv.w;
+    let scr = ss(.74 - dmg * .34, .78 - dmg * .34, Wk.a) * ss(.02, .25, dmg);
+    let soot = ss(.62 - dmg * .3, .8 - dmg * .2, D.c * .6 + Ws.a * .5) * dmg;
+    alb = mix(alb * (1. - soot * .8), vec3f(.52, .54, .55), scr * .85);
+    gloss = mix(gloss, .9, scr); bump += dmg * .9;
   }
   else if (kind == 12) {
     let hue = fract(i.par.w * 5.73);
@@ -439,7 +456,7 @@ fn rift(uv: vec2f, open: f32, beat: f32, near: f32) -> vec3f {
 const W_LEAF = S_B + /*wgsl*/`
 override ROWS: f32 = 7.;
 override FAR: f32 = 150.;
-struct LI { @location(0) a: vec4f, @location(1) b: vec4f, @location(2) c: vec4f };
+struct LI { @location(0) a: vec4f, @location(1) b: vec4f, @location(2) c: vec4f, @location(3) col: f32 };
 struct LO { @builtin(position) cp: vec4f, @location(0) wp: vec3f, @location(1) n: vec3f, @location(2) uv: vec2f,
   @location(3) @interpolate(flat) col: vec3f, @location(4) @interpolate(flat) pr: vec4f,
   @location(5) @interpolate(flat) sd: vec2f, @location(6) @interpolate(flat) spc: vec3f };
@@ -498,10 +515,8 @@ fn pal(h: f32) -> vec3f {
   p += N2 * ruf;
   let sw = sway(i.a.xz, hA + (p.y - i.a.y), t);
   p.x += sw.x; p.z += sw.y;
-  // Le sous-marin écarte les feuilles sur son passage (et les entraîne un peu dans son sillage)
-  let dv = p - g.sub.xyz; let dl = length(dv);
-  let pk = ss(g.sub.w, g.sub.w * .3, dl) * sat((p.y - i.a.y) / max(len, .3) + hA * .25) * g.res.x / max(g.res.x, 1e-3);
-  p += dv / max(dl, .01) * vec3f(1., .45, 1.) * pk * (1.3 + min(length(g.subv.xyz), 6.) * .3) + g.subv.xyz * pk * .22;
+  // La tige plie comme une chaîne de points quand le sous-marin passe (voir bend)
+  p += bend(i.col, hA + (p.y - i.a.y));
   o.cp = g.vp * vec4f(p, 1.); o.wp = p; o.n = normalize(N2 + S * u * .55 - T0 * cos(v * 10. + s2 * 30. + t * .6) * u * .7 * nearK); o.uv = vec2f(u, v);
   o.col = col; o.pr = pr; o.sd = vec2f(s1, s2); o.spc = spc;
   return o;
@@ -510,6 +525,7 @@ struct GO { @builtin(position) cp: vec4f, @location(0) uv: vec2f, @location(1) @
 @vertex fn vsGl(@builtin(vertex_index) vi: u32, @location(0) a: vec4f, @location(1) b: vec4f) -> GO {
   var o: GO; let q = vec2f(f32(vi & 1u), f32(vi >> 1u)) * 2. - 1.; let t = g.cam.w;
   var p = a.xyz; let sw = sway(a.xz, a.w, t); p.x += sw.x; p.z += sw.y;
+  p += bend(b.w, a.w); // les étincelles suivent la tige qui plie
   p += .1 * vec3f(sin(t * .7 + b.x * 50.), sin(t * .9 + b.x * 70.), cos(t * .8 + b.x * 90.));
   let d = length(p - g.cam.xyz);
   if (d > 120. || dot(p - g.cam.xyz, g.fwd.xyz) < -1.) { o.cp = vec4f(0., 0., 2., 1.); return o; }
@@ -641,6 +657,23 @@ fn quad(i: u32) -> vec2f { return vec2f(f32(i & 1u), f32(i >> 1u)) * 2. - 1.; }
   al *= mix(.35, 1., T);
   return vec4f(min(max(c * al, vec3f(0.)), vec3f(20.)), al);
 }
+// Particules du jeu : a = position + taille (m), b = couleur + type (0 bulle, 1 lueur)
+@vertex fn vsPt(@builtin(vertex_index) vi: u32, @location(0) a: vec4f, @location(1) b: vec4f) -> VO {
+  var o: VO; let q = quad(vi);
+  let d = length(a.xyz - g.cam.xyz);
+  let sz = max(a.w, d * .0016);
+  o.cp = g.vp * vec4f(a.xyz + (g.right.xyz * q.x + g.up.xyz * q.y) * sz, 1.); o.uv = q; o.wp = a.xyz;
+  let lit = select(vec3f(1.), sunE(a.y, 0.) * .5 + amb(a.xyz, vec3f(0., 1., 0.), 1., 0.) + lightsVol(a.xyz) * .5, b.w < .5);
+  o.lv = b.rgb * lit * exp(-SIG * d) * min(1., a.w / sz);
+  o.pr = vec4f(b.w, 0., 0., 0.);
+  return o;
+}
+@fragment fn fsPt(i: VO) -> @location(0) vec4f {
+  let r = length(i.uv);
+  var m = ss(1., .1, r);
+  if (i.pr.x < .5) { m = ss(.5, .95, r) * ss(1., .93, r) + ss(.3, 0., length(i.uv - vec2f(-.35, .4))) * 1.5; }
+  return vec4f(min(i.lv * m, vec3f(12.)), 0.);
+}
 @vertex fn vsSnow(@builtin(vertex_index) vi: u32, @location(0) a: vec4f) -> VO {
   var o: VO; let q = quad(vi); let t = g.cam.w;
   let B = 44.;
@@ -741,8 +774,10 @@ const W_POST = S_G + W_FS + /*wgsl*/`
 fn tmap(x: vec3f) -> vec3f { return sat3((x * (2.51 * x + .03)) / (x * (2.43 * x + .59) + .14)); }
 fn sat3(x: vec3f) -> vec3f { return clamp(x, vec3f(0.), vec3f(1.)); }
 @fragment fn fs(@builtin(position) fc: vec4f) -> @location(0) vec4f {
-  let px = vec2i(fc.xy);
   let uv = fc.xy * g.res.zw;
+  // près du portail, l'image ondule (g.mis.w)
+  let wob = vec2f(sin(uv.y * 38. + g.cam.w * 2.6), cos(uv.x * 31. - g.cam.w * 2.1)) * g.mis.w * 6.;
+  let px = clamp(vec2i(fc.xy + wob), vec2i(0), vec2i(g.res.xy) - 1);
   let zf = min(g.fwd.w / max(textureLoad(tDp, px, 0), 1e-6), 3e4);
   // depth-aware upsample of the half-res shafts
   let h = fc.xy * .5 - .5; let b = floor(h); let f = h - b; let bi = vec2i(b);

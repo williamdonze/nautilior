@@ -2,8 +2,8 @@
  * Le jardin : toutes les plantes de la plongée, sous forme de « feuilles » instanciées
  * (technique d'Abyssal Garden, licence MIT — Maksymilian Dendura).
  *
- * Une feuille = 36 octets : position + longueur, (lacet, inclinaison, largeur, hauteur d'attache),
- * (type, graine 1, graine 2, courbure). Le shader fait le reste : forme, ondulation, houle.
+ * Une feuille = 40 octets : position + longueur, (lacet, inclinaison, largeur, hauteur d'attache),
+ * (type, graine 1, graine 2, courbure), numéro de tige (+1 ; 0 = aucune) pour la flexion (kelpSim.js). Le shader fait le reste : forme, ondulation, houle.
  * Les feuilles sont triées par cellule de 24 m pour n'afficher que celles qui sont en vue.
  *
  * Types : 0 kelp vert/doré · 1 tige · 2 herbier turquoise · 3 algue sombre irisée · 4 algue ambrée
@@ -49,10 +49,10 @@ export function buildGroundMap(w = 128, h = 512) {
 /** Tableau de flottants extensible */
 class Floats {
   constructor(n = 1 << 16) { this.a = new Float32Array(n); this.n = 0; }
-  push12(c, x, y, z, l, yaw, tilt, wid, hA, type, s1, s2, bend) {
-    if (this.n + 13 > this.a.length) { const b = new Float32Array(this.a.length * 2); b.set(this.a); this.a = b; }
+  push12(c, x, y, z, l, yaw, tilt, wid, hA, type, s1, s2, bend, col = 0) {
+    if (this.n + 14 > this.a.length) { const b = new Float32Array(this.a.length * 2); b.set(this.a); this.a = b; }
     const a = this.a; let n = this.n;
-    a[n++] = c; a[n++] = x; a[n++] = y; a[n++] = z; a[n++] = l; a[n++] = yaw; a[n++] = tilt; a[n++] = wid; a[n++] = hA; a[n++] = type; a[n++] = s1; a[n++] = s2; a[n++] = bend;
+    a[n++] = c; a[n++] = x; a[n++] = y; a[n++] = z; a[n++] = l; a[n++] = yaw; a[n++] = tilt; a[n++] = wid; a[n++] = hA; a[n++] = type; a[n++] = s1; a[n++] = s2; a[n++] = bend; a[n++] = col;
     this.n = n;
   }
 }
@@ -64,14 +64,14 @@ const cellOf = (x, z) => {
 
 /** Trie par cellule et emballe (feuilles : 36 octets ; scintillements : 32 octets) */
 function pack(L, leafFmt, step = 1, widthMul = 1) {
-  const R = 13, count = L.n / R, a = L.a;
+  const R = 14, count = L.n / R, a = L.a;
   const start = new Uint32Array(NCELLS + 1), fill = new Uint32Array(NCELLS);
   const per = new Uint32Array(NCELLS);
   for (let i = 0; i < count; i++) per[a[i * R]]++;
   let n = 0;
   for (let c = 0; c < NCELLS; c++) { start[c] = n; n += Math.ceil(per[c] / step); }
   start[NCELLS] = n;
-  const stride = leafFmt ? 36 : 32;
+  const stride = leafFmt ? 40 : 32;
   const buf = new ArrayBuffer(Math.max(n, 1) * stride), f = new Float32Array(buf), u8 = new Uint8Array(buf);
   const lo = new Float32Array(NCELLS).fill(1e9), hi = new Float32Array(NCELLS).fill(-1e9);
   const seen = new Uint32Array(NCELLS);
@@ -80,10 +80,11 @@ function pack(L, leafFmt, step = 1, widthMul = 1) {
     if (seen[c]++ % step) continue;
     const k = start[c] + fill[c]++;
     if (leafFmt) {
-      for (let j = 0; j < 8; j++) f[k * 9 + j] = a[o + 1 + j];
-      f[k * 9 + 6] *= widthMul;
-      u8[k * 36 + 32] = a[o + 9]; u8[k * 36 + 33] = a[o + 10] * 255; u8[k * 36 + 34] = a[o + 11] * 255; u8[k * 36 + 35] = a[o + 12] * 255;
-    } else for (let j = 0; j < 8; j++) f[k * 8 + j] = a[o + 1 + j];
+      for (let j = 0; j < 8; j++) f[k * 10 + j] = a[o + 1 + j];
+      f[k * 10 + 6] *= widthMul;
+      u8[k * 40 + 32] = a[o + 9]; u8[k * 40 + 33] = a[o + 10] * 255; u8[k * 40 + 34] = a[o + 11] * 255; u8[k * 40 + 35] = a[o + 12] * 255;
+      f[k * 10 + 9] = a[o + 13];
+    } else { for (let j = 0; j < 7; j++) f[k * 8 + j] = a[o + 1 + j]; f[k * 8 + 7] = a[o + 13]; }
     const y = a[o + 2], l = leafFmt ? a[o + 4] : 0.5;
     if (y - l < lo[c]) lo[c] = y - l;
     if (y + l > hi[c]) hi[c] = y + l;
@@ -100,9 +101,13 @@ export function buildGarden(density = 1) {
   const rr = (a, b) => a + (b - a) * rnd();
   const wide = 1 + (1 - density) * 0.9;
   const big = new Floats(1 << 20), small = new Floats(1 << 19), glints = new Floats(1 << 17);
+  // Tiges simulées : x, y, z du pied et hauteur. `stalk` = tige courante (numéro + 1) des feuilles posées.
+  const stalks = [];
+  let stalk = 0;
+  const newStalk = (x, y, z, H) => { stalks.push(x, y, z, H); stalk = stalks.length / 4; };
   const leaf = (L, x, y, z, len, yaw, tilt, wid, hA, type, s1, s2, bend) =>
-    L.push12(cellOf(x, z), x, y, z, len, yaw, tilt, type === 1 ? wid : wid * wide, hA, type, s1, s2, bend);
-  const glint = (x, y, z, hA, seed, hue, size) => glints.push12(cellOf(x, z), x, y, z, hA, seed, hue, size, 0, 0, 0, 0, 0);
+    L.push12(cellOf(x, z), x, y, z, len, yaw, tilt, type === 1 ? wid : wid * wide, hA, type, s1, s2, bend, L === small ? 0 : stalk);
+  const glint = (x, y, z, hA, seed, hue, size) => glints.push12(cellOf(x, z), x, y, z, hA, seed, hue, size, 0, 0, 0, 0, 0, hA > 0 ? stalk : 0);
   const slopeY = (x, z) => {
     const dx = getFloorHeight(x + 1, z) - getFloorHeight(x - 1, z), dz = getFloorHeight(x, z + 1) - getFloorHeight(x, z - 1);
     return 2 / Math.hypot(dx, 2, dz);
@@ -112,6 +117,7 @@ export function buildGarden(density = 1) {
 
   /* ---- Colonnes de kelp : des brins torsadés portant des centaines de feuilles */
   const column = (x, y, z, H, kind, dens) => {
+    newStalk(x, y, z, H);
     const strands = 2 + (rnd() < 0.6) + (rnd() < 0.3), ph = rnd() * TAU, tw = rr(0.1, 0.28), sr = rr(0.2, 0.55), sc = rr(0.75, 1.25);
     const la = rnd() * TAU, lm = rr(0, 0.11), full = rr(0.55, 1.3) * dens;
     const stem = (s, h) => { const a = ph + (s * TAU) / strands + h * tw, r = sr * (1 - (0.6 * h) / H), ln = (lm * h * h) / H; return [x + Math.cos(a) * r + Math.cos(la) * ln, z + Math.sin(a) * r + Math.sin(la) * ln, a]; };
@@ -155,6 +161,7 @@ export function buildGarden(density = 1) {
 
   /* ---- Bouquets de rubans posés sur le fond, touffes sur les parois */
   const cluster = (x, y, z, n, type, lmin, lmax, wmin, wmax, tmax, sway) => {
+    newStalk(x, y, z, lmax + sway);
     for (let i = 0; i < n; i++) {
       const a = rnd() * TAU, r = rnd() * 0.5, L = rr(lmin, lmax);
       leaf(big, x + Math.cos(a) * r, y - 0.15, z + Math.sin(a) * r, L, a, rr(0.05, tmax), rr(wmin, wmax), sway, type, rnd(), rnd(), rr(0.3, 0.8));
@@ -174,6 +181,7 @@ export function buildGarden(density = 1) {
       // touffes accrochées aux pentes raides
       const dx = getFloorHeight(x + 1, z) - getFloorHeight(x - 1, z), dz = getFloorHeight(x, z + 1) - getFloorHeight(x, z - 1);
       const yaw = Math.atan2(-dz, -dx), n = (5 + rnd() * 7) | 0;
+      newStalk(x, y, z, 2.2);
       for (let j = 0; j < n; j++) leaf(big, x, y, z, rr(0.5, 1.6), yaw + rr(-0.9, 0.9), rr(0.3, 1.1), rr(0.06, 0.12), 0.5, depth > 120 ? (rnd() < 0.7 ? 3 : 6) : rnd() < 0.3 ? 6 : 0, rnd(), rnd(), rr(0.2, 0.6));
     }
   }
@@ -204,5 +212,6 @@ export function buildGarden(density = 1) {
     bigF: pack(big, true, 2, 1.5),
     small: pack(small, true),
     glints: pack(glints, false),
+    stalks: new Float32Array(stalks),
   };
 }

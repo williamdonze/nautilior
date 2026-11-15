@@ -401,9 +401,16 @@ export class Dive {
     rp.spotCos = Math.cos(sub.spot.angle);
     // Près de la surface, il fait jour : le phare compte peu ; dans le noir, il devient essentiel
     const beamK = 0.3 + 0.7 * this.ambience.state.beam;
-    sub.spot.intensity = stats.lightIntensity * 1.8 * beamK;
+    // Coque abîmée : le phare grésille, puis a de vraies coupures quand elle est en ruine
+    let lamp = 1;
+    const hr = survival.hullRatio;
+    if (hr < 0.5 && !survival.dead) {
+      const n = Math.sin(time * 31) * Math.sin(time * 7.3) + Math.sin(time * 2.1 + Math.sin(time * 0.37) * 4);
+      lamp = n > (hr < 0.25 ? -0.35 : -1.25) ? 0.8 + 0.2 * Math.sin(time * 53) : 0.04;
+    }
+    sub.spot.intensity = stats.lightIntensity * 1.8 * beamK * lamp;
     sub.spot.distance = stats.lightRange * 1.3;
-    rp.spot = beamK * (stats.lightIntensity / 85);
+    rp.spot = beamK * (stats.lightIntensity / 85) * lamp;
     this.pixel.setRays(rp);
     this.snow.update(time, camera.position, this._lightPos, this._lightDir, this.ambience.state.ambient, rad);
 

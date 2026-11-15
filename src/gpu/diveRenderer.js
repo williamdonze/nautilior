@@ -13,6 +13,7 @@ import { buildShaders } from './shaders.js';
 import { Bridge, VERTEX_LAYOUT, INSTANCE_LAYOUT } from './bridge.js';
 import { buildGarden, buildGroundMap, GRID } from './garden.js';
 import { RADIATION } from '../config/settings.js';
+import { KelpSim } from './kelpSim.js';
 
 const HDR = 'rgba16float', DEPTH = 'depth32float';
 const NB = 6; // niveaux du halo
@@ -82,6 +83,20 @@ export class GpuDiveRenderer {
     const tMap = tex(gm.w, gm.h, 'rgba8unorm', TU.TEXTURE_BINDING | TU.COPY_DST);
     Qu.writeTexture({ texture: tMap }, gm.data, { bytesPerRow: gm.w * 4 }, [gm.w, gm.h]);
 
+    /* ---- Le jardin (kelp, herbiers, tapis) et la neige marine */
+    const G = (this.garden = buildGarden(Q.flora));
+    this.kelp = new KelpSim(device, G.stalks);
+    const vbuf = (data) => { const b = device.createBuffer({ size: Math.max(4, (data.byteLength + 3) & ~3), usage: BU.VERTEX | BU.COPY_DST }); Qu.writeBuffer(b, 0, data); return b; };
+    this.ibBig = vbuf(new Uint8Array(G.big.buf)); this.ibBigF = vbuf(new Uint8Array(G.bigF.buf));
+    this.ibSmall = vbuf(new Uint8Array(G.small.buf)); this.ibGl = vbuf(new Uint8Array(G.glints.buf));
+    for (const k of ['big', 'bigF', 'small', 'glints']) G[k].buf = null;
+    const snow = new Float32Array(9000 * 4);
+    for (let i = 0; i < snow.length; i++) snow[i] = Math.random();
+    this.ibSnow = vbuf(snow); this.nSnow = 9000;
+    // Particules du jeu (bulles, étincelles, lueurs du portail), remplies à chaque image par le pont
+    this.ibPts = device.createBuffer({ size: 8000 * 32, usage: BU.VERTEX | BU.COPY_DST });
+
+
     // Bloc d'uniformes : voir struct G dans shaders.js (144 flottants)
     this.UB = new Float32Array(144);
     this.UBS = new Float32Array(144);
@@ -95,11 +110,12 @@ export class GpuDiveRenderer {
       { binding: 0, visibility: VF, buffer: {} },
       { binding: 1, visibility: VF, sampler: {} }, { binding: 2, visibility: VF, sampler: {} }, { binding: 3, visibility: VF, sampler: { type: 'comparison' } },
       { binding: 4, visibility: VF, texture: { sampleType: 'depth' } },
-      { binding: 5, visibility: VF, texture: {} }, { binding: 6, visibility: VF, texture: {} }, { binding: 7, visibility: VF, texture: {} }] });
+      { binding: 5, visibility: VF, texture: {} }, { binding: 6, visibility: VF, texture: {} }, { binding: 7, visibility: VF, texture: {} },
+      { binding: 8, visibility: VF, texture: { sampleType: 'unfilterable-float' } }] });
     const mkBG0 = (u, sh) => device.createBindGroup({ layout: bgl0, entries: [
       { binding: 0, resource: { buffer: u } }, { binding: 1, resource: sRep }, { binding: 2, resource: sClamp }, { binding: 3, resource: sCmp },
       { binding: 4, resource: sh.createView() }, { binding: 5, resource: this.tWater.createView() }, { binding: 6, resource: tDetail.createView() },
-      { binding: 7, resource: tMap.createView() }] });
+      { binding: 7, resource: tMap.createView() }, { binding: 8, resource: this.kelp.texture.createView() }] });
     this.bg0 = mkBG0(this.ubo, this.tShadow);
     this.bg0s = mkBG0(this.uboS, tDummy);
     const bgl1 = device.createBindGroupLayout({ entries: [{ binding: 0, visibility: SS.FRAGMENT, texture: {} }] });
@@ -120,7 +136,7 @@ export class GpuDiveRenderer {
     const colorAtt = (this.colorAtt = (view, clear) => ({ view, loadOp: clear ? 'clear' : 'load', storeOp: 'store', clearValue: [0, 0, 0, 0] }));
 
     const A = (shaderLocation, offset, format) => ({ shaderLocation, offset, format });
-    const ibLeaf = { arrayStride: 36, stepMode: 'instance', attributes: [A(0, 0, 'float32x4'), A(1, 16, 'float32x4'), A(2, 32, 'unorm8x4')] };
+    const ibLeaf = { arrayStride: 40, stepMode: 'instance', attributes: [A(0, 0, 'float32x4'), A(1, 16, 'float32x4'), A(2, 32, 'unorm8x4'), A(3, 36, 'float32')] };
     const ibGl = { arrayStride: 32, stepMode: 'instance', attributes: [A(0, 0, 'float32x4'), A(1, 16, 'float32x4')] };
     const ibSnow = { arrayStride: 16, stepMode: 'instance', attributes: [A(0, 0, 'float32x4')] };
     const AAc = Q.AA;
@@ -151,6 +167,7 @@ export class GpuDiveRenderer {
     // le fond : plan lointain (profondeur 0 = infini), là où rien d'autre n'a été dessiné
     this.pBack = scenePipe(mSurf, 'vsB', 'fsB', [], { strip: true, compare: 'greater-equal' });
     this.pSnow = scenePipe(mSpr, 'vsSnow', 'fsSnow', [ibSnow], { strip: true, blend: ADD });
+    this.pPts = scenePipe(mSpr, 'vsPt', 'fsPt', [ibGl], { strip: true, blend: ADD });
 
     // Texture d'eau animée (une passe par image + mips)
     const mWater = mod(W.W_WATER);
@@ -177,16 +194,6 @@ export class GpuDiveRenderer {
       const t0 = performance.now();
       Qu.onSubmittedWorkDone().then(() => { this.detailMs = performance.now() - t0; });
     }
-
-    /* ---- Le jardin (kelp, herbiers, tapis) et la neige marine */
-    const G = (this.garden = buildGarden(Q.flora));
-    const vbuf = (data) => { const b = device.createBuffer({ size: Math.max(4, (data.byteLength + 3) & ~3), usage: BU.VERTEX | BU.COPY_DST }); Qu.writeBuffer(b, 0, data); return b; };
-    this.ibBig = vbuf(new Uint8Array(G.big.buf)); this.ibBigF = vbuf(new Uint8Array(G.bigF.buf));
-    this.ibSmall = vbuf(new Uint8Array(G.small.buf)); this.ibGl = vbuf(new Uint8Array(G.glints.buf));
-    for (const k of ['big', 'bigF', 'small', 'glints']) G[k].buf = null;
-    const snow = new Float32Array(9000 * 4);
-    for (let i = 0; i < snow.length; i++) snow[i] = Math.random();
-    this.ibSnow = vbuf(snow); this.nSnow = 9000;
 
     this.bridge = new Bridge(device, bgl1, sRep);
     this.shadowPass = { colorAttachments: [], depthStencilAttachment: { view: this.tShadow.createView(), depthClearValue: 1, depthLoadOp: 'clear', depthStoreOp: 'store' } };
@@ -305,7 +312,11 @@ export class GpuDiveRenderer {
     this.resize();
     const { device, UB, UBS, bridge, cam: c } = this, Qu = device.queue;
     const camera = dive.camera;
-    bridge.collect(dive.scene, camera);
+    bridge.collect(dive.scene, camera, time);
+    const dt = Math.min(0.1, Math.max(0, time - (this.lastTime ?? time)));
+    this.lastTime = time;
+    this.kelp.update(dt, dive.sub.position, dive.sub.velocity, dive.sub.forward);
+    if (bridge.nPts) Qu.writeBuffer(this.ibPts, 0, bridge.pts, 0, bridge.nPts * 8);
 
     /* ---- Caméra : base et projection à profondeur inversée (plan lointain à l'infini) */
     const e = camera.matrixWorld.elements, near = camera.near;
@@ -326,10 +337,12 @@ export class GpuDiveRenderer {
     const depth = -c.y;
     const ek = Math.min(1, Math.max(0, (depth - 8) / 26)), dark = Math.min(1, Math.max(0, (depth - 60) / 380));
     m[56] = EXPO * (0.6 + 0.4 * ek) * (1 + 0.7 * dark); m[57] = RAYS; m[58] = 1;
+    m[59] = (dive.survival?.radiation ?? 0) * 0.0035; // ondulation de l'image près du portail
     // Sous-marin (il écarte les feuilles), portail (l'eau verdit), lumières
     const sub = dive.sub, S = RADIATION.SOURCE;
     m[60] = sub.position.x; m[61] = sub.position.y; m[62] = sub.position.z; m[63] = 6;
     m[64] = sub.velocity.x; m[65] = sub.velocity.y; m[66] = sub.velocity.z;
+    m[67] = 1 - (dive.survival?.hullRatio ?? 1); // dégâts de coque (rayures, suie)
     const pd = Math.hypot(c.x - S.x, c.z - S.z), pk = Math.min(1, Math.max(0, (300 - pd) / 240));
     m[68] = pk * pk * 0.7 * (dive.portal?.open ?? 1) + (dive.survival?.radiation ?? 0) * 0.5;
     m[69] = 1;
@@ -389,6 +402,7 @@ export class GpuDiveRenderer {
     if (!K.blend) { r.setPipeline(this.pMeshAdd); bridge.draw(r, L.add); }
     if (!K.gl) { r.setPipeline(this.pGl); r.setVertexBuffer(0, this.ibGl); this.drawCells(r, G.glints, 2, 4, 0, 120); }
     if (!K.snow) { r.setPipeline(this.pSnow); r.setVertexBuffer(0, this.ibSnow); r.draw(4, this.nSnow); }
+    if (bridge.nPts) { r.setPipeline(this.pPts); r.setVertexBuffer(0, this.ibPts); r.draw(4, bridge.nPts); }
     r.end();
     // Rayons de lumière (soleil + faisceau du phare), puis flou qui respecte la profondeur
     if (!K.rays) { r = enc.beginRenderPass(this.passRays); r.setPipeline(this.pRays); r.setBindGroup(0, this.bgRays); r.draw(3); r.end(); }

@@ -55,6 +55,7 @@ export class CaptureFx {
     });
     this.sparks = new THREE.Points(geo, mat);
     this.sparks.frustumCulled = false;
+    this.sparks.userData.gpuPoints = { kind: 'spark', size: 0.06 };
     scene.add(this.sparks);
   }
 
