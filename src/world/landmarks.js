@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { WORLD } from '../config/settings.js';
 import { createRandom, paintFaces } from '../core/utils.js';
 import { getFloorHeight, canyonCenter } from './seabed.js';
+import { applyDetail } from './detail.js';
 
 /**
  * Éléments marquants de chaque zone :
@@ -19,7 +20,10 @@ const WRECKS = [
 ];
 /** Positions des épaves (pour y semer plus d'objets) */
 export const WRECK_SPOTS = WRECKS.map(([x, z]) => [x, z]);
-const vmat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+// Épaves : métal rouillé ; aiguilles du canyon : roche (détail triplanaire)
+const vmat = applyDetail(new THREE.MeshLambertMaterial({ vertexColors: true }), 'metal', 1.4);
+const rockMat = applyDetail(new THREE.MeshLambertMaterial({ vertexColors: true }), 'rock', 1);
+const woodMat = applyDetail(new THREE.MeshLambertMaterial({ vertexColors: true }), 'wood', 1);
 
 /** Peint une géométrie : base + taches de rouille */
 function weathered(geo, base, rust = '#63321b', amount = 0.4) {
@@ -53,7 +57,7 @@ function wreck(x, z, size, colliders) {
   const L = 18 * size, B = 5 * size, D = 4 * size;
   g.add(new THREE.Mesh(weathered(hullGeometry(L, B, D), '#3f4446', '#63321b', 0.45), vmat));
   // Pont et cabine
-  const deck = new THREE.Mesh(weathered(new THREE.BoxGeometry(L * 0.9, 0.3, B * 0.95), '#3e2114', '#22140d', 0.5), vmat);
+  const deck = new THREE.Mesh(weathered(new THREE.BoxGeometry(L * 0.9, 0.3, B * 0.95), '#3e2114', '#22140d', 0.5), woodMat);
   deck.position.set(-L * 0.02, D, 0);
   g.add(deck);
   const cabin = new THREE.Mesh(weathered(new THREE.BoxGeometry(L * 0.22, D * 0.7, B * 0.7), '#5f6564', '#63321b', 0.5), vmat);
@@ -66,7 +70,7 @@ function wreck(x, z, size, colliders) {
     g.add(w);
   }
   // Mât brisé, penché
-  const mast = new THREE.Mesh(weathered(new THREE.CylinderGeometry(0.15 * size, 0.2 * size, D * 2.2, 5), '#3e2114'), vmat);
+  const mast = new THREE.Mesh(weathered(new THREE.CylinderGeometry(0.15 * size, 0.2 * size, D * 2.2, 5), '#3e2114'), woodMat);
   mast.position.set(L * 0.15, D * 2, 0);
   mast.rotation.z = rand.range(-0.6, 0.6);
   g.add(mast);
@@ -96,7 +100,7 @@ function spire(x, z, height) {
     pos.setX(i, pos.getX(i) + Math.sin(y * 0.15 + n) * 1.5);
     pos.setZ(i, pos.getZ(i) + Math.cos(y * 0.12 + n) * 1.5);
   }
-  const m = new THREE.Mesh(weathered(geo, '#3a3e40', '#26292b', 0.3), vmat);
+  const m = new THREE.Mesh(weathered(geo, '#4a4e50', '#3a3e40', 0.3), rockMat);
   m.position.set(x, getFloorHeight(x, z) + height / 2 - 2, z);
   return m;
 }

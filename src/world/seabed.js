@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { SEABED, WORLD } from '../config/settings.js';
 import { createNoise2D } from './noise.js';
-import { paintFaces, smoothstep, clamp } from '../core/utils.js';
+import { smoothstep, clamp } from '../core/utils.js';
+import { applyDetail } from './detail.js';
 
 const noise = createNoise2D(WORLD.SEED);
 
@@ -104,10 +105,20 @@ function createChunk(z0, z1) {
   geo.translate(0, 0, (z0 + z1) / 2);
   const pos = geo.attributes.position;
   for (let i = 0; i < pos.count; i++) pos.setY(i, getFloorHeight(pos.getX(i), pos.getZ(i)));
-  geo = geo.toNonIndexed();
+  // Normales lisses et couleur par sommet : le relief fin vient de la texture de détail
   geo.computeVertexNormals();
-  const tmp = new THREE.Color();
-  paintFaces(geo, (center, normal) => floorColor(center, normal, tmp));
+  const nrm = geo.attributes.normal;
+  const colors = new Float32Array(pos.count * 3);
+  const tmp = new THREE.Color(), p = new THREE.Vector3(), n = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    p.fromBufferAttribute(pos, i);
+    n.fromBufferAttribute(nrm, i);
+    floorColor(p, n, tmp);
+    colors[i * 3] = tmp.r;
+    colors[i * 3 + 1] = tmp.g;
+    colors[i * 3 + 2] = tmp.b;
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   geo.computeBoundingSphere();
   return geo;
 }
@@ -116,7 +127,7 @@ function createChunk(z0, z1) {
 export function createSeabed() {
   const group = new THREE.Group();
   group.name = 'seabed';
-  const mat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+  const mat = applyDetail(new THREE.MeshLambertMaterial({ vertexColors: true }), 'sand', 1);
   for (let z = SEABED.Z_START; z > SEABED.Z_END; z -= SEABED.CHUNK_LENGTH) {
     const z1 = Math.max(SEABED.Z_END, z - SEABED.CHUNK_LENGTH);
     const chunk = new THREE.Mesh(createChunk(z, z1), mat);

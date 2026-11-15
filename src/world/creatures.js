@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import creaturesData from '../config/creatures.json';
 import { WORLD } from '../config/settings.js';
 import { damp } from '../core/utils.js';
+import { applySkin } from './detail.js';
 import { getFloorHeight } from './seabed.js';
 import { createEel, createLantern, createJelly, createFishGeometry, FISH_SPECIES } from './creatureModels.js';
 
@@ -46,7 +47,8 @@ function spawnPoint(sub, out, minY = -1e9, maxY = -3) {
 class FishSchools {
   constructor(scene) {
     const uniforms = (this.uniforms = { uTime: { value: 0 } });
-    const mat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide });
+    // Écailles lisses, bords argentés et irisés (comme des sardines au soleil)
+    const mat = applySkin(new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }), { rim: 0.8, translucent: 0.5, iridescent: 0.9, rimColor: '#a8d0d0' });
     /*
      * Nage : une onde part de la tête et grandit en descendant vers la queue
      * (la tête bouge à peine, la queue bat). aU = 0 à la tête, 1 au bout de la queue.

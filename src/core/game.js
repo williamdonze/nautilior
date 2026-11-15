@@ -14,6 +14,7 @@ import { playEnding, showEndScreen } from '../story/endings.js';
 import { applyUpgrades, stats } from '../submarine/stats.js';
 import { SURVIVAL } from '../config/settings.js';
 import { MemoryView } from '../ui/memoryView.js';
+import { createDetailTexture } from '../world/detail.js';
 import { Soundscape } from './soundscape.js';
 import { Music } from './music.js';
 import { Menu } from '../ui/menu.js';
@@ -44,6 +45,8 @@ export class Game {
     this.hold.onChange(() => hud.updateCargo(this.hold));
     // Vignettes générées une fois, avant la première frame (pendant le fondu au noir)
     this.thumbnails = renderThumbnails(pixel.renderer, ITEMS);
+    // Texture de détail des surfaces : générée une fois, avant la construction du monde
+    createDetailTexture(pixel.renderer);
 
     this.dive = new Dive({
       pixel, input, pointer, sound, hud,
