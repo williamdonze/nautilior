@@ -20,6 +20,7 @@ import { Creatures } from './creatures.js';
 import { Wildlife } from './wildlife.js';
 import { gpuMode } from '../gpu/mode.js';
 import { Guardian } from './guardian.js';
+import { PortalFx } from './portalFx.js';
 import { zoneAtDepth } from './zones.js';
 import { createPortal } from './portal.js';
 import { pointScale } from '../core/renderer.js';
@@ -50,6 +51,7 @@ export class Dive {
     scene.add(this.snow.object);
     this.radiationSource = createRadiationSource(scene);
     this.portal = createPortal(scene);
+    this.portalFx = new PortalFx(scene, this.portal);
     this.radar = new Radar(sound);
     this.radar.setWorld(this.decor.group); // nuage de points du sonar 3D
     this.wake = new Wake();
@@ -235,6 +237,7 @@ export class Dive {
   leave() {
     this.pixel.setRays(null);
     this.sound.setDrone(0);
+    this.sound.setRift?.(0, 56);
     this.sound.setSonar(false);
     this.sound.stopEngine();
     this.inventory.close();
@@ -361,7 +364,12 @@ export class Dive {
     if (this.beatPhase >= 1) {
       this.beatPhase -= 1;
       if (!this.autopilot) this.sound.sonarBeep(0.8 + stress * 0.6);
-      this.radar.beat?.();
+      // Près de la déchirure, le battement devient physique : coup sourd, onde sur la plaine, secousse
+      if (this.riftNear > 0.02 && this.portal.open > 0.05) {
+        this.portalFx.beat();
+        this.sound.heartbeat(0.5 + this.riftNear * 1.6);
+        this.shake(0.03 + this.riftNear * 0.14);
+      }
     }
     // le tracé de la déchirure a son pic à la phase 0,3 : on le cale sur le bip
     this.portal.externalBeat = true;
@@ -506,6 +514,10 @@ export class Dive {
     hud.update(sub.depth, this.input);
     // Le portail : bourdonnement qui monte à l'approche, et invite quand on est devant
     const portalDist = sub.position.distanceTo(this.portal.center);
+    // Effets de la déchirure : de plus en plus forts à l'approche (0 à 300 m … 1 à 25 m)
+    this.riftNear = Math.max(0, Math.min(1, (300 - portalDist) / 275));
+    if (this.portalFx.update(dt, time, this.riftNear) && this.riftNear > 0.15) sound.crackle?.(this.riftNear);
+    sound.setRift?.(this.riftNear * this.portal.open, this.bpm ?? 56);
     this.portal.update(time, this.camera.position, pointScale.value);
     sound.setDrone(Math.max(0, 1 - portalDist / 160) * this.portal.open);
     this.nearPortal = portalDist < 32 && this.portal.open > 0.5 && !survival.dead && !this.autopilot && this.canFacePortal();

@@ -493,6 +493,70 @@ export class Sound {
     this.noiseBurst(t, 0.35 * volume, 0.5, 'bandpass', 2600, 3);
   }
 
+  /**
+   * La déchirure : une nappe qui enfle à l'approche. Deux voix désaccordées qui montent, un souffle,
+   * un grave qui palpite au rythme du cœur. level 0..1, bpm = pouls courant.
+   */
+  setRift(level, bpm = 56) {
+    if (!this.ready) return;
+    if (!this.rift) {
+      if (level <= 0.001) return;
+      const ctx = this.ctx, out = ctx.createGain();
+      out.gain.value = 0;
+      out.connect(this.master);
+      out.connect(this.echo);
+      const voices = [110, 164.8, 221.5].map((f, i) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = i === 2 ? 'sine' : 'sawtooth';
+        o.frequency.value = f;
+        g.gain.value = i === 2 ? 0.5 : 0.16;
+        const lp = ctx.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.value = 700;
+        o.connect(lp).connect(g).connect(out);
+        o.start();
+        return { o, f, lp };
+      });
+      // souffle
+      const n = ctx.createBufferSource();
+      n.buffer = this.noise;
+      n.loop = true;
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 900;
+      bp.Q.value = 0.7;
+      const ng = ctx.createGain();
+      ng.gain.value = 0.25;
+      n.connect(bp).connect(ng).connect(out);
+      n.start();
+      // grave qui palpite
+      const sub = ctx.createOscillator(), sg = ctx.createGain(), lfo = ctx.createOscillator(), lg = ctx.createGain();
+      sub.frequency.value = 41;
+      sg.gain.value = 0.5;
+      lg.gain.value = 0.45;
+      lfo.connect(lg).connect(sg.gain);
+      sub.connect(sg).connect(out);
+      sub.start();
+      lfo.start();
+      this.rift = { out, voices, bp, lfo };
+    }
+    const t = this.ctx.currentTime, R = this.rift;
+    R.out.gain.setTargetAtTime(level * level * 0.22, t, 0.5);
+    // les voix montent d'une quinte à mesure qu'on approche, le souffle s'éclaircit
+    for (const v of R.voices) { v.o.frequency.setTargetAtTime(v.f * (1 + level * 0.5), t, 0.8); v.lp.frequency.setTargetAtTime(500 + level * 2600, t, 0.8); }
+    R.bp.frequency.setTargetAtTime(700 + level * 2800, t, 0.8);
+    R.lfo.frequency.setTargetAtTime(bpm / 60, t, 0.4);
+  }
+
+  /** Claquement d'un éclair de la déchirure */
+  crackle(volume = 1) {
+    if (!this.ready || this.ctx.currentTime - (this.lastCrackle ?? 0) < 0.12) return;
+    this.lastCrackle = this.ctx.currentTime;
+    const t = this.ctx.currentTime;
+    this.noiseBurst(t, 0.22 * volume, 0.06, 'highpass', 3000 + Math.random() * 3000, 1);
+    this.noiseBurst(t + 0.03, 0.14 * volume, 0.18, 'bandpass', 1200 + Math.random() * 1500, 2);
+  }
+
   /** Impulsion de défense : un coup de sonar assourdissant, puis l'onde qui s'éloigne */
   pulse() {
     if (!this.ready) return;
