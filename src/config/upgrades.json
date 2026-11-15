@@ -251,6 +251,27 @@
           }
         }
       ]
+    },
+    {
+      "id": "sonar",
+      "name": "Sonar",
+      "levels": [
+        {
+          "label": "Sonar à balayage",
+          "cost": 0,
+          "stats": {
+            "sonar3d": 0
+          }
+        },
+        {
+          "label": "Sonar volumétrique",
+          "cost": 3800,
+          "description": "Le relief et tout ce qui rôde autour du Nautiliar, en nuage de points.",
+          "stats": {
+            "sonar3d": 1
+          }
+        }
+      ]
     }
   ]
 }

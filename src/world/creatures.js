@@ -246,7 +246,7 @@ class Mutant {
 
     // Pilotage doux
     desired.multiplyScalar(desiredSpeed);
-    this.vel.lerp(desired, damp(this.state === 'charge' ? 2.5 : 1.2, dt));
+    this.vel.lerp(desired, damp(this.state === 'charge' ? 4.5 : 1.6, dt));
     this.pos.addScaledVector(this.vel, dt);
     const floor = getFloorHeight(this.pos.x, this.pos.z);
     this.pos.y = THREE.MathUtils.clamp(this.pos.y, floor + 1.5, -3);
@@ -334,6 +334,18 @@ export class Creatures {
     this.fish = new FishSchools(scene);
     this.mutants = [];
     this.calm = false; // portail refermé : les bêtes s'apaisent et s'en vont
+  }
+
+  /** Impulsion du sous-marin : les créatures à portée prennent la fuite */
+  scare(position, radius, time) {
+    for (const m of this.mutants) if (m.pos.distanceTo(position) < radius) { m.state = 'retreat'; m.timer = time; }
+  }
+
+  /** Nombre de créatures en train de charger */
+  get threat() {
+    let n = 0;
+    for (const m of this.mutants) if (m.state === 'charge' && !m.cfg.contact) n++;
+    return n;
   }
 
   /** Retire toutes les créatures (nouvelle plongée) */

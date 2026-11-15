@@ -45,6 +45,9 @@ export class Bridge {
     this.single = new Float32Array(MAX_SINGLE * INST);
     this.singleBuf = device.createBuffer({ size: this.single.byteLength, usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST });
     this.nSingle = 0;
+    // Particules : position + taille, couleur + type (voir vsPt)
+    this.pts = new Float32Array(8000 * 8);
+    this.nPts = 0;
     // Listes de dessin, par passe
     this.lists = { rock: [], opaque: [], alpha: [], add: [] };
     this.lights = [];
@@ -203,7 +206,9 @@ export class Bridge {
   }
 
   /** Parcourt la scène et prépare les listes de dessin et les lumières */
-  collect(scene, camera) {
+  collect(scene, camera, time = 0) {
+    this.time = time;
+    this.nPts = 0;
     const L = this.lists;
     L.rock.length = L.opaque.length = L.alpha.length = L.add.length = 0;
     this.lights.length = 0;
@@ -222,6 +227,7 @@ export class Bridge {
     if (o.isLight) this.light(o, ce);
     else if (o.isSprite) this.sprite(o, ce);
     else if (o.isMesh) this.mesh(o);
+    else if (o.isPoints && o.userData.gpuPoints) this.points(o);
     const ch = o.children;
     for (let i = 0; i < ch.length; i++) this.walk(ch[i], ce);
   }
@@ -248,6 +254,30 @@ export class Bridge {
     }
   }
 
+  /**
+   * Particules (THREE.Points étiquetés userData.gpuPoints = { kind, size, color? }) :
+   *  bubble : bulles (attribut aLife) · spark : étincelles (aLife, aColor) · mote : lueurs du portail (aSeed)
+   */
+  points(o) {
+    const cfg = o.userData.gpuPoints, A = o.geometry.attributes, pos = A.position.array, out = this.pts, e = o.matrixWorld.elements;
+    const life = A.aLife?.array, col = A.aColor?.array, seed = A.aSeed?.array, n = A.position.count;
+    for (let i = 0; i < n && this.nPts < 8000; i++) {
+      let x = pos[i * 3], y = pos[i * 3 + 1], z = pos[i * 3 + 2], r = 0.5, g = 0.6, b = 0.6, a = 1, kind = 0, size = cfg.size;
+      if (cfg.kind === 'bubble') { if (life[i] <= 0) continue; a = Math.min(1, life[i] * 2); size *= 0.6 + 0.4 * ((i * 7) % 5) / 4; }
+      else if (cfg.kind === 'spark') { if (life[i] <= 0) continue; a = Math.min(1, life[i] * 1.5) * 3; r = col[i * 3]; g = col[i * 3 + 1]; b = col[i * 3 + 2]; kind = 1; }
+      else {
+        // lueurs qui remontent le long de la déchirure, aspirées vers elle
+        const H = cfg.hover;
+        y = ((y + H + this.time * (0.8 + seed[i] * 1.6)) % 42) - H;
+        const k = 1 - Math.min(0.8, Math.max(0, (y + H) / 50));
+        x *= k; z *= k; a = (1 - (y + H) / 42) * 2.5 * (cfg.open?.() ?? 1); r = 0.5; g = 1; b = 0.55; kind = 1;
+      }
+      const k = this.nPts++ * 8;
+      out[k] = e[0] * x + e[4] * y + e[8] * z + e[12]; out[k + 1] = e[1] * x + e[5] * y + e[9] * z + e[13]; out[k + 2] = e[2] * x + e[6] * y + e[10] * z + e[14];
+      out[k + 3] = size; out[k + 4] = r * a; out[k + 5] = g * a; out[k + 6] = b * a; out[k + 7] = kind;
+    }
+  }
+
   /** Halo (THREE.Sprite) : un quad face à la caméra */
   sprite(o, ce) {
     if (this.nSingle >= MAX_SINGLE || o.material.opacity <= 0.002) return;
@@ -255,7 +285,11 @@ export class Bridge {
     this.params(o.material, o, geo);
     const w = o.matrixWorld.elements, out = this.single, k = this.nSingle * INST;
     const sx = Math.hypot(w[0], w[1], w[2]), sy = Math.hypot(w[4], w[5], w[6]);
-    this._m.set(ce[0] * sx, ce[4] * sy, ce[8], w[12], ce[1] * sx, ce[5] * sy, ce[9], w[13], ce[2] * sx, ce[6] * sy, ce[10], w[14], 0, 0, 0, 1);
+    // Face à la caméra mais sans son roulis : le haut du halo reste le haut du monde
+    let rx = ce[10], rz = -ce[8];
+    const rl = Math.hypot(rx, rz) || 1;
+    rx /= rl; rz /= rl;
+    this._m.set(rx * sx, 0, ce[8], w[12], 0, sy, ce[9], w[13], rz * sx, 0, ce[10], w[14], 0, 0, 0, 1);
     this.write(out, k, this._m.elements, null);
     this.lists.add.push({ geo, buf: this.singleBuf, first: this.nSingle++, count: 1, tex: this.white });
   }

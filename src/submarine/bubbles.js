@@ -55,6 +55,7 @@ export function createBubbles(max = 220) {
   material.uniforms.uPointScale = pointScale; // référence partagée (merge l'aurait copiée)
   const points = new THREE.Points(geo, material);
   points.frustumCulled = false;
+  points.userData.gpuPoints = { kind: 'bubble', size: 0.05 }; // dessinées par le moteur WebGPU
   let cursor = 0;
   let accumulator = 0;
 

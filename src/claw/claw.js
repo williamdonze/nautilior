@@ -13,6 +13,7 @@ import { stats } from '../submarine/stats.js';
  *   RETRACT  → retour, d'autant plus lent que l'objet est lourd
  *   STOW     → l'objet rentre dans la soute
  */
+const Y_UP = new THREE.Vector3(0, 1, 0);
 const State = { IDLE: 'idle', EXTEND: 'extend', GRAB: 'grab', RETRACT: 'retract', STOW: 'stow' };
 
 const v3 = (o) => new THREE.Vector3(o.x, o.y, o.z);
@@ -177,6 +178,8 @@ export class Claw {
         const slow = (CLAW.WEIGHT_REF / (CLAW.WEIGHT_REF + weight)) * stats.clawSpeed;
         // Le poignet est entraîné par le sous-marin : le bras se replie aussi en avançant
         this.wrist.addScaledVector(this.sub.velocity, dt);
+        // …et tourne avec lui dans les virages
+        this.wrist.sub(this.sub.position).applyAxisAngle(Y_UP, this.sub.yawVelocity * dt).add(this.sub.position);
         const arrived = this.moveWrist(this._rest, dt, CLAW.RETRACT_SPEED * slow, CLAW.RETRACT_ACCEL * slow);
         this.sound.motorPitch(0.6 + Math.min(slow, 1) * 0.5);
         // Le bras tremble sous l'effort

@@ -52,9 +52,21 @@ export function getFloorHeight(x, z) {
   const r = 1 - Math.abs(noise(x * 0.018 + 57, z * 0.018 - 31));
   const ridges = r * r * r * SEABED.RIDGE_AMPLITUDE * roughness;
   const detail = noise(x * 0.08, z * 0.08) * 0.8;
-  // Les bords du monde remontent un peu (cuvette) pour cacher les limites
-  const edge = smoothstep(150, 205, Math.abs(x)) * 40;
-  return -depth + relief + ridges + detail + edge;
+  const base = -depth + relief + ridges + detail;
+  // Les bords du monde sont de vraies falaises qui montent jusqu'au-dessus de la surface :
+  // barrière naturelle, pas de mur invisible. Leur tracé ondule, avec des replats.
+  const wx = noise(z * 0.016, 7.7) * 12 + noise(z * 0.06, 2.2) * 5;
+  const wz = noise(x * 0.02, 3.3) * 10;
+  const e = Math.max(
+    smoothstep(152 + wx, 180 + wx, Math.abs(x)),
+    smoothstep(-1122 + wz, -1152 + wz, z),
+    smoothstep(170 + wz, 198 + wz, z)
+  );
+  if (e <= 0) return base;
+  const step = Math.floor(e * 5) / 5, f = e * 5 - Math.floor(e * 5);
+  const terr = step + smoothstep(0.55, 1, f) / 5; // gradins : replats puis ressauts
+  const k = e * 0.45 + terr * 0.55;
+  return base + (8 - base) * k + noise(x * 0.05, z * 0.05 + 40) * 6 * e * (1 - e);
 }
 
 // Couleurs (sRGB, converties en linéaire par THREE.Color)

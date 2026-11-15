@@ -106,7 +106,7 @@ export function createPortal(scene) {
   const riftGeo = new THREE.PlaneGeometry(RIFT_WIDTH, RIFT_HEIGHT);
   const rift = new THREE.Group();
   rift.position.y = RIFT_HEIGHT / 2;
-  for (const ry of [0, Math.PI / 2.6]) {
+  for (const ry of [0]) {
     const plane = new THREE.Mesh(riftGeo, riftMat);
     plane.rotation.y = ry;
     plane.raycast = () => {};
@@ -172,6 +172,7 @@ export function createPortal(scene) {
   });
   const motes = new THREE.Points(moteGeo, moteMat);
   motes.frustumCulled = false;
+  motes.userData.gpuPoints = { kind: 'mote', size: 0.07, hover: HOVER, open: () => open };
   group.add(motes);
   scene.add(group);
 
@@ -225,6 +226,8 @@ export function createPortal(scene) {
 
       const dist = viewer ? viewer.distanceTo(center) : 0;
       riftMat.uniforms.uNear.value = THREE.MathUtils.clamp(1 - (dist - 15) / 45, 0, 1);
+      // La déchirure fait toujours face à qui la regarde (rotation autour de la verticale seulement)
+      if (viewer) rift.rotation.y = Math.atan2(viewer.x - center.x, viewer.z - center.z) - group.rotation.y;
 
       // Lueur lointaine : placée sur la ligne de visée, à taille apparente constante
       const far = viewer && dist > FAR_GLOW_DIST * 0.8 && open > 0.01;

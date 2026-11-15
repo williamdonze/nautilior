@@ -14,15 +14,14 @@ En bref : Bretagne, 1984, le village de **Port-Kermor**. Le joueur se réveille 
 Règles d'écriture : textes courts, mélancoliques, jamais la vérité dite directement avant le portail. **Aucune** légende bretonne, aucune référence à une cité engloutie : l'Envers est simplement là, et ne s'explique que par l'histoire des personnages.
 
 ## Style visuel (très important)
-3D low-poly avec un **rendu pixelisé** façon rétro / PS1 :
-- Rendu en basse résolution puis upscale sans lissage (`RenderPixelatedPass` de Three.js ou render target basse résolution avec `NearestFilter`). La résolution doit être réglable dans une constante.
-- Modèles low-poly en flat shading (formes primitives Three.js au début, pas d'assets externes obligatoires).
-- Palette limitée et désaturée (bleus, verts d'eau, rouille, gris granit) avec un léger dithering en post-processing.
-- Brouillard sous-marin (`scene.fog`) qui s'assombrit avec la profondeur.
-- Particules de « neige marine ».
-- Un phare (SpotLight) à l'avant du sous-marin, principale source de lumière en profondeur.
-- Plus on approche du portail, plus la lueur est verdâtre et surnaturelle (légère distorsion, particules lumineuses).
-- En surface : port brumeux, ciel gris, lumière froide.
+Rendu sous-marin réaliste et détaillé, dans l'esprit d'« Abyssal Garden » (pas de pixelisation) :
+- Plongée dessinée par un moteur **WebGPU** (`src/gpu/`) : eau et brouillard par couleur, caustiques, rayons de lumière, halo, forêts de kelp en feuilles instanciées. Repli sur Three.js sans WebGPU.
+- Modèles lisses (coques, animaux, épaves), détails dessinés par les shaders (tôles, rivets, roche, corail).
+- Palette désaturée (bleus, verts d'eau, rouille, gris granit) ; l'obscurité grandit avec la profondeur.
+- Un phare à l'avant du sous-marin, principale source de lumière en profondeur.
+- Plus on approche du portail, plus la lueur est verdâtre et surnaturelle.
+- En surface : port brumeux, granit, ciel gris, lumière froide (Three.js).
+- Interface fine et discrète (police Barlow Condensed) ; en vue cockpit, les informations se lisent sur le tableau de bord.
 
 ## Stack technique
 - **Vite** + **JavaScript** (modules ES), pas de framework UI

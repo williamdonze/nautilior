@@ -39,6 +39,69 @@ export class Music {
     this.timer = 0;
     this.index = 0;
     this.enabled = true;
+    this.threat = 0; // bêtes en train de charger : la musique se resserre et cogne
+    this.tension = 0;
+    this.beat = 0;
+    this.beatTimer = 0;
+  }
+
+  /**
+   * Rythme : un battement sourd et régulier sous la nappe. En plongée il est lent, comme un cœur ;
+   * dans les abysses, plus lourd. Dès qu'une bête charge, le tempo double, la caisse claque
+   * et des accords dissonants tombent sur les temps.
+   */
+  rhythm(dt) {
+    const s = this.sound;
+    this.tension += ((this.threat > 0 ? 1 : 0) - this.tension) * Math.min(1, dt * (this.threat > 0 ? 4 : 0.5));
+    if (this.mood === 'port' && this.tension < 0.05) return;
+    const hunted = this.tension > 0.35;
+    const bpm = hunted ? 138 : this.mood === 'deep' ? 54 : 66;
+    this.beatTimer -= dt;
+    if (this.beatTimer > 0) return;
+    this.beatTimer += 60 / bpm / 2; // croches
+    if (this.beatTimer < 0) this.beatTimer = 0;
+    const step = this.beat++ % 8, t = s.ctx.currentTime + 0.02;
+    if (hunted) {
+      if (step % 2 === 0) this.kick(t, 0.34);
+      if (step === 2 || step === 6) s.noiseBurst(t, 0.16, 0.12, 'bandpass', 1800, 1.2);
+      else s.noiseBurst(t, 0.035, 0.03, 'highpass', 6000, 1);
+      if (step === 0 || step === 5) this.stab(t, step ? [39, 45, 50] : [38, 44, 51]);
+    } else {
+      // cœur lent : deux coups rapprochés, puis le silence
+      if (step === 0) this.kick(t, this.mood === 'deep' ? 0.2 : 0.13);
+      if (step === 1) this.kick(t, this.mood === 'deep' ? 0.12 : 0.08);
+      if (step === 4 && this.mood === 'deep') s.noiseBurst(t, 0.03, 0.4, 'lowpass', 300, 0.7);
+    }
+  }
+
+  kick(t, vol) {
+    const s = this.sound, o = s.ctx.createOscillator(), g = s.ctx.createGain();
+    o.frequency.setValueAtTime(95, t);
+    o.frequency.exponentialRampToValueAtTime(36, t + 0.16);
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+    o.connect(g).connect(s.musicBus);
+    o.start(t);
+    o.stop(t + 0.32);
+  }
+
+  /** Accord dissonant, bref et rauque */
+  stab(t, notes) {
+    const s = this.sound, f = s.ctx.createBiquadFilter(), g = s.ctx.createGain();
+    f.type = 'lowpass';
+    f.frequency.setValueAtTime(1400, t);
+    f.frequency.exponentialRampToValueAtTime(260, t + 0.3);
+    g.gain.setValueAtTime(0.085, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.34);
+    f.connect(g).connect(s.musicBus);
+    for (const n of notes) {
+      const o = s.ctx.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.value = midi(n);
+      o.connect(f);
+      o.start(t);
+      o.stop(t + 0.36);
+    }
   }
 
   setMood(mood) {
@@ -50,6 +113,7 @@ export class Music {
   update(dt) {
     const s = this.sound;
     if (!s.ready || !this.enabled) return;
+    this.rhythm(dt);
     this.timer -= dt;
     if (this.timer > 0) return;
     const m = MOODS[this.mood];

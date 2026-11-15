@@ -9,29 +9,29 @@
   "mutants": {
     "eel": {
       "name": "Anguille mutée",
-      "speed": 3,
-      "chargeSpeed": 12,
-      "aggroRadius": 26,
+      "speed": 5,
+      "chargeSpeed": 19,
+      "aggroRadius": 48,
       "damage": 9,
       "biteRadius": 3.4,
-      "retreatTime": 3.5,
-      "cooldown": 3
+      "retreatTime": 1.6,
+      "cooldown": 1.2
     },
     "lantern": {
       "name": "Poisson-lanterne",
-      "speed": 2,
-      "chargeSpeed": 9,
-      "aggroRadius": 34,
+      "speed": 3.5,
+      "chargeSpeed": 15,
+      "aggroRadius": 55,
       "damage": 15,
       "biteRadius": 4.6,
-      "retreatTime": 4,
-      "cooldown": 4
+      "retreatTime": 2,
+      "cooldown": 1.5
     },
     "jelly": {
       "name": "Méduse irradiée",
       "speed": 0.8,
-      "chargeSpeed": 1.6,
-      "aggroRadius": 16,
+      "chargeSpeed": 3.2,
+      "aggroRadius": 24,
       "damage": 7,
       "biteRadius": 4.2,
       "retreatTime": 0,

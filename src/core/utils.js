@@ -56,3 +56,21 @@ export function paintFaces(geometry, colorFn) {
   geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   return geometry;
 }
+
+/**
+ * Peint une géométrie sommet par sommet : `colorFn(position, index)` renvoie une THREE.Color.
+ * Contrairement à paintFaces, la teinte varie en douceur sur les surfaces (patine, salissures).
+ */
+export function paintVertices(geometry, colorFn) {
+  const pos = geometry.attributes.position;
+  const colors = new Float32Array(pos.count * 3);
+  const p = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    const col = colorFn(p.fromBufferAttribute(pos, i), i);
+    colors[i * 3] = col.r;
+    colors[i * 3 + 1] = col.g;
+    colors[i * 3 + 2] = col.b;
+  }
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  return geometry;
+}
