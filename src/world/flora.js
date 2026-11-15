@@ -5,6 +5,7 @@ import { createRandom } from '../core/utils.js';
 import { createNoise2D } from './noise.js';
 import { getFloorHeight } from './seabed.js';
 import { tileKey, registerSmall } from './tiles.js';
+import { applySkin } from './detail.js';
 
 /**
  * Flore marine : forêts de laminaires, herbiers, fucus des épaves, gorgones, éponges.
@@ -39,13 +40,14 @@ export const floraUniforms = {
 
 function kelpGeometry() {
   // Lanière : un ruban qui se vrille, s'élargit un peu puis s'effile, bords ondulés
-  const geo = new THREE.PlaneGeometry(1, 1, 1, 10);
+  const geo = new THREE.PlaneGeometry(1, 1, 2, 14);
   geo.translate(0, 0.5, 0);
   const pos = geo.attributes.position;
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i), y = pos.getY(i);
     const width = (0.35 + Math.sin(Math.min(1, y * 1.3) * Math.PI) * 0.65) * (1 - y * 0.5);
-    const ruffle = Math.sin(y * 28) * 0.1 * Math.abs(x) * 2;
+    // Bords froissés (la nervure centrale reste droite)
+    const ruffle = Math.sin(y * 34) * 0.16 * Math.abs(x) * 2;
     const twist = y * 2.2;
     const px = x * width;
     pos.setXYZ(i, px * Math.cos(twist), y, px * Math.sin(twist) + ruffle);
@@ -242,8 +244,13 @@ const SHAPES = {
 
 /* ------------------------------------------------------------ Matériau qui ondule et s'écarte */
 
-function floraMaterial(sway, push) {
-  const mat = new THREE.MeshLambertMaterial({ flatShading: true, side: THREE.DoubleSide });
+/**
+ * Matériau des plantes (d'après Abyssal Garden) : ondulation et sillage dans le vertex shader ;
+ * dans le fragment, nervure plus sombre, pointe plus claire, paillettes dorées ou vertes
+ * qui scintillent, et (via applySkin) lumière qui traverse les feuilles et reflets irisés.
+ */
+function floraMaterial(sway, push, sparkle) {
+  const mat = new THREE.MeshLambertMaterial({ side: THREE.DoubleSide });
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = floraUniforms.uTime;
     shader.uniforms.uField = floraUniforms.uField;
@@ -256,7 +263,8 @@ function floraMaterial(sway, push) {
         uniform float uTime;
         uniform sampler2D uField;
         uniform float uFieldSize;
-        uniform float uSubY;`
+        uniform float uSubY;
+        varying vec2 vLeaf;`
       )
       .replace(
         '#include <project_vertex>',
@@ -281,11 +289,42 @@ function floraMaterial(sway, push) {
         // La plante se couche : le sommet s'écarte et s'abaisse (longueur à peu près conservée)
         wp.xz += off * bend;
         wp.y -= (plantH * 0.5) * (1.0 - cos(min(offLen / max(plantH, 0.5), 1.2))) * bend;
+        vLeaf = position.xy;
         vec4 mvPosition = viewMatrix * wp;
         gl_Position = projectionMatrix * mvPosition;
         `
       );
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform float uTime;\nvarying vec2 vLeaf;')
+      .replace(
+        '#include <color_fragment>',
+        `#include <color_fragment>
+        // Nervure centrale plus sombre, pointe plus claire
+        diffuseColor.rgb *= (0.7 + 0.3 * smoothstep(0.0, 0.18, abs(vLeaf.x))) * mix(0.55, 1.15, clamp(vLeaf.y, 0.0, 1.0));`
+      )
+      .replace(
+        '#include <emissivemap_fragment>',
+        `#include <emissivemap_fragment>
+        #ifdef USE_FOG
+        {
+          // Paillettes : quelques points de la feuille scintillent lentement
+          vec3 cell = floor(vFogWorld * 7.0);
+          float h = fract(sin(dot(cell, vec3(127.1, 311.7, 74.7))) * 43758.5453);
+          float d = length(vFogWorld - cameraPosition);
+          if (h > ${(1 - sparkle).toFixed(4)} && d < 45.0) {
+            float tw = pow(0.5 + 0.5 * sin(uTime * (0.6 + h * 2.0) + h * 900.0), 6.0);
+            float pick = fract(h * 91.7);
+            vec3 col = pick < 0.4 ? vec3(1.0, 0.7, 0.2) : pick < 0.8 ? vec3(0.3, 1.0, 0.4) : vec3(0.4, 0.9, 1.0);
+            totalEmissiveRadiance += col * tw * 2.5 * smoothstep(45.0, 10.0, d);
+          }
+        }
+        #endif`
+      );
+    shader.uniforms.uTime = floraUniforms.uTime;
   };
+  applySkin(mat, { rim: 0.35, translucent: 1.1, iridescent: 0.35, rimColor: '#6fae8a' });
+  // Chaque espèce a ses constantes : un programme par espèce
+  mat.customProgramCacheKey = () => `flora-${sway}-${push}-${sparkle}`;
   return mat;
 }
 
@@ -328,7 +367,7 @@ export function createFlora() {
 
   for (const sp of floraData.species) {
     const geo = SHAPES[sp.shape]();
-    const mat = floraMaterial(sp.sway, sp.push);
+    const mat = floraMaterial(sp.sway, sp.push, sp.sparkle ?? 0);
     const plants = placeSpecies(sp, rand, noise);
     // Regroupe par tuile (une InstancedMesh par tuile → culling hors champ et à distance)
     const bands = new Map();

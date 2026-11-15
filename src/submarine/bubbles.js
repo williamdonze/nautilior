@@ -41,7 +41,12 @@ export function createBubbles(max = 220) {
         // Bulle ronde : bord clair, centre transparent
         float r = length(gl_PointCoord - 0.5) * 2.0;
         if (r > 1.0) discard;
-        gl_FragColor = vec4(uColor, min(1.0, vLife * 2.0) * (0.25 + 0.65 * smoothstep(0.4, 0.95, r)));
+        // Bord lumineux, centre presque transparent, petit reflet en haut à gauche
+        vec2 q = gl_PointCoord - 0.5;
+        float rim = smoothstep(0.55, 0.98, r);
+        float hl = smoothstep(0.17, 0.0, length(q - vec2(-0.18, -0.2)));
+        float a = min(1.0, vLife * 2.0) * clamp(0.04 + rim * rim * 0.9 + hl, 0.0, 1.0);
+        gl_FragColor = vec4(uColor * (0.8 + 0.8 * rim) + vec3(1.0) * hl * 1.5, a);
         #include <fog_fragment>
       }
     `,
