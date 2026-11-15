@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { gpuMode } from '../gpu/mode.js';
 import { createNoise2D } from '../world/noise.js';
 
 /**
@@ -495,6 +496,7 @@ export const SUB_MODEL_COUNT = BUILDERS.length;
  * @returns {{ group, propellers: {spin, kind}[], lampPosition, cockpit, tail, clawRoot?, clawRest? }}
  */
 export function createSubmarineModel(level = 0) {
+  glassMat.visible = gpuMode.active; // pas de shader de verre dans le rendu Three.js
   const build = BUILDERS[Math.max(0, Math.min(level, BUILDERS.length - 1))];
   const model = build();
   model.level = level;

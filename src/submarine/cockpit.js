@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { gpuMode } from '../gpu/mode.js';
 import { createNoise2D } from '../world/noise.js';
 
 /**
@@ -154,6 +155,7 @@ const DESK_Y = -0.55;
 function glassMaterial() {
   const m = new THREE.MeshLambertMaterial({ color: '#cfe8e6', transparent: true, opacity: 0.07, side: THREE.DoubleSide, depthWrite: false });
   m.userData.detail = 'glass';
+  m.visible = gpuMode.active; // le rendu Three.js n'a pas de shader de verre : on ne le dessine pas
   return m;
 }
 
