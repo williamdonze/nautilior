@@ -14,10 +14,11 @@ Le jeu avance par retournements. Chacun paraît être « le » secret, puis le s
 |---|---|---|
 | 1 | « Je me réveille d'un coma, dans un village vide. » | Début |
 | 2 | « Ce village n'est pas normal : tout est figé à 4 h 12, on ne peut pas en sortir. » | Acte I |
-| 3 | « J'ai déjà vécu tout ça, plusieurs fois. » | Acte II |
-| 4 | « Je n'étais pas seul, ce jour-là. » | Acte III |
-| 5 | « Je ne me suis jamais réveillé. Ces voix sont à mon chevet. » | Acte IV |
-| 6 | **« Yann est mort en me sauvant. C'est ça que je fuis. »** | Au fond |
+| 3 | « Je n'étais pas seul, ce jour-là. » | Actes II et III |
+| 4 | « Je ne me suis jamais réveillé. Ces voix sont à mon chevet. » | Acte IV |
+| 5 | **« Yann est mort en me sauvant. C'est ça que je fuis. »** | Au fond, et au réveil |
+
+**Le joueur n'a que trois choses à comprendre**, et chacune a un moment impossible à rater (section 10) : il était dans le coma depuis le début ; les villageois étaient sa famille ; son frère est mort en le sauvant.
 
 Le dernier retourne le premier : le jeu commence par un réveil qui n'en est pas un.
 
@@ -33,7 +34,7 @@ On retrouve Loïc à la dérive, seul, en hypothermie. Dans la nuit, à **4 h 12
 
 **Le coma.** Les recherches pour retrouver Yann sont abandonnées au bout de quelques jours : personne ne sait où est l'épave. Loïc seul le sait.
 
-Autour du lit, jour après jour : le **docteur Guéguen**, son père **Job**, sa mère **Soazig**, et **Anna**, qui lui tient la main et lui lit des lettres. Son état est instable : plusieurs fois, son cœur s'emballe ou faiblit, on le rattrape, on augmente la sédation.
+Autour du lit, jour après jour : le **docteur Guéguen**, son père **Job**, sa mère **Soazig**, et **Anna**, qui lui tient la main et lui lit des lettres. Son état est instable : plusieurs fois, son cœur s'emballe ou faiblit, et on le rattrape.
 
 **Le jeu commence au 112e jour.** Ce jour-là, le médecin reçoit la famille pour parler de la suite : continuer, ou arrêter les soins.
 
@@ -50,10 +51,11 @@ Jamais expliquées au joueur, mais tout le jeu doit les respecter.
 5. **Pour remonter, il faut descendre.** La seule sortie passe par ce qu'il refuse de savoir. Il n'y a pas d'autre chemin : la route du village est éboulée.
 6. **Les villageois ne savent pas qu'ils sont un rêve.** Ils ont les visages de ses proches et répètent, déformé, ce qui se dit dans la chambre. Ils n'expliquent donc jamais rien.
 7. **Le temps est arrêté à 4 h 12**, l'heure où son cœur s'est arrêté.
-8. **Mourir en plongée, c'est une alerte médicale.** On le rattrape : il « se réveille » dans le lit de l'hôpital du village. La sédation qu'on augmente ensuite est le « remède » qui lui fait oublier.
+8. **Mourir en plongée, c'est une alerte médicale.** On le rattrape : il « se réveille » dans le lit de l'hôpital du village, et le docteur soupire : « Encore toi… »
 9. **Approcher du réveil fait mal.** Près de la faille, tout brûle et se déforme : c'est la douleur de revenir à soi.
 10. **Les monstres sont faits des sensations de la chambre**, déformées par la peur (voir section 4).
-11. **Fermer la faille, c'est lâcher prise** : il meurt. **La traverser, c'est se réveiller.**
+11. **Fermer la faille, c'est lâcher prise** : il meurt. **La traverser, c'est se réveiller.** Rien n'est exigé pour la traverser.
+12. **Ce qu'il a retrouvé, il s'en souvient au réveil.** Les souvenirs remontés décident de ce qu'il sait en ouvrant les yeux.
 
 ---
 
@@ -64,10 +66,8 @@ Jamais expliquées au joueur, mais tout le jeu doit les respecter.
 | Le bip du sonar | Son moniteur cardiaque |
 | La jauge d'oxygène | Le respirateur |
 | « Encore toi… » après une mort en plongée | Une alerte ; la voix du médecin |
-| Le remède | La sédation |
 | La faille verte et son tracé | La ligne du moniteur, à travers ses paupières |
 | La brûlure (« radiation ») près de la faille | La douleur du réveil |
-| Les 112 encoches sous le lit, les épaves de Nautiliar | Les 112 jours ; les alertes passées |
 | Toutes les horloges à 4 h 12 | L'heure de l'arrêt cardiaque |
 | Le téléphone où quelqu'un respire | Sa respiration assistée |
 | La boîte pleine de lettres sans adresse | Les lettres qu'Anna lui lit |
@@ -90,7 +90,7 @@ Jamais expliquées au joueur, mais tout le jeu doit les respecter.
 
 **Le docteur Guéguen.** Dans le rêve, le médecin du village. Sa voix est celle que Loïc entend le plus : calme, précise, qui prépare la famille au pire. Dans le rêve, il devient celui qui veut qu'on ferme.
 > Début : « Repose-toi. Tu nous as fait peur. »
-> Milieu : « Bois. Ça t'aidera à ne plus y penser. »
+> Milieu : « Tu descends trop. Ton cœur n'aime pas ça. »
 > Fin : « Ce qui remontera, ce ne sera plus toi. » *(Dans la chambre : il parle des séquelles.)*
 
 **Job, le père (le mécano).** Il a construit le Nautiliar avec ses fils. Il a perdu Yann, et regarde l'autre s'éteindre depuis 112 jours. Bourru, tendre, épuisé.
@@ -101,7 +101,7 @@ Jamais expliquées au joueur, mais tout le jeu doit les respecter.
 **Soazig, la mère (la marchande).** Elle est celle qui dit, dans la chambre : « Il nous entend. » Dans le rêve, elle achète tout… sauf ce qui compte.
 > Devant un souvenir : « Ça, je ne l'achète pas. Garde-le. »
 > Milieu : « Tu dors bien ? Tu rêves de quoi ? »
-> Fin, en public : comme les deux autres. La nuit, un mot sous la porte : « Ce qui bat dans ta poche est à toi. Ne les laisse pas éteindre la lumière. »
+> Fin : elle est la seule à ne pas demander qu'on ferme. « Moi, je crois que tu m'entends. »
 
 **Anna, la femme de Loïc.** Jamais vue avant la fin. Elle est le souffle au téléphone, les lettres, l'alliance, et la main qu'on sent au réveil.
 
@@ -114,9 +114,9 @@ Jamais expliquées au joueur, mais tout le jeu doit les respecter.
 | Acte | Zone | Coques | Ce qu'on trouve | Les villageois |
 |---|---|---|---|---|
 | **I. Le réveil** | Récif | 1 et 2 | Un village figé à 4 h 12, sans issue. Souvenirs 1 et 2. | Chaleureux, évasifs |
-| **II. La boucle** | Épaves | 3 et 4 | Des épaves de Nautiliar identiques au sien, sabord ouvert de l'intérieur. Les encoches. Le plongeur pâle, au loin. Souvenirs 3 et 4. | Gênés ; le remède |
-| **III. L'autre** | Canyon | 5 et 6 | « NE LA FERME PAS » gravé dans la roche, de sa propre écriture. Des journaux de bord : « Ne bois pas le remède. » Un deuxième nom, rayé. Souvenirs 5, 6 et 7. | Le docteur se durcit, Job fuit le regard, Soazig aide sans le dire |
-| **IV. La faille** | Abysses | 7 | Le ver. Les voix de la chambre, étouffées par l'eau. L'éclat vert, la cloche, le souvenir 8. | Ils supplient de fermer |
+| **II. Ce jour-là** | Épaves | 3 et 4 | La journée de l'accident se reconstitue. Le plongeur pâle, au loin. Souvenirs 3 et 4. | Gênés dès qu'on parle de la plongée |
+| **III. L'autre** | Canyon | 5 et 6 | Un deuxième nom, rayé. Les filets. Deux garçons sur une barque. Souvenirs 5, 6 et 7. | Le docteur se durcit, Job fuit le regard, Soazig est la seule à poser des questions |
+| **IV. La faille** | Abysses | 7 | Le ver. Les voix de la chambre, étouffées par l'eau. Le souvenir 8. | Le docteur et Job demandent de fermer ; Soazig, non |
 
 **Micro-indices** (un par personnage et par acte, jamais plus) : une bizarrerie, pas une information. Exemples : le docteur ne demande jamais à Loïc ce dont il se souvient ; Job a réglé le siège du sous-marin pour deux ; Soazig met toujours trois bols sur la table et en retire un.
 
@@ -130,7 +130,7 @@ Rangés dans un carnet, dans l'ordre de la journée. Les emplacements vides sont
 2. **Alliance**, « Une promesse » : « L. & A. » — « Reviens avant la nuit. »
 3. **Montre de plongée**, « 4 h 12 » : arrêtée. Le bracelet est sec.
 4. **Carnet de bord**, « La dernière page » : « 14 octobre 1984. Épave de la *Marie-Morgane*. Descente à 15 h 50. Équipage : 2. »
-5. **Plaque de plongée**, « Les noms » : deux noms. Le second a été rayé au couteau, par la même main qui a gravé les rochers.
+5. **Plaque de plongée**, « Les noms » : deux noms. Le second a été rayé au couteau. Tu reconnais le geste : c'est le tien.
 6. **Couteau de plongée**, « Les filets » : la lame est ébréchée. Des mailles coupées y sont encore prises.
 7. **Photographie d'enfance**, « La plate » : deux garçons sur une petite barque. Au dos : « Loïc et Yann, été 1961. »
 8. **Feuille de soins** (au pied de la faille) : « Arrêt cardiaque à 4 h 12, réanimé. Coma. Jour 1… Jour 112. Famille reçue ce jour au sujet de la poursuite des soins. » En marge, une écriture de femme : « Je suis là. »
@@ -142,55 +142,58 @@ Rangés dans un carnet, dans l'ordre de la journée. Les emplacements vides sont
 Les objets ordinaires sont des morceaux de sa vie qu'il échange pour descendre. Quelques-uns ont un double sens :
 
 - **Filet déchiré** : « Les mailles ont été coupées. De l'intérieur. »
-- **Tôle gravée** : « NAUTILIAR. Dessous, une rangée d'encoches. Tu en comptes plus de cent. »
 - **Bol breton à prénom** : « YANN. Il est intact. Personne n'y a touché depuis longtemps. »
 - **Petit voilier en bois** : « Un jouet. Deux prénoms au couteau sous la coque, de deux écritures. »
 - **Montre à gousset** : « Arrêtée à 4 h 12. Comme toutes les autres. »
-- **Cloche de la *Marie-Morgane*** : « Elle tinte parfois, seule. » *(Elle prouve qu'il sait où est l'épave. Nécessaire pour la troisième fin.)*
-- **Éclat vert** : « Un morceau de lumière, plus froid que l'eau. Il bat, très doucement. » *(Son propre pouls. Nécessaire pour traverser. Soazig refuse de l'acheter.)*
+- **Cloche de la *Marie-Morgane*** : « Elle tinte parfois, seule. » *(Un objet rare comme un autre : elle n'est exigée pour aucune fin.)*
+
+Les souvenirs ne se vendent pas : Soazig les refuse.
 
 ---
 
 ## 9. Les trois fins
 
-Le choix se fait devant la faille. **« Fermer » est définitif** : la sauvegarde est écrasée, sans confirmation, et il n'existe aucune sauvegarde d'avant le choix. Pour voir une autre fin, il faut recommencer.
+Le choix se fait devant la faille : la fermer ou la traverser. **« Fermer » est définitif** : la sauvegarde est écrasée, sans confirmation, et il n'existe aucune sauvegarde d'avant le choix. Pour voir une autre fin, il faut recommencer.
 
 ### Fin 1 : Le Repos (fermer)
-Le bras du Nautiliar saisit la faille par le bas et la recoud jusqu'en haut, puis casse. Le vert s'éteint, les bêtes s'en vont, la jauge d'oxygène disparaît. Remontée dans une mer redevenue claire. Au port, le village est allumé, plein de monde ; tout y est doux, et rien n'y bouge plus. Noir. Le bip ralentit, puis ne retombe plus. Une voix : « Heure du décès… »
+Le bras du Nautiliar saisit la faille par le bas et la recoud jusqu'en haut, puis casse. Le vert s'éteint, les bêtes s'en vont. Noir. Le bip ralentit, puis ne retombe plus. Dans la chambre, une voix : « Heure du décès… », et la voix de sa mère : « Loïc. »
 
-### Fin 2 : Le Réveil (traverser avec l'éclat vert)
-La faille s'élargit et avale le sous-marin. Tunnel de lumière et de débris, noir, éclairs, paupières qui s'ouvrent sur la chambre. Loïc est revenu, mais il n'a pas tout regardé : il ne se souvient pas de la plongée. Dans la chambre, il manque quelqu'un, et personne n'en parle.
+### Fin 2 : Le Réveil (traverser, sans avoir tous les souvenirs)
+La faille s'élargit et avale le sous-marin. Tunnel de lumière et de débris, noir, éclairs, paupières qui s'ouvrent sur la chambre (voir « Le réveil » ci-dessous). Loïc est revenu, mais il ne se souvient pas de la plongée. Il demande : « Où est Yann ? » Personne ne répond. Son père détourne les yeux.
 
-### Fin 3 : Le Départ (traverser avec les 8 souvenirs et la cloche)
-Le même réveil. Puis Loïc dit une seule phrase : « Je sais où est Yann. » Plan sur son père. Épilogue : on remonte la cloche de la *Marie-Morgane* ; Yann est enterré à terre. Sur la table de chevet, la montre repart.
+### Fin 3 : Le Départ (traverser avec les 8 souvenirs)
+Le même réveil. Mais cette fois, c'est Loïc qui parle : « Yann a coupé les filets. Il m'a sorti de là. Je sais où il est. » Son père lui prend la main. Épilogue : on retrouve l'épave de la *Marie-Morgane* ; Yann est enterré à terre. Sur la table de chevet, la montre repart.
+
+### Le réveil (commun aux fins 2 et 3)
+Une fois les yeux ouverts, on est dans le vrai monde : **les personnages parlent clairement.**
+- Le docteur : « Doucement. Vous êtes à l'hôpital. Vous avez dormi cent douze jours. »
+- Soazig : « Je le savais. Je leur ai dit que tu nous entendais. »
+- Job, la casquette dans les mains : « Mon grand. »
+- Anna, qui n'a pas lâché sa main : « Loïc ? »
 
 ---
 
 ## 10. Comment le joueur comprend
 
-Personne ne lui explique rien. La compréhension vient de quatre moyens.
+Dans le rêve, personne n'explique rien. Au réveil, tout est dit simplement.
 
 **Pendant le jeu.** Plus on descend, plus la chambre traverse le rêve : des voix étouffées par l'eau près de la faille (« Loïc, tu m'entends ? », « On en reparle demain avec la famille. »). Le carnet des souvenirs montre ses trous. Le plongeur pâle intrigue bien avant qu'on sache qui il est.
 
-**Au réveil.**
-1. *Les correspondances* : pendant les éclairs, une image du rêve devient ce qu'elle était (la faille → la ligne du moniteur, le Linceul → le drap, le ver → un tuyau). Une seconde chacune, sans texte.
-2. *Les mêmes phrases* : paupières closes, on réentend trois répliques des villageois, mot pour mot, dans leur vrai contexte.
-3. *Les visages* : autour du lit, la casquette de Job, le fichu de Soazig, les lunettes du docteur. Sur la table : une maquette du Nautiliar, des lettres, une montre arrêtée à 4 h 12.
-4. *La chaise vide*, avec une photo de deux frères.
+**Au réveil, trois moments, un par chose à comprendre.**
+1. *« J'étais dans le coma depuis le début. »* Le bip du sonar ne s'est pas arrêté : c'est le moniteur. Pendant les éclairs, une image du rêve devient ce qu'elle était (la faille → la ligne verte, le Linceul → le drap, le ver → un tuyau). Puis le médecin le dit : « Vous avez dormi cent douze jours. »
+2. *« Les villageois étaient ma famille. »* Les trois mêmes visages autour du lit : la casquette de Job, le fichu de Soazig, les lunettes du docteur. Paupières encore closes, on a réentendu leurs phrases du village, mot pour mot, dans leur vrai sens. Sur la table : une maquette du Nautiliar, des lettres, une montre arrêtée à 4 h 12.
+3. *« Mon frère est mort en me sauvant. »* Une chaise vide, avec la photo de deux garçons sur une barque. Dans la fin 3, Loïc le dit lui-même. Dans la fin 2, il pose la question et personne ne répond.
 
-**Selon la fin.** Fermer : on comprend ce que « fermer » voulait dire. Traverser : on comprend le coma et les villageois, et on sent qu'il manque quelqu'un. Traverser avec tout : on sait.
-
-**Après une fin : la relecture.** La collection gagne une seconde ligne par objet et par indice : ce que c'était vraiment. Facultatif.
+**Après une fin : la relecture.** La collection gagne une seconde ligne par objet et par indice : ce que c'était vraiment. Facultatif, mais personne ne reste sans réponse.
 
 ---
 
 ## 11. Mécaniques qui racontent l'histoire
 
 - **Le sonar est un cœur** : même son que le moniteur des fins. Il s'emballe sous la menace, ralentit à la mort, se tait quand on ferme.
-- **Le remède se refuse**, après avoir lu un journal « Ne bois pas le remède ». On garde alors un indice de plus (la direction d'un souvenir).
-- **Les alertes passées sont dans le décor** : encoches, épaves de Nautiliar.
 - **Le plongeur pâle** indique la direction du souvenir manquant le plus proche.
-- **La troisième fin se devine** : huit emplacements visibles dans le carnet, un socle vide pour la cloche ; Soazig prévient si l'on part vers la faille sans tout avoir.
+- **Le carnet** : huit emplacements, visibles dès le début, dans l'ordre de la journée.
+- **La fin dépend des souvenirs** : avec les huit, Loïc se réveille en sachant. Soazig prévient si l'on part vers la faille sans tout avoir : « Il te reste des choses à toi, là-dessous. »
 - **L'écran-titre change** selon la fin vue. Après la Fin 1, la partie ne peut plus être chargée.
 
 ---
@@ -199,7 +202,7 @@ Personne ne lui explique rien. La compréhension vient de quatre moyens.
 
 - Mélancolique, intrigant, de plus en plus inquiétant avec la profondeur. Aucun humour.
 - Répliques d'une ou deux phrases. Les personnages répondent à côté et laissent des silences.
-- **Personne ne raconte jamais l'histoire.** Tout passe par les objets, les souvenirs, le décor et les sous-entendus. La seule phrase qui dit la vérité est celle de Loïc, dans la troisième fin.
+- **Dans le rêve, personne ne raconte l'histoire.** Tout passe par les objets, les souvenirs, le décor et les sous-entendus. **Au réveil, on est dans le vrai monde : les personnages parlent clairement.**
 - Chaque réplique doit pouvoir être relue autrement une fois la fin connue : c'est une phrase dite dans une chambre d'hôpital.
 - Rien de surnaturel, aucune légende : tout s'explique par un homme qui entend sans pouvoir répondre.
 - Les mots « coma », « rêve », « hôpital » (le vrai) n'apparaissent jamais dans la bouche d'un personnage avant le réveil.
