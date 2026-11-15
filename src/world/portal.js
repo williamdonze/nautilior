@@ -33,6 +33,7 @@ const riftFragment = /* glsl */ `
   uniform float uOpen;
   uniform float uBeat;   // phase du battement 0..1
   uniform float uNear;   // 0 loin, 1 tout près : le tracé ECG apparaît
+  uniform float uZip;    // part déjà refermée depuis le bas (−1 = intacte)
   varying vec2 vUv;
 
   float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -59,7 +60,7 @@ const riftFragment = /* glsl */ `
     float profile = pow(sin(3.14159 * y), 0.6);
     float wave = sin(y * 9.0 + uTime * 1.1) * 0.05 + (noise(vec2(y * 7.0, uTime * 0.6)) - 0.5) * 0.12;
     float jag = noise(vec2(y * 30.0, uTime * 2.0)) * 0.05;
-    float halfW = (0.12 + jag) * profile * uOpen;
+    float halfW = (0.12 + jag) * profile * uOpen * smoothstep(uZip - 0.05, uZip + 0.03, y);
     float x = vUv.x - 0.5 - wave * profile;
     float ax = abs(x);
     float inside = 1.0 - smoothstep(halfW * 0.55, halfW, ax);
@@ -95,7 +96,7 @@ export function createPortal(scene) {
 
   // La déchirure : deux plans croisés (volume apparent), additifs, sans brouillard
   const riftMat = new THREE.ShaderMaterial({
-    uniforms: { uTime: { value: 0 }, uOpen: { value: 1 }, uBeat: { value: 0 }, uNear: { value: 0 } },
+    uniforms: { uTime: { value: 0 }, uOpen: { value: 1 }, uBeat: { value: 0 }, uNear: { value: 0 }, uZip: { value: -1 } },
     vertexShader: riftVertex,
     fragmentShader: riftFragment,
     transparent: true,
@@ -128,13 +129,13 @@ export function createPortal(scene) {
   group.add(pool);
 
   // Particules lumineuses qui remontent le long de la plaie
-  const MOTES = 240;
+  const MOTES = 1300;
   const motePos = new Float32Array(MOTES * 3);
   const moteSeed = new Float32Array(MOTES);
   for (let i = 0; i < MOTES; i++) {
-    motePos[i * 3] = (Math.random() - 0.5) * 22;
+    motePos[i * 3] = (Math.random() - 0.5) * (i % 3 ? 26 : 70);
     motePos[i * 3 + 1] = Math.random() * 40 - HOVER;
-    motePos[i * 3 + 2] = (Math.random() - 0.5) * 22;
+    motePos[i * 3 + 2] = (Math.random() - 0.5) * (i % 3 ? 26 : 70);
     moteSeed[i] = Math.random();
   }
   const moteGeo = new THREE.BufferGeometry();
@@ -203,6 +204,10 @@ export function createPortal(scene) {
       riftMat.uniforms.uOpen.value = v;
       moteMat.uniforms.uOpen.value = v;
       pool.material.opacity = 0.25 * v;
+    },
+    /** Referme la plaie depuis le bas, comme on la recoud : v de 0 (ouverte) à 1 (close) ; −1 = intacte */
+    setZip(v) {
+      riftMat.uniforms.uZip.value = v;
     },
     /** Phase du battement de cœur (0..1), fournie par le son du sonar (étape 4) */
     setBeat(phase) {

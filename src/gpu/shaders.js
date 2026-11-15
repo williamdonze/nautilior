@@ -339,6 +339,9 @@ fn tri(p: vec3f, n: vec3f, s: f32) -> TP {
   var c = alb * (dl + am) + alb * flu * dot(dl + am, vec3f(.1, .5, .5));
   let H = normalize(V + L);
   c += E * (.25 + ca) * pow(sat(dot(N, H)), 14.) * .18 * ndl;
+  // près de la déchirure, le fond se fissure : des veines de lumière verte qui battent avec elle (g.fx.x)
+  let vein = (ss(.035, 0., abs(big2 - .5)) + ss(.02, 0., abs(B.c - .5)) * .6) * ss(.25, .6, gm.g);
+  c += vec3f(.2, 1., .4) * vein * gm.g * g.fx.x * 1.5;
   return fin(fog(c, i.wp, 0.));
 }
 fn rhash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(127.1, 311.7))) * 43758.5453); }
@@ -351,11 +354,12 @@ fn ecg(p: f32) -> f32 {
        - .30 * exp(-pow((p - .32) / .010, 2.)) + .22 * exp(-pow((p - .52) / .05, 2.));
 }
 // La déchirure du portail : open = ouverture, beat = phase du cœur, near = proximité (le tracé apparaît)
-fn rift(uv: vec2f, open: f32, beat: f32, near: f32) -> vec3f {
+// zip = part déjà refermée, depuis le bas (−1 = intacte) : la plaie se recoud à mesure qu'on la tire
+fn rift(uv: vec2f, open: f32, beat: f32, near: f32, zip: f32) -> vec3f {
   let t = g.cam.w; let y = uv.y;
   let profile = pow(max(sin(3.14159 * y), 0.), .6);
   let wave = sin(y * 9. + t * 1.1) * .05 + (rnoise(vec2f(y * 7., t * .6)) - .5) * .12;
-  let halfW = (.12 + rnoise(vec2f(y * 30., t * 2.)) * .05) * profile * open;
+  let halfW = (.12 + rnoise(vec2f(y * 30., t * 2.)) * .05) * profile * open * ss(zip - .05, zip + .03, y);
   let x = uv.x - .5 - wave * profile; let ax = abs(x);
   let inside = 1. - ss(halfW * .55, halfW + 1e-4, ax);
   let lip = ss(halfW * .35, halfW * .9 + 1e-4, ax) * inside;
@@ -368,6 +372,8 @@ fn rift(uv: vec2f, open: f32, beat: f32, near: f32) -> vec3f {
   var col = deep * inside + vec3f(.45, 1., .55) * lip * 1.2;
   col += vec3f(.8, 1., .85) * line * mix(.3, 2.2, near) * bg * step(.001, inside + near * .5);
   col += vec3f(.25, .8, .35) * exp(-ax * 7. / max(open, .05)) * profile * .4 * open * bg;
+  // le point de couture : là où la pince serre, la lumière se concentre
+  col += vec3f(.9, 1., .9) * exp(-pow((y - zip) * 30., 2.)) * exp(-abs(uv.x - .5) * 18.) * step(0., zip) * 3.;
   return col * 2.2;
 }
 // Types : 0 peint, 3 bois, 4 métal, 5 sans éclairage (écrans), 6 déchirure, 7 colonne de lumière, 8 peau, 9 halo,
@@ -422,7 +428,7 @@ fn rift(uv: vec2f, open: f32, beat: f32, near: f32) -> vec3f {
   var a = i.col.a * tx.a;
   var c = vec3f(0.);
   if (kind == 5) { c = alb + i.emi.rgb; }
-  else if (kind == 6) { c = rift(i.uv, i.emi.a, i.par.z, i.par.w); }
+  else if (kind == 6) { c = rift(i.uv, i.emi.a, i.par.z, i.par.w, i.col.r); }
   else if (kind == 7) { c = i.emi.rgb * i.par.z * pow(1. - i.uv.y, 2.); }
   else if (kind == 9) { let r = length(i.uv - .5) * 2.; c = alb * pow(sat(1. - r), 2.2); }
   else {
@@ -804,6 +810,12 @@ fn sat3(x: vec3f) -> vec3f { return clamp(x, vec3f(0.), vec3f(1.)); }
     acc += r.rgb * w; ws += w;
   }
   var c = textureLoad(tS, px, 0).rgb + acc / ws;
+  // aberration chromatique près de la déchirure : le rouge et le bleu se décollent vers les bords
+  if (g.mis.w > 1e-5) {
+    let off = vec2i((uv - .5) * g.mis.w * 2600.); let mxp = vec2i(g.res.xy) - 1;
+    c.r = textureLoad(tS, clamp(px + off, vec2i(0), mxp), 0).r + acc.r / ws;
+    c.b = textureLoad(tS, clamp(px - off, vec2i(0), mxp), 0).b + acc.b / ws;
+  }
   let bl = textureSampleLevel(tB, sC, uv, 0.).rgb;
   c = mix(c, bl, .06) + bl * .03;
   c *= g.mis.x;

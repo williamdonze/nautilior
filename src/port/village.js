@@ -505,6 +505,7 @@ export function decorateVillage(group, colliders, tagged) {
   laundry(group, -28, -20, -23, -20.5, sheets);
 
   // Goélands : quelques-uns posés sur les toits, d'autres qui tournent au-dessus du port
+  const resting = [];
   const perched = [[-18, 9.6, -11], [8.5, 6.8, -12], [-4, 7.2, -10], [-50, 17.6, 42], [25, 7.2, -8]];
   for (const [x, y, z] of perched) {
     const b = gull();
@@ -512,6 +513,7 @@ export function decorateVillage(group, colliders, tagged) {
     b.g.rotation.y = rand() * 6;
     b.wings.forEach(({ w, s }) => (w.rotation.z = s * 0.1));
     group.add(b.g);
+    resting.push({ ...b, y, yaw: b.g.rotation.y, phase: rand() * 20 });
   }
   const flying = [];
   for (let i = 0; i < 6; i++) {
@@ -524,6 +526,14 @@ export function decorateVillage(group, colliders, tagged) {
     lighthouseLantern: lh.lantern,
     update(time) {
       sheets.forEach((p, i) => (p.rotation.x = Math.sin(time * 1.3 + i) * 0.25 + 0.15));
+      // Goélands posés : ils se dandinent, tournent la tête, s'ébrouent de temps en temps
+      for (const r of resting) {
+        const t = time + r.phase, shake = Math.max(0, Math.sin(t * 0.37)) ** 14; // ébrouement bref, de loin en loin
+        r.g.rotation.y = r.yaw + Math.sin(t * 0.23) * 0.5 + Math.sin(t * 1.9) * 0.06;
+        r.g.rotation.z = Math.sin(t * 1.3) * 0.05;
+        r.g.position.y = r.y + Math.abs(Math.sin(t * 2.1)) * 0.015 + shake * 0.12;
+        r.wings.forEach(({ w, s }) => (w.rotation.z = s * (0.1 + shake * (0.8 + Math.sin(t * 22) * 0.4))));
+      }
       for (const f of flying) {
         const a = time * f.speed + f.phase;
         f.g.position.set(f.cx + Math.cos(a) * f.r, f.h + Math.sin(a * 2) * 1.2, f.cz + Math.sin(a) * f.r);

@@ -124,7 +124,7 @@ export function createEel() {
   for (let i = 0; i < N; i++) {
     const r = 0.46 * (1 - (i / N) * 0.85);
     const seg = new THREE.Group();
-    const bodyGeo = shade(lathe([[r * 0.6, -0.55], [r, -0.2], [r, 0.2], [r * 0.6, 0.55]], 7, 0.85), skinBack, skinBelly);
+    const bodyGeo = shade(lathe([[r * 0.5, -0.62], [r * 0.9, -0.5], [r, -0.2], [r, 0.2], [r * 0.9, 0.5], [r * 0.5, 0.62]], 14, 0.85), skinBack, skinBelly);
     seg.add(new THREE.Mesh(bodyGeo, vmat()));
     const crest = fin([[0, r * 0.8, -0.5], [0, r * 0.8, 0.5], [0, r * 1.9, 0.1]], '#3e2114');
     seg.add(crest);

@@ -129,6 +129,45 @@ export function createGuardianPreview(open = 0.75) {
   return g;
 }
 
+/**
+ * Corps du ver : UN SEUL tube continu, recalculé à chaque image le long de l'échine (courbe lisse
+ * passant par les tronçons). Aucun joint : il peut se tordre autant qu'il veut sans s'ouvrir.
+ * Les anneaux de cuirasse sont modelés dans le rayon ; couleurs et lueurs sont fixées une fois.
+ */
+const TUBE_ROWS = 10, TUBE_NA = 30; // rangs par tronçon, points par anneau
+function createBodyTube(segments) {
+  const rows = segments * TUBE_ROWS + 1, W = TUBE_NA + 1, n = rows * W;
+  const pos = new Float32Array(n * 3), nor = new Float32Array(n * 3), col = new Float32Array(n * 3), glow = new Float32Array(n), idx = [];
+  const hide = new THREE.Color('#2a2622'), ridge = new THREE.Color('#57493a'), groove = new THREE.Color('#1c1814'), pore = new THREE.Color('#9be8a8'), c = new THREE.Color();
+  const lift = new Float32Array(n); // relief de cuirasse, ajouté au rayon
+  for (let i = 0; i < rows; i++) {
+    const u = i / TUBE_ROWS, ring = (u * 3) % 1, band = Math.floor(u * 3);
+    for (let j = 0; j < W; j++) {
+      const a = (j / TUBE_NA) * TAU, k = i * W + j;
+      lift[k] = Math.pow(ring, 0.6) * 0.16 - 0.06 + Math.sin(a * 9 + band * 2.1) * Math.sin(ring * Math.PI) * 0.035;
+      const g = Math.pow(Math.max(0, Math.sin(a * 7 + band * 1.3)), 24) * (ring > 0.25 && ring < 0.6 ? 1 : 0);
+      c.copy(groove).lerp(hide, Math.min(1, ring * 3)).lerp(ridge, Math.pow(ring, 3) * 0.9).lerp(pore, g);
+      col[k * 3] = c.r; col[k * 3 + 1] = c.g; col[k * 3 + 2] = c.b;
+      glow[k] = g * 1.5;
+    }
+  }
+  for (let i = 0; i < rows - 1; i++) for (let j = 0; j < TUBE_NA; j++) {
+    const a = i * W + j, b = a + W;
+    idx.push(a, a + 1, b, a + 1, b + 1, b);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  geo.setAttribute('aGlow', new THREE.BufferAttribute(glow, 1));
+  geo.setIndex(idx);
+  geo.userData.dynamic = true; // le moteur WebGPU réécrit son tampon au lieu de le recréer
+  geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 1e5);
+  return { geo, lift, rows, W };
+}
+const _t = new THREE.Vector3(), _n = new THREE.Vector3(), _b = new THREE.Vector3(), _p = new THREE.Vector3();
+const crom = (a, b, c2, d, f) => 0.5 * (2 * b + (c2 - a) * f + (2 * a - 5 * b + 4 * c2 - d) * f * f + (3 * b - a - 3 * c2 + d) * f * f * f);
+
 export class Guardian {
   /** @param {object} events roar(), bite(direction), bump(direction) */
   constructor(scene, events = {}) {
@@ -146,8 +185,10 @@ export class Guardian {
     head.scale.setScalar(G.RADIUS);
     this.group.add(head);
     const mat = applySkin(new THREE.MeshLambertMaterial({ vertexColors: true }), { rim: 0.35, translucent: 0.1, iridescent: 0.15, rimColor: '#7fbf7a' });
-    this.body = new THREE.InstancedMesh(segmentGeometry(), mat, G.SEGMENTS);
+    this.tube = createBodyTube(G.SEGMENTS);
+    this.body = new THREE.Mesh(this.tube.geo, mat);
     this.body.frustumCulled = false;
+    this.spine = Array.from({ length: G.SEGMENTS + 1 }, () => new THREE.Vector3());
     this.group.add(this.body);
     this.group.traverse((o) => { if (o.isMesh) o.raycast = () => {}; });
     this.spacing = G.RADIUS * 1.25;
@@ -176,6 +217,38 @@ export class Guardian {
     }
     this.vel.set(-Math.sin(this.angle), 0, Math.cos(this.angle)).multiplyScalar(G.SPEED);
     this.group.visible = false;
+  }
+
+  /** Recalcule le tube du corps le long de l'échine (tête puis tronçons), sans torsion */
+  updateTube(time) {
+    const G = GUARDIAN, { geo, lift, rows, W } = this.tube, S = this.spine, N = G.SEGMENTS;
+    // l'échine part de l'arrière de la tête
+    _t.set(0, 0, 1).applyQuaternion(this.head.quaternion);
+    S[0].copy(this.pos).addScaledVector(_t, -G.RADIUS * 1.25);
+    for (let k = 0; k < N; k++) S[k + 1].copy(this.segs[k]);
+    const pos = geo.attributes.position.array, nor = geo.attributes.normal.array;
+    _n.set(0, 1, 0);
+    for (let i = 0; i < rows; i++) {
+      const u = Math.min(N - 1e-4, (i / (rows - 1)) * N), k = Math.floor(u), fr = u - k;
+      const a = S[Math.max(0, k - 1)], b = S[k], c = S[k + 1], d = S[Math.min(N, k + 2)];
+      _p.set(crom(a.x, b.x, c.x, d.x, fr), crom(a.y, b.y, c.y, d.y, fr), crom(a.z, b.z, c.z, d.z, fr));
+      const e = 0.02;
+      _t.set(crom(a.x, b.x, c.x, d.x, fr + e), crom(a.y, b.y, c.y, d.y, fr + e), crom(a.z, b.z, c.z, d.z, fr + e)).sub(_p).normalize();
+      // repère transporté le long de la courbe : il ne vrille pas
+      _n.addScaledVector(_t, -_n.dot(_t));
+      if (_n.lengthSq() < 1e-6) _n.set(1, 0, 0).addScaledVector(_t, -_t.x);
+      _n.normalize();
+      _b.crossVectors(_t, _n);
+      const t = i / (rows - 1), R = G.RADIUS * (1 - 0.72 * Math.pow(t, 2.2)) * (1 + 0.03 * Math.sin(u * 1.7 - time * 2));
+      for (let j = 0; j < W; j++) {
+        const an = (j / TUBE_NA) * TAU, cs = Math.cos(an), sn = Math.sin(an), o = (i * W + j) * 3;
+        const nx = _n.x * cs + _b.x * sn, ny = _n.y * cs + _b.y * sn, nz = _n.z * cs + _b.z * sn, r = R * (1 + lift[i * W + j]);
+        pos[o] = _p.x + nx * r; pos[o + 1] = _p.y + ny * r; pos[o + 2] = _p.z + nz * r;
+        nor[o] = nx; nor[o + 1] = ny; nor[o + 2] = nz;
+      }
+    }
+    geo.attributes.position.needsUpdate = true;
+    geo.attributes.normal.needsUpdate = true;
   }
 
   /** Impulsion de défense : elle lâche prise un instant */
@@ -246,20 +319,13 @@ export class Guardian {
       this.trail.unshift(p.copy(this.pos));
     }
     const f = Math.min(1, this.pos.distanceTo(this.trail[0]) / this.spacing);
-    let prev = this.pos;
     for (let k = 0; k < G.SEGMENTS; k++) {
-      // position glissante entre deux points du chemin, plus une ondulation latérale
-      const a = this.trail[k], b = this.trail[k + 1], seg = this.segs[k];
-      seg.lerpVectors(a, b, 1 - f);
-      const t = k / (G.SEGMENTS - 1), r = G.RADIUS * (1 - 0.7 * Math.pow(t, 2.2)) * (0.96 + 0.05 * Math.sin(k * 1.7 - time * 2));
-      seg.y += Math.sin(time * 1.1 - k * 0.4) * 2.2 * t;
-      _d.subVectors(prev, seg);
-      const len = _d.length() || 1;
-      _q.setFromUnitVectors(Z, _d.divideScalar(len));
-      this.body.setMatrixAt(k, _m.compose(seg, _q, _s.set(r, r, len * 1.08)));
-      prev = seg;
+      // position glissante entre deux points du chemin, plus une ondulation lente
+      const seg = this.segs[k];
+      seg.lerpVectors(this.trail[k], this.trail[k + 1], 1 - f);
+      seg.y += Math.sin(time * 1.1 - k * 0.4) * 2.2 * (k / (G.SEGMENTS - 1));
     }
-    this.body.instanceMatrix.needsUpdate = true;
+    this.updateTube(time);
 
     // Tête : dans le sens de la nage ; la gueule s'ouvre en grand pendant l'attaque
     this.head.position.copy(this.pos);

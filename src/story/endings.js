@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import * as cinema from './cinema.js';
 import texts from './endings.json';
 import { storyState } from './state.js';
 import { gameState } from '../save/gameState.js';
@@ -55,16 +56,46 @@ export async function playEnding(game, kind) {
 
   if (kind === 'close') {
     /* ---------- Fermer : la déchirure se referme, le vert s'éteint ---------- */
-    dive.autopilot = () => dive.sub.velocity.multiplyScalar(0.95);
-    sound.boom(5);
-    dive.follow.shake(0.6);
-    const closing = tween(6, (t) => {
-      dive.portal.setOpen(1 - t);
-      setRadiationScale(1 - t);
-    });
+    // Le Nautiliar se place face à la plaie ; le bras télescopique sort, l'agrippe par le bas
+    // et la referme en la tirant vers le haut, comme on recoud. À la fin, il casse.
+    const P = dive.portal, C = P.center, sub = dive.sub, claw = dive.claw;
+    const hold = new THREE.Vector3(C.x, C.y - 5, C.z + 17);
+    const bottom = new THREE.Vector3(C.x, C.y - 13.5, C.z + 0.8), top = new THREE.Vector3(C.x, C.y + 14, C.z + 0.8);
     dive.creatures.calm = true;
-    for (const line of T.abyss) await dialogue.narrate(line);
-    await closing;
+    dive.autopilot = (dt) => {
+      const to = new THREE.Vector3().subVectors(hold, sub.position);
+      sub.yaw += Math.atan2(Math.sin(Math.atan2(C.x - sub.position.x, C.z - sub.position.z) - sub.yaw), Math.cos(Math.atan2(C.x - sub.position.x, C.z - sub.position.z) - sub.yaw)) * Math.min(1, dt * 2);
+      sub.velocity.lerp(to.clampLength(0, 4), Math.min(1, dt * 2));
+    };
+    const narration = (async () => { for (const line of T.abyss) await dialogue.narrate(line); })();
+    await wait(3000);
+    claw.puppet(bottom, 1, 6); // le bras se déploie jusqu'au bas de la déchirure
+    await wait(3600);
+    claw.puppet(bottom, 0, 6); // la pince se referme sur la lumière
+    sound.clank(1);
+    dive.follow.shake(0.4);
+    await wait(900);
+    const goal = new THREE.Vector3();
+    let creak = 0;
+    await tween(8, (t) => {
+      // il tire : la plaie se recoud derrière la pince, le vert faiblit, le bras tremble de plus en plus
+      const e = t * t * (3 - 2 * t);
+      P.setZip(e);
+      setRadiationScale(1 - e * 0.85);
+      goal.lerpVectors(bottom, top, e).add({ x: (Math.random() - 0.5) * 0.5 * t, y: (Math.random() - 0.5) * 0.3 * t, z: (Math.random() - 0.5) * 0.3 * t });
+      claw.puppet(goal, 0, 14);
+      dive.follow.shake(0.05 + t * 0.2);
+      if (t > creak) { creak += 0.09; sound.creak(0.6 + t); sound.crackle?.(0.5 + t); }
+    });
+    // dernier effort : la plaie claque, le bras cède
+    sound.boom(5);
+    dive.follow.shake(1.2);
+    P.setOpen(0);
+    setRadiationScale(0);
+    claw.shatter();
+    game.hud.flash('#8fffb0');
+    await narration;
+    await wait(2200);
     await fadeOut('#020407', 2);
 
     // Retour au port : ils attendent tous les trois sur le quai
@@ -89,56 +120,61 @@ export async function playEnding(game, kind) {
     await fadeOut('#020407', 3);
   } else {
     /* ---------- Traverser : le Nautiliar entre dans la lumière ---------- */
-    const target = dive.portal.center.clone();
+    // La plaie s'élargit, vient au-devant du Nautiliar et l'avale
+    const P = dive.portal, target = P.center.clone();
     sound.whoosh(5);
     dive.sub.ghost = true; // seul ce choix permet de franchir la déchirure
+    dive.creatures.calm = true;
+    let pull = 5;
     dive.autopilot = (dt) => {
       const sub = dive.sub;
       const to = new THREE.Vector3().subVectors(target, sub.position);
-      sub.yaw += (Math.atan2(to.x, to.z) - sub.yaw) * Math.min(1, dt * 2);
-      sub.velocity.lerp(to.normalize().multiplyScalar(6), Math.min(1, dt * 2));
+      sub.yaw += Math.atan2(Math.sin(Math.atan2(to.x, to.z) - sub.yaw), Math.cos(Math.atan2(to.x, to.z) - sub.yaw)) * Math.min(1, dt * 2);
+      pull += dt * 2.5; // elle aspire de plus en plus fort
+      sub.velocity.lerp(to.normalize().multiplyScalar(pull), Math.min(1, dt * 2));
     };
-    const narration = (async () => {
-      for (const line of T.abyss) await dialogue.narrate(line);
-    })();
-    await wait(2500);
-    await fadeOut('#e8ece2', 3);
+    const narration = (async () => { for (const line of T.abyss) await dialogue.narrate(line); })();
+    const growing = tween(5, (t) => {
+      const e = t * t;
+      P.group.scale.setScalar(1 + e * 3.2);
+      P.setOpen(1 + e * 2.2);
+      dive.follow.shake(0.05 + e * 0.5);
+    });
+    await wait(3800);
+    await fadeOut('#e4ffec', 1.2);
+    await growing;
     await narration;
 
-    // Le village des morts se dissout
+    // Le tunnel de lumière, puis le noir, puis quelque chose qui se rallume
+    game.paused = true;
     dive.autopilot = null;
     dive.sub.ghost = false;
+    P.group.scale.setScalar(1);
     dive.leave();
-    game.setMode('port');
-    port.enter('quay');
-    port.gatherVillagers();
-    port.holdCamera = true;
-    port.player.object.visible = false;
-    port.cameraMove([12, 2, 8], [12, 2.6, 5], [12, 1.5, -2], [12, 1.8, -2], 10);
-    await fadeIn(2.5);
-    const dissolving = tween(9, (t) => port.dissolve(t));
-    for (const line of T.dissolve) await dialogue.narrate(line);
-    await dissolving;
-    await fadeOut('#e8ece2', 1.5);
-
-    // Le vrai Port-Kermor
-    port.dissolve(0);
-    port.makeAlive();
-    port.player.object.visible = true;
-    port.player.place(12, 4.6, Math.PI);
-    sound.crowd(26);
-    port.cameraMove([12, 9, 18], [12, 3.2, 10], [12, 0, 0], [12, 1.4, 2], 9);
-    await fadeIn(3);
-    for (const line of T.alive) await dialogue.narrate(line);
-    await wait(1000);
-    await fadeOut('#e8ece2', 3);
+    const tun = cinema.tunnel(9, sound);
+    await wait(200);
+    await fadeIn(0.8);
+    await tun;
+    await cinema.blackout(1.8);
+    await wait(1200);
+    await cinema.synapses(7, sound);
+    await wait(900);
+    // Les paupières : le bip n'a pas cessé, mais ce n'est plus un sonar
+    const opening = cinema.awaken(12, () => sound.sonarBeep(1.1));
+    await wait(5200);
+    for (const line of T.pulse ?? []) await dialogue.narrate(line);
+    await opening;
+    await wait(2500);
+    await cinema.blackout(2.5);
+    await fadeOut('#020407', 0.1);
+    cinema.close();
   }
 
   /*
-   * Épilogue commun : écran noir, et le bip du sonar qui n'a jamais cessé.
-   * Traverser : il continue, régulier — c'est un moniteur cardiaque, dans une chambre d'hôpital.
-   * Fermer : il ralentit, puis ne retombe plus.
+   * Épilogue de « Fermer » : écran noir, et le bip du sonar qui n'a jamais cessé…
+   * il ralentit, puis ne retombe plus. (Pour « Traverser », le bip accompagne le réveil : voir plus haut.)
    */
+  if (kind === 'close') {
   await fadeOut('#020407', 2.5);
   let alive = true, beats = 0;
   (async () => {
@@ -154,6 +190,7 @@ export async function playEnding(game, kind) {
   }
   alive = false;
   await wait(1500);
+  }
 
   // Fin : on la note et on affiche l'écran de fin
   storyState.ending = kind;

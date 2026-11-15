@@ -76,10 +76,14 @@ export class Bridge {
     let g = this.geos.get(geo);
     const version = pos.version + (geo.index?.version ?? 0) * 7 + (geo.attributes.color?.version ?? 0) * 13;
     if (g && g.version === version && g.count === pos.count) return g;
-    g?.vb.destroy();
-    g?.ib?.destroy();
+    // Géométrie animée (même nombre de sommets) : on réécrit le tampon existant
+    const reuse = g && g.count === pos.count && g.data;
+    if (!reuse) {
+      g?.vb.destroy();
+      g?.ib?.destroy();
+    }
     const n = pos.count, A = geo.attributes;
-    const data = new Float32Array(n * VERT);
+    const data = reuse ? g.data : new Float32Array(n * VERT);
     const nor = A.normal, col = A.color, uv = A.uv, aU = A.aU, aG = A.aGlow;
     for (let i = 0; i < n; i++) {
       const o = i * VERT;
@@ -91,6 +95,11 @@ export class Bridge {
       if (aG) data[o + 12] = aG.getX(i);
     }
     const dev = this.device;
+    if (reuse) {
+      dev.queue.writeBuffer(g.vb, 0, data);
+      g.version = version;
+      return g;
+    }
     const vb = dev.createBuffer({ size: data.byteLength, usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST });
     dev.queue.writeBuffer(vb, 0, data);
     let ib = null, count = n, format = 'uint32';
@@ -102,7 +111,7 @@ export class Bridge {
       count = idx.length;
     }
     if (!geo.boundingSphere) geo.computeBoundingSphere();
-    g = { vb, ib, n: count, format, version, count: n, flat: !nor, hasColor: !!col };
+    g = { vb, ib, n: count, format, version, count: n, flat: !nor, hasColor: !!col, data: geo.userData.dynamic ? data : null };
     this.geos.set(geo, g);
     geo.addEventListener('dispose', () => { vb.destroy(); ib?.destroy(); this.geos.delete(geo); });
     return g;
@@ -141,7 +150,7 @@ export class Bridge {
     P.col[0] = c ? c.r : 1; P.col[1] = c ? c.g : 1; P.col[2] = c ? c.b : 1; P.col[3] = mat.transparent ? op : 1;
     if (mat.isShaderMaterial) {
       const U = mat.uniforms;
-      if (tag === 'rift') { kind = 6; P.emi[3] = U.uOpen.value; z = U.uBeat.value; w = U.uNear.value; P.col[3] = 1; }
+      if (tag === 'rift') { kind = 6; P.emi[3] = U.uOpen.value; z = U.uBeat.value; w = U.uNear.value; P.col[3] = 1; P.col[0] = U.uZip?.value ?? -1; }
       else if (tag === 'pillar') { kind = 7; const k = U.uColor.value; P.emi[0] = k.r; P.emi[1] = k.g; P.emi[2] = k.b; z = U.uOpacity.value; P.col[3] = 1; }
       else return false;
       flags |= 4;

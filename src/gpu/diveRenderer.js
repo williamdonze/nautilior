@@ -339,14 +339,16 @@ export class GpuDiveRenderer {
     const depth = -c.y;
     const ek = Math.min(1, Math.max(0, (depth - 8) / 26)), dark = Math.min(1, Math.max(0, (depth - 60) / 380));
     m[56] = EXPO * (0.6 + 0.4 * ek) * (1 + 0.7 * dark); m[57] = RAYS; m[58] = 1;
-    m[59] = (dive.survival?.radiation ?? 0) * 0.0035; // ondulation de l'image près du portail
+    // battement : 1 au bip du sonar, puis ça retombe ; l'eau verte, les veines du sol et l'image pulsent avec lui
+    const beat = Math.exp(-(dive.beatPhase ?? 1) * 5);
+    m[59] = (dive.survival?.radiation ?? 0) * 0.0035 * (1 + beat * 1.2) * (dive.portal?.open ?? 1); // ondulation de l'image près du portail
     // Sous-marin (il écarte les feuilles), portail (l'eau verdit), lumières
     const sub = dive.sub, S = RADIATION.SOURCE;
     m[60] = sub.position.x; m[61] = sub.position.y; m[62] = sub.position.z; m[63] = dive.echoAge ?? -1; // âge de l'écho du sonar
     m[64] = sub.velocity.x; m[65] = sub.velocity.y; m[66] = sub.velocity.z;
     m[67] = 1 - (dive.survival?.hullRatio ?? 1); // dégâts de coque (rayures, suie)
     const pd = Math.hypot(c.x - S.x, c.z - S.z), pk = Math.min(1, Math.max(0, (300 - pd) / 240));
-    m[68] = pk * pk * 0.7 * (dive.portal?.open ?? 1) + (dive.survival?.radiation ?? 0) * 0.5;
+    m[68] = (pk * pk * 0.7 * (dive.portal?.open ?? 1) + (dive.survival?.radiation ?? 0) * 0.5) * (0.75 + 0.6 * beat);
     m[69] = 1;
     m[70] = bridge.writeLights(UB, 72, LIGHT_K);
     m[71] = bridge.spot ? 0.006 + 0.02 * dark : 0; // faisceau visible surtout dans le noir

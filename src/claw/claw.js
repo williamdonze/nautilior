@@ -14,7 +14,7 @@ import { stats } from '../submarine/stats.js';
  *   STOW     → l'objet rentre dans la soute
  */
 const Y_UP = new THREE.Vector3(0, 1, 0);
-const State = { IDLE: 'idle', EXTEND: 'extend', GRAB: 'grab', RETRACT: 'retract', STOW: 'stow' };
+const State = { IDLE: 'idle', EXTEND: 'extend', GRAB: 'grab', RETRACT: 'retract', STOW: 'stow', PUPPET: 'puppet' };
 
 const v3 = (o) => new THREE.Vector3(o.x, o.y, o.z);
 const POLE_LOCAL = v3(CLAW.POLE).normalize();
@@ -66,6 +66,27 @@ export class Claw {
 
   get busy() {
     return this.state !== State.IDLE;
+  }
+
+  /** Cinématique : le script mène le poignet vers un point (ouverture 0 = serrée, 1 = ouverte) */
+  puppet(point, open = 1, speed = 7) {
+    this.state = State.PUPPET;
+    this.puppetGoal = (this.puppetGoal ?? new THREE.Vector3()).copy(point);
+    this.puppetOpen = open;
+    this.puppetSpeed = speed;
+  }
+
+  /** Le bras cède : il disparaît dans une gerbe de bulles et d'éclats */
+  shatter() {
+    if (this.broken) return;
+    this.broken = true;
+    this.model.group.visible = false;
+    this.bubbles.burst(this.wrist, 90, 9);
+    this.bubbles.burst(this.elbow, 60, 7);
+    this.sound.clank(1);
+    this.sound.impact?.(1.4);
+    this.onShake?.(1.2);
+    this.state = State.IDLE;
   }
 
   /**
@@ -128,7 +149,14 @@ export class Claw {
     this.updateAnchors();
     const weight = this.carried ? this.carried.weight : 0;
 
+    if (this.broken) return;
     switch (this.state) {
+      case State.PUPPET: {
+        this.moveWrist(this.puppetGoal, dt, this.puppetSpeed, this.puppetSpeed * 2);
+        this.open += (this.puppetOpen - this.open) * damp(8, dt);
+        break;
+      }
+
       case State.IDLE: {
         // Le bras suit le sous-marin, avec un tout petit retard élastique
         this.wrist.lerp(this._rest, damp(18, dt));
@@ -247,6 +275,8 @@ export class Claw {
     }
     this.target = null;
     this.state = State.IDLE;
+    this.broken = false;
+    this.model.group.visible = true;
     this.speed = 0;
     this.sound.motorStop();
     this.updateAnchors();
