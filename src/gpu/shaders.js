@@ -377,7 +377,7 @@ fn rift(uv: vec2f, open: f32, beat: f32, near: f32, zip: f32) -> vec3f {
   return col * 2.2;
 }
 // Types : 0 peint, 3 bois, 4 métal, 5 sans éclairage (écrans), 6 déchirure, 7 colonne de lumière, 8 peau, 9 halo,
-//         10 verre, 11 coque peinte (tôles, rivets), 12 corail, 13 éponge
+//         10 verre, 11 coque peinte (tôles, rivets), 12 corail, 13 éponge, 14 filet
 @fragment fn fs(i: MO) -> @location(0) vec4f {
   let kind = i32(i.par.x + .5); let fl = u32(i.par.y + .5);
   let tx = textureSample(tT, sR, i.uv);
@@ -426,6 +426,15 @@ fn rift(uv: vec2f, open: f32, beat: f32, near: f32, zip: f32) -> vec3f {
   }
   else { alb *= .92 + .16 * D.h; bump = .08; }
   var a = i.col.a * tx.a;
+  // filet : mailles en losange dessinées par les UV (en mètres) ; de loin, un voile régulier
+  let q = vec2f(i.uv.x + i.uv.y, i.uv.x - i.uv.y) * i.par.z;
+  let fw = fwidth(q) * 1.5; // (les dérivées se calculent hors de toute condition)
+  if (kind == 14) {
+    let d = min(fract(q), 1. - fract(q));
+    let ln = max(1. - ss(.085, .085 + fw.x, d.x), 1. - ss(.085, .085 + fw.y, d.y));
+    a *= mix(ln, .32, sat(max(fw.x, fw.y) * 1.6));
+    alb *= .7 + .6 * D.h;
+  }
   var c = vec3f(0.);
   if (kind == 5) { c = alb + i.emi.rgb; }
   else if (kind == 6) { c = rift(i.uv, i.emi.a, i.par.z, i.par.w, i.col.r); }

@@ -14,10 +14,10 @@ import fragmentsData from './fragments.json';
  *  - « close »  : le joueur ferme le portail et reste à jamais dans l'Envers ;
  *  - « cross »  : il traverse, l'Envers se dissout, il émerge dans le vrai Port-Kermor.
  */
-const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+export const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** Anime une valeur de 0 à 1 sur `duration` secondes */
-function tween(duration, fn) {
+export function tween(duration, fn) {
   return new Promise((resolve) => {
     const t0 = performance.now();
     const step = (now) => {
@@ -32,14 +32,14 @@ function tween(duration, fn) {
 
 /** Fondu plein écran vers une couleur (noir ou blanc), puis retour */
 const veil = () => document.getElementById('veil');
-async function fadeOut(color, seconds) {
+export async function fadeOut(color, seconds) {
   const el = veil();
   el.style.background = color;
   el.style.transitionDuration = `${seconds}s`;
   el.classList.add('on');
   await wait(seconds * 1000);
 }
-async function fadeIn(seconds) {
+export async function fadeIn(seconds) {
   const el = veil();
   el.style.transitionDuration = `${seconds}s`;
   el.classList.remove('on');

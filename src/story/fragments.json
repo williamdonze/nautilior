@@ -85,8 +85,8 @@
     {
       "id": "couteau",
       "name": "Couteau de plongée",
-      "x": 4,
-      "z": -705,
+      "x": 0,
+      "z": -704,
       "inCanyon": true,
       "art": "knife",
       "description": "La lame est ébréchée. Des mailles de filet y sont encore prises.",

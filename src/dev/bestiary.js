@@ -21,7 +21,12 @@ createDetailTexture(renderer);
 
 let items;
 if (set === 'guardian') items = [{ name: 'Le gardien — gueule ouverte', make: () => createGuardianPreview(0.85), view: [0.9, 0.25, 1] }, { name: 'Le gardien — de profil, gueule close', make: () => createGuardianPreview(0.08), view: [1, 0.3, 0.25] }];
-else if (set === 'people') items = Object.entries(LOOKS).map(([id, look]) => ({ name: id, make: () => createCharacter(look).object, view: [0.5, 0.25, 1] }));
+else if (set === 'marie') {
+  const { createMariePreview } = await import('../world/landmarks.js');
+  const { createNetPreviews } = await import('../world/nets.js');
+  const n = createNetPreviews();
+  items = [{ name: 'La Marie-Morgane — tribord, la brèche', make: createMariePreview, view: [0.5, 0.35, 1] }, { name: 'La Marie-Morgane — de dessus', make: createMariePreview, view: [0.3, 1, -0.6] }, { name: 'Une nappe de filet', make: () => n.curtain, view: [0.3, 0.2, 1] }, { name: 'Le sous-marin pris', make: () => n.lost, view: [1, 0.3, 0.6] }];
+} else if (set === 'people') items = Object.entries(LOOKS).map(([id, look]) => ({ name: id, make: () => createCharacter(look).object, view: [0.5, 0.25, 1] }));
 else if (set === 'faces') items = Object.entries(LOOKS).map(([id, look]) => ({ name: id, make: () => createCharacter(look).object, view: [0.45, 0.08, 1], focus: [0, 1.66, 0, 0.62] }));
 else items = ABYSS_MODELS.map((m) => ({ ...m, view: m.id === 'glaneuse' ? [0.9, 0.25, 1] : m.id === 'linceul' ? [0.6, 0.5, 1] : m.id === "choeur" ? [0.35, 0.15, 1] : m.id === "chapelet" ? [1, 0.35, 0.5] : [0.8, 0.45, 1] }));
 

@@ -157,6 +157,15 @@ export const AIR_BELLS = {
   SPOTS: [[-30, -200], [60, -350], [-70, -500], [20, -640], [-25, -790], [40, -930], [-55, -1010]],
 };
 
+/** La forêt de filets du Canyon (autour de la Marie-Morgane) */
+export const NETS = {
+  COUNT: 15, // nappes en travers du Canyon
+  REACH: 2.3, // distance à laquelle le sous-marin s'y prend (m)
+  DRAG: 5, // freinage quand on est pris
+  CUTS: 3, // coups de pince pour couper une nappe
+  BLAST: 16, // rayon dans lequel l'impulsion arrache les filets (m)
+};
+
 /** Le gardien du portail (créature colossale des abysses) */
 export const GUARDIAN = {
   SEGMENTS: 44, // tronçons du corps

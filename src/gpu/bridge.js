@@ -17,7 +17,7 @@ const VERT = 13; // flottants par sommet
 const MAX_SINGLE = 6000; // maillages non instanciés par image
 const MAX_LIGHTS = 6;
 export const MAX_PTS = 60000; // particules + points de l'écho du sonar
-const KIND = { rock: 1, sand: 2, wood: 3, metal: 4, glass: 10, hull: 11, coral: 12, sponge: 13 };
+const KIND = { rock: 1, sand: 2, wood: 3, metal: 4, glass: 10, hull: 11, coral: 12, sponge: 13, net: 14 };
 
 export const VERTEX_LAYOUT = {
   arrayStride: VERT * 4,
@@ -159,20 +159,21 @@ export class Bridge {
     else {
       kind = KIND[u.detail] ?? (u.skin != null ? 8 : 0);
       if (kind === 8) z = u.skin;
+      if (kind === 14) z = u.netScale ?? 0.95;
       if (mat.flatShading || geo.flat) flags |= 1;
       if (u.swim) flags |= 2;
       if (u.flap) flags |= 16;
       const e = mat.emissive, ei = mat.emissiveIntensity ?? 1;
       if (e) { P.emi[0] = e.r * ei; P.emi[1] = e.g * ei; P.emi[2] = e.b * ei; }
       if (u.flap) P.emi[3] = u.flap; // amplitude du battement d'ailes
-      P.tex = mat.map;
+      P.tex = kind === 14 ? null : mat.map; // le filet est dessiné par le shader
       if (kind === 1) P.col[0] = P.col[1] = P.col[2] = 1; // la roche a sa propre couleur ; seule la teinte d'instance compte
     }
     if (mat.blending === THREE.AdditiveBlending) flags |= 4;
     if (mat.vertexColors && geo.hasColor) flags |= 8;
     P.par[0] = kind; P.par[1] = flags; P.par[2] = z; P.par[3] = w;
     P.col[3] *= this.fade;
-    P.list = flags & 4 ? 'add' : kind === 1 || kind === 2 ? 'rock' : (mat.transparent && op < 0.999) || this.fade < 0.999 ? 'alpha' : 'opaque';
+    P.list = flags & 4 ? 'add' : kind === 1 || kind === 2 ? 'rock' : (mat.transparent && op < 0.999) || kind === 14 || this.fade < 0.999 ? 'alpha' : 'opaque';
     return true;
   }
 

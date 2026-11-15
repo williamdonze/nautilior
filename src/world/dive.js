@@ -15,7 +15,7 @@ import { Claw } from '../claw/claw.js';
 import { Aim } from '../claw/aim.js';
 import { CaptureFx } from '../loot/captureFx.js';
 import { Inventory } from '../ui/inventory.js';
-import { SURVIVAL, SUBMARINE, RADIATION, DEFENSE, ECHO, PULSE } from '../config/settings.js';
+import { SURVIVAL, SUBMARINE, RADIATION, DEFENSE, ECHO, PULSE, NETS } from '../config/settings.js';
 import { AirBells } from './airBells.js';
 import { Creatures } from './creatures.js';
 import { Wildlife } from './wildlife.js';
@@ -24,6 +24,7 @@ import { Guardian } from './guardian.js';
 import { PortalFx } from './portalFx.js';
 import { PaleDiver } from './paleDiver.js';
 import { createSunkenRoom } from './sunkenRoom.js';
+import { NetForest, holdPocket } from './nets.js';
 import voicesData from '../story/voices.json';
 import { zoneAtDepth } from './zones.js';
 import { createPortal } from './portal.js';
@@ -160,6 +161,9 @@ export class Dive {
     this.airBells = new AirBells(scene, this.decor.colliders);
     // Le plongeur pâle, qui montre où chercher
     this.paleDiver = new PaleDiver(scene);
+    this.nets = new NetForest(scene, this.decor.colliders);
+    // dans la cale de la Marie-Morgane, une poche d'air
+    if (this.decor.group.userData.marie) this.airBells.spots.push(holdPocket(scene, this.decor.group.userData.marie.userData.hold));
     this.voiceTimer = 12;
     this.zoneId = null;
     this.whisperTimer = 0;
@@ -234,6 +238,7 @@ export class Dive {
     this.wildlife.clear();
     this.guardian.reset();
     this.paleDiver.reset();
+    this.nets.reset();
     this.foundCount = foundFragments.length;
     this.zoneId = null;
     this.claw.reset();
@@ -327,6 +332,13 @@ export class Dive {
       this.pointer.lock();
       return;
     }
+    // Pris dans un filet : la pince coupe
+    if (this.nets.snagged) {
+      this.sound.clank?.(0.5);
+      this.shake(0.12);
+      if (this.nets.cut()) { this.sound.release?.(); this.hud.notice('Le filet cède'); }
+      return;
+    }
     if (this.claw.busy) return;
     if (this.claw.fire(this.aim.resolvePoint(this.claw.root)) === 'full') this.hud.denyCargo();
   }
@@ -353,6 +365,7 @@ export class Dive {
     this.creatures.scare(this.sub.position, DEFENSE.RADIUS, DEFENSE.FEAR_TIME);
     this.wildlife.scare(this.sub.position, DEFENSE.RADIUS, DEFENSE.FEAR_TIME);
     this.guardian?.scare(DEFENSE.FEAR_TIME * 0.5);
+    if (this.nets.blast(this.sub.position, NETS.BLAST)) this.sound.release?.();
     this.radar.pulse?.();
     this.pulseFx = 1;
     this.shake(0.25);
@@ -459,6 +472,13 @@ export class Dive {
     // Pendant une cinématique, ni l'air ni la coque ne s'épuisent
     if (!this.autopilot) survival.update(dt, sub);
     sub.update(dt, time, survival.dead || this.autopilot ? this.noInput : this.input);
+    // Les filets du Canyon retiennent le sous-marin
+    const wasSnag = this.nets.snag > 0.5;
+    if (!this.autopilot && this.nets.update(dt, time, sub) > 0.5 && !wasSnag) {
+      hud.notice('Pris dans un filet — coupe à la pince (clic, vue cockpit) ou F');
+      sound.creak(0.7);
+      this.pulseJolt = Math.max(this.pulseJolt ?? 0, 18);
+    }
     if (this.autopilot) this.autopilot(dt);
     this.claw.update(dt, time);
     if (this.view === 'first') {
