@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import ambienceData from '../config/depthAmbience.json';
 import { clamp } from '../core/utils.js';
 import { WATER_GLSL, waterUniform } from '../core/waterFog.js';
+import { quality } from '../save/preferences.js';
 
 /**
  * Ambiance en fonction de la profondeur :
@@ -175,8 +176,9 @@ export function createAmbience(scene) {
   const sun = new THREE.DirectionalLight('#ccd8cc', 1);
   sun.position.set(30, 100, 20);
   // Ombres portées du soleil, sur une zone de 140 m autour du sous-marin
-  sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  const shadowSize = quality().shadows;
+  sun.castShadow = shadowSize > 0;
+  sun.shadow.mapSize.set(shadowSize || 512, shadowSize || 512);
   const sc = sun.shadow.camera;
   sc.left = sc.bottom = -70;
   sc.right = sc.top = 70;
@@ -212,7 +214,7 @@ export function createAmbience(scene) {
       waterUniform.x = time;
       waterUniform.y = clamp(state.sun / 1.3, 0, 1) * 0.55;
       // L'ombre suit le sous-marin ; on la cale sur une grille pour éviter qu'elle ne « nage »
-      const snap = 140 / 2048;
+      const snap = 140 / (shadowSize || 512);
       const fx = Math.round(focus.x / snap) * snap, fz = Math.round(focus.z / snap) * snap;
       sun.position.set(fx + 90, focus.y + 300, fz + 60);
       sun.target.position.set(fx, focus.y, fz);

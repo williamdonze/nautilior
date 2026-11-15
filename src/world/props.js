@@ -5,6 +5,7 @@ import { getFloorHeight, canyonCenter } from './seabed.js';
 import { WRECK_SPOTS } from './landmarks.js';
 import { tileKey, registerSmall } from './tiles.js';
 import { applyDetail } from './detail.js';
+import { quality } from '../save/preferences.js';
 
 /**
  * Tout ce qui peuple le fond en dehors des plantes :
@@ -113,7 +114,9 @@ function scatterInstanced(group, geo, list, material = vmat, smallDist = 0) {
 }
 
 /** Points au hasard sur le fond, entre deux profondeurs (et éventuellement autour d'un centre) */
-function floorPoints(count, minDepth, maxDepth, around = null, spread = 20) {
+function floorPoints(count0, minDepth, maxDepth, around = null, spread = 20, dense = true) {
+  // Les petits éléments suivent la densité du niveau de détail
+  const count = dense ? Math.round(count0 * quality().flora) : count0;
   const out = [];
   let tries = 0;
   while (out.length < count && tries++ < count * 40) {
@@ -195,7 +198,7 @@ export function createProps(colliders) {
   ];
   const blocks = [];
   for (const [sx, sz] of rubbleSites) {
-    blocks.push(...floorPoints(14, 0, 3000, [sx, sz], 20).map((p) => ({ ...p, y: p.y + 0.2, rx: rand.range(-0.4, 0.4), rz: rand.range(-0.4, 0.4), s: rand.range(0.6, 2.2) })));
+    blocks.push(...floorPoints(14, 0, 3000, [sx, sz], 20, false).map((p) => ({ ...p, y: p.y + 0.2, rx: rand.range(-0.4, 0.4), rz: rand.range(-0.4, 0.4), s: rand.range(0.6, 2.2) })));
   }
   scatterInstanced(group, GEOS.block(), blocks, rockMat);
   return group;

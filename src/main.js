@@ -15,7 +15,7 @@ import { startLoop } from './core/loop.js';
 import { Hud } from './ui/hud.js';
 import { Game } from './core/game.js';
 import { getFloorHeight } from './world/seabed.js';
-import { loadPreferences, preferences, QUALITY_LEVELS } from './save/preferences.js';
+import { preferences, quality } from './save/preferences.js';
 
 const pixel = new GameRenderer(document.getElementById('game'));
 const input = new Input();
@@ -33,11 +33,9 @@ const game = new Game({ pixel, input, pointer, sound, hud });
 const fpsEl = document.getElementById('fps');
 function applySettings() {
   sound.setVolumes(preferences);
-  const q = (QUALITY_LEVELS[preferences.qualityLevel] ?? QUALITY_LEVELS[2]).scale;
-  if (pixel.quality !== q) pixel.setQuality(q);
+  pixel.setAutoRes(preferences.autoRes);
   fpsEl.style.display = preferences.showFps ? 'block' : 'none';
 }
-loadPreferences();
 applySettings();
 game.applySettings = applySettings;
 
@@ -57,10 +55,15 @@ let frames = 0, fpsTime = 0;
 startLoop(
   (dt, time) => {
     game.update(dt, time);
+    pixel.adapt(dt);
     frames++;
     fpsTime += dt;
     if (fpsTime >= 0.5) {
-      if (preferences.showFps) fpsEl.textContent = `${Math.round(frames / fpsTime)} i/s`;
+      if (preferences.showFps) {
+        // Images/s, temps de calcul de la carte graphique (si mesurable), niveau et résolution
+        const gpu = pixel.gpuMs != null ? ` · GPU ${pixel.gpuMs.toFixed(1)} ms` : '';
+        fpsEl.textContent = `${Math.round(frames / fpsTime)} i/s${gpu} · ${quality().label} ${Math.round(pixel.quality * 100)} %`;
+      }
       frames = 0;
       fpsTime = 0;
     }

@@ -3,6 +3,7 @@ import { WORLD, SEABED } from '../config/settings.js';
 import { createRandom } from '../core/utils.js';
 import { getFloorHeight } from './seabed.js';
 import { tileKey, registerSmall } from './tiles.js';
+import { quality } from '../save/preferences.js';
 
 /**
  * Petit peuple du fond : étoiles de mer et crabes posés sur le sable et les rochers
@@ -54,7 +55,8 @@ function crabGeometry() {
 }
 
 /** Répartit des instances sur le fond, regroupées par bandes de 140 m (culling hors champ) */
-function scatter(group, geo, material, count, colors, maxDepth, sizeRange, rand) {
+function scatter(group, geo, material, count0, colors, maxDepth, sizeRange, rand) {
+  const count = Math.round(count0 * quality().flora);
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3();
   const bands = new Map();
   let placed = 0, tries = 0;

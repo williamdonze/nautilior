@@ -64,8 +64,26 @@ Les flèches du clavier fonctionnent aussi. Les touches sont lues par position p
 
 Sauvegarde automatique dans le `localStorage` (retour au port, ventes, achats, dialogues, réveil).
 « Nouvelle partie » depuis l'écran titre efface la partie en cours.
-Les réglages (volumes, qualité graphique, compteur d'images/s) sont dans le menu Réglages
-(écran titre ou pause) et conservés à part.
+Les réglages (volumes, niveau de détail, résolution auto, compteur d'images/s) sont dans le menu
+Réglages (écran titre ou pause) et conservés à part.
+
+## Rendu et performances
+
+Rendu HDR inspiré d'[Abyssal Garden](https://github.com/Noniv/abyssal-garden) et de
+[Web Ocean](https://github.com/Noniv/web-ocean) (MIT, Maksymilian Dendura) : eau physique, caustiques,
+ombres, lumière volumétrique, surface vue d'en dessous, mer de Gerstner, textures de détail
+générées au chargement, bloom et courbe de tons.
+
+| Niveau | Résolution max | Antialiasing | Ombres | Rayons du soleil | Flore |
+| --- | --- | --- | --- | --- | --- |
+| Basse | 60 % | non | non | non | 35 % |
+| Moyenne | 80 % | 2× | 1024 | allégés | 65 % |
+| Haute | 100 % | 4× | 2048 | complets | 100 % |
+
+Le niveau est choisi automatiquement à la première visite (selon l'appareil) et s'applique au
+lancement. La **résolution auto** baisse ou remonte la résolution par petits pas pour tenir 60 i/s.
+Le compteur affiche les images/s, le temps de calcul de la carte graphique (si le navigateur le
+permet), le niveau et la résolution actuelle.
 
 Le choix final est définitif : il n'y a pas de sauvegarde d'avant le choix. Pour voir une autre
 fin, il faut recommencer une partie (voir `docs/LORE.md`, section 9).
