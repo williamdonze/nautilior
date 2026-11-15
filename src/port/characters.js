@@ -10,47 +10,61 @@ const mat = (color, extra = {}) => new THREE.MeshLambertMaterial({ color, ...ext
 const TAU = Math.PI * 2;
 const gauss = (d, s) => Math.exp(-(d * d) / (s * s));
 
+const sstep = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+
+/** Forme du crâne (sans les traits) : facteurs d'échelle en un point de la sphère. Partagée par la tête, les cheveux et la barbe. */
+function skull(y, z, female) {
+  const low = Math.max(0, -y - 0.15) / 0.85;
+  return { sx: 0.78 * (1 - (female ? 0.4 : 0.3) * Math.pow(low, 1.3)), sz: 0.92 * (1 - 0.22 * Math.pow(low, 1.5) * (z < 0 ? 1.6 : 0.5)), low };
+}
+
 /**
- * Tête sculptée : une sphère fine que l'on modèle point par point — crâne, mâchoire qui s'affine,
- * pommettes, arcades, orbites, nez, lèvres, menton. La couleur suit le relief (lèvres, joues,
- * ombre des orbites, barbe naissante). Regarde vers +Z, mesure ~0,24 m du menton au sommet.
- * @param {object} o skin, female (traits plus doux), aged (creusé), stubble (couleur de barbe ou null)
+ * Tête sculptée : une sphère fine modelée point par point — crâne, mâchoire, pommettes, arcades,
+ * orbites, nez (arête, bout, ailes), deux lèvres, menton, plis. La couleur suit le relief : lèvres,
+ * joues, ombres des creux, rides, barbe naissante. Regarde vers +Z, ~0,24 m du menton au sommet.
+ * @param {object} o skin, female (traits plus doux), aged (creusé, ridé), stubble (couleur ou null)
  */
 function headGeometry(o) {
-  const geo = new THREE.SphereGeometry(1, 56, 44);
+  const geo = new THREE.SphereGeometry(1, 96, 72);
   const p = geo.attributes.position, col = new Float32Array(p.count * 3);
-  const skin = new THREE.Color(o.skin), lip = skin.clone().lerp(new THREE.Color('#8a3a34'), o.female ? 0.6 : 0.4), dark = skin.clone().multiplyScalar(0.62);
+  const skin = new THREE.Color(o.skin), lip = skin.clone().lerp(new THREE.Color('#8a3a34'), o.female ? 0.65 : 0.42), dark = skin.clone().multiplyScalar(0.5);
   const blush = skin.clone().lerp(new THREE.Color('#c0605a'), 0.35), stub = o.stubble ? new THREE.Color(o.stubble) : null, c = new THREE.Color();
-  const jaw = o.female ? 0.4 : 0.3, brow = o.female ? 0.035 : 0.06;
+  const M = o.female ? 0.75 : 1, A = o.aged ? 1 : 0; // force des traits, âge
   for (let i = 0; i < p.count; i++) {
-    const x = p.getX(i), y = p.getY(i), z = p.getZ(i), ax = Math.abs(x), front = Math.max(0, z);
-    // crâne : plus haut que large, l'arrière bombé, les tempes rentrées
-    let sx = 0.78, sy = 1.0, sz = 0.92;
-    // la mâchoire s'affine vers le menton
-    const low = Math.max(0, -y - 0.15) / 0.85;
-    sx *= 1 - jaw * Math.pow(low, 1.3);
-    sz *= 1 - 0.22 * Math.pow(low, 1.5) * (z < 0 ? 1.6 : 0.5);
-    let r = 1;
-    // relief du visage (seulement à l'avant)
-    const f = Math.pow(front, 0.8);
-    r += 0.075 * gauss(y - 0.02, 0.2) * gauss(ax - 0.52, 0.22) * f; // pommettes
-    r += brow * gauss(y - 0.3, 0.09) * gauss(ax - 0.3, 0.3) * f; // arcades
-    r -= 0.06 * gauss(y - 0.17, 0.08) * gauss(ax - 0.33, 0.13) * f; // orbites
-    r += 0.24 * gauss(ax, 0.075 + 0.055 * gauss(y + 0.1, 0.07)) * gauss(y + 0.02, 0.17) * (0.4 + 0.6 * gauss(y + 0.09, 0.09)) * f; // nez : arête puis bout
-    r += 0.03 * gauss(ax - 0.1, 0.05) * gauss(y + 0.12, 0.045) * f; // ailes du nez
-    r += 0.055 * gauss(ax, 0.2) * gauss(y + 0.36, 0.075) * f; // lèvres
-    r -= 0.028 * gauss(ax, 0.22) * gauss(y + 0.365, 0.014) * f; // fente de la bouche
-    r -= 0.03 * gauss(ax, 0.3) * gauss(y + 0.5, 0.05) * f; // creux sous la lèvre
-    r += 0.06 * gauss(ax, 0.2) * gauss(y + 0.66, 0.12) * f; // menton
-    if (o.aged) r -= 0.03 * gauss(ax - 0.3, 0.12) * gauss(y + 0.2, 0.2) * f; // joues creusées
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i), ax = Math.abs(x), f = Math.pow(Math.max(0, z), 0.8);
+    const { sx, sz } = skull(y, z, o.female);
+    let r = 1, shade = 0;
+    r += 0.08 * gauss(y - 0.02, 0.2) * gauss(ax - 0.52, 0.22) * f; // pommettes
+    r += 0.075 * M * gauss(y - 0.31, 0.07) * gauss(ax - 0.3, 0.26) * f; // arcades
+    r += 0.03 * gauss(y - 0.6, 0.25) * gauss(ax, 0.5) * f; // front bombé
+    const orbit = gauss(y - 0.17, 0.075) * gauss(ax - 0.33, 0.125) * f;
+    r -= 0.07 * orbit; shade += 0.28 * orbit; // orbites
+    r -= 0.035 * gauss(y - 0.2, 0.06) * gauss(ax, 0.1) * f; // racine du nez
+    const bridge = gauss(ax, 0.065) * sstep(0.26, 0.1, y) * sstep(-0.16, -0.06, y);
+    r += 0.17 * bridge * f; // arête
+    r += 0.2 * gauss(ax, 0.105) * gauss(y + 0.1, 0.075) * f; // bout du nez
+    r += 0.07 * gauss(ax - 0.115, 0.05) * gauss(y + 0.125, 0.045) * f; // ailes
+    shade += 0.6 * gauss(ax - 0.06, 0.03) * gauss(y + 0.175, 0.02) * f + 0.35 * gauss(ax, 0.16) * gauss(y + 0.2, 0.03) * f; // narines, ombre sous le nez
+    const fold = gauss(ax - (0.19 + (-y - 0.1) * 0.35), 0.03) * sstep(-0.48, -0.36, y) * sstep(-0.08, -0.16, y) * f; // pli du nez à la bouche
+    r -= (0.012 + 0.02 * A) * fold; shade += (0.18 + 0.3 * A) * fold;
+    const upper = gauss(ax, 0.2) * gauss(y + 0.325, 0.035), lower = gauss(ax, 0.16) * gauss(y + 0.415, 0.04), slit = gauss(ax, 0.23) * gauss(y + 0.368, 0.012);
+    r += (0.05 * upper + 0.06 * lower + 0.03 * gauss(ax, 0.3) * gauss(y + 0.36, 0.1) - 0.04 * slit) * f; // lèvres sur le relief des dents
+    r -= 0.035 * gauss(ax, 0.25) * gauss(y + 0.52, 0.045) * f; shade += 0.3 * gauss(ax, 0.22) * gauss(y + 0.52, 0.04) * f; // creux sous la lèvre
+    r += 0.075 * M * gauss(ax, 0.2) * gauss(y + 0.68, 0.11) * f; // menton
+    r += 0.03 * M * gauss(ax - 0.5, 0.15) * gauss(y + 0.45, 0.14); // angle de la mâchoire
+    r -= (0.02 + 0.035 * A) * gauss(ax - 0.34, 0.13) * gauss(y + 0.22, 0.18) * f; // joues
     r -= 0.05 * gauss(y - 0.25, 0.3) * gauss(ax - 0.75, 0.2); // tempes
-    p.setXYZ(i, x * sx * r, y * sy * r - 0.03, z * sz * r);
-    // couleur
+    // rides de l'âge : front, pattes d'oie, poches sous les yeux
+    const lines = A * (Math.pow(Math.max(0, Math.sin(y * 62)), 6) * gauss(y - 0.52, 0.1) * gauss(ax, 0.42) * f + gauss(y - 0.13, 0.05 + ax * 0.08) * gauss(ax - 0.5, 0.06) * Math.pow(Math.abs(Math.sin((y - ax * 0.4) * 70)), 4) * f);
+    const bag = A * gauss(y - 0.075, 0.03) * gauss(ax - 0.33, 0.11) * f;
+    r -= 0.006 * lines; r += 0.012 * bag; shade += 0.3 * lines + 0.22 * gauss(y - 0.045, 0.02) * gauss(ax - 0.33, 0.12) * f * A;
+    shade += 0.35 * sstep(-0.6, -0.95, y) * (1 - f * 0.4); // dessous de la mâchoire
+    p.setXYZ(i, x * sx * r, y * r - 0.03, z * sz * r);
     c.copy(skin);
-    c.lerp(blush, 0.5 * gauss(y + 0.05, 0.16) * gauss(ax - 0.45, 0.2) * f);
-    c.lerp(dark, 0.5 * gauss(y - 0.17, 0.08) * gauss(ax - 0.33, 0.14) * f + 0.25 * gauss(y + 0.5, 0.05) * gauss(ax, 0.3) * f);
-    c.lerp(lip, Math.min(1, 1.6 * gauss(ax, 0.17) * gauss(y + 0.36, 0.05) * f));
-    if (stub) c.lerp(stub, 0.5 * Math.min(1, Math.max(0, (-y - 0.12) * 3)) * (0.5 + 0.5 * front) * (1 - gauss(ax, 0.16) * gauss(y + 0.36, 0.06)));
+    c.lerp(blush, 0.5 * gauss(y + 0.05, 0.16) * gauss(ax - 0.45, 0.2) * f + 0.25 * gauss(ax, 0.1) * gauss(y + 0.1, 0.07) * f);
+    c.lerp(lip, Math.min(1, 1.5 * (upper + lower) * f));
+    c.lerp(dark, Math.min(0.85, shade + 0.9 * slit * f));
+    if (stub) c.lerp(stub, 0.45 * sstep(-0.1, -0.4, y) * (0.4 + 0.6 * Math.max(0, z)) * (1 - Math.min(1, 2 * (upper + lower))));
     col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
   }
   geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
@@ -59,32 +73,50 @@ function headGeometry(o) {
   return geo;
 }
 
-/** Calotte de cheveux : épouse le crâne, s'arrête à la ligne du front et des tempes, mèches en relief */
-function hairGeometry(style) {
-  const geo = new THREE.SphereGeometry(1, 72, 54);
-  const p = geo.attributes.position, keep = [];
-  // garde-t-on ce point du crâne ? (devant : au-dessus du front ; derrière l'oreille : jusqu'à la nuque)
-  const has = (x, y, z) => {
-    const back = Math.max(0, -z), ax = Math.abs(x);
-    if (style === 'bald') return z < 0.35 && y < 0.62 - 0.9 * Math.max(0, z) && y > -0.2 - 0.45 * back; // couronne : le dessus est nu
-    if (style === 'long') return z > 0.25 ? y > 0.5 + 0.2 * ax || (ax > 0.74 && y > -0.9) : true; // encadre le visage, tombe aux épaules
-    return z > 0.2 ? y > 0.47 + 0.12 * z + 0.1 * ax : y > -0.12 - 0.5 * back;
-  };
+/** Où poussent les cheveux (> 0 : cheveux) selon le style. Fonction continue : les bords sont nets. */
+function hairMask(style, x, y, z) {
+  const ax = Math.abs(x), back = Math.max(0, -z);
+  if (style === 'bald') return Math.min(0.3 - z, 0.6 - 0.9 * Math.max(0, z) - y, y + 0.22 + 0.45 * back); // couronne
+  const front = Math.max(y - (0.5 + 0.18 * ax + 0.1 * z), style === 'long' ? Math.min(ax - 0.72, y + 0.95) : -1); // front dégagé ; les cheveux longs encadrent le visage
+  const rear = style === 'long' ? 1 : y + 0.14 + 0.5 * back;
+  const t = sstep(0.08, 0.34, z);
+  return rear * (1 - t) + front * t;
+}
+
+/**
+ * Chevelure : une coque qui épouse le crâne. Là où il n'y a pas de cheveux, elle rentre sous la peau
+ * (aucun triangle coupé : la ligne d'implantation est l'intersection des deux surfaces, donc lisse).
+ */
+function hairGeometry(style, female = false, lift = 0.07) {
+  const geo = new THREE.SphereGeometry(1, 80, 60), p = geo.attributes.position;
   for (let i = 0; i < p.count; i++) {
-    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
-    const strand = Math.sin(Math.atan2(x, z) * 26 + y * 9) * 0.012 + Math.sin(Math.atan2(x, z) * 9 + y * 4) * 0.02;
-    const k = 1.06 + strand + (style === 'long' && y < -0.2 ? 0.05 : 0);
-    // les cheveux longs tombent droit sous le crâne au lieu de suivre la sphère
-    const fall = style === 'long' && y < -0.1 ? 1 + (-y - 0.1) * 0.25 : 1;
-    p.setXYZ(i, x * 0.8 * k * fall, y * 1.02 * k * (style === 'long' && y < 0 ? 1.45 : 1) - 0.03, z * 0.95 * k * fall - (style === 'long' && y < 0 ? 0.03 : 0));
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i), a = Math.atan2(x, z);
+    const { sx, sz } = skull(y, z, female);
+    const m = sstep(-0.035, 0.035, hairMask(style, x, y, z));
+    const strand = (Math.sin(a * 34 + y * 11) * 0.01 + Math.sin(a * 11 + y * 5) * 0.016) * m;
+    const k = 0.88 + (0.12 + lift + strand) * m;
+    // cheveux longs : sous le crâne, ils tombent droit au lieu de suivre la mâchoire
+    const fall = style === 'long' ? m * sstep(0, -0.5, y) : 0;
+    p.setXYZ(i, x * (sx * (1 - fall) + 0.8 * fall) * k, (y < 0 ? y * (1 + 0.5 * fall) : y) * k - 0.03, z * (sz * (1 - fall) + 0.9 * fall) * k);
   }
-  const idx = geo.index.array, o = new THREE.SphereGeometry(1, 72, 54).attributes.position;
-  for (let i = 0; i < idx.length; i += 3) {
-    const a = idx[i], b = idx[i + 1], c = idx[i + 2];
-    if (!has(o.getX(a), o.getY(a), o.getZ(a)) || !has(o.getX(b), o.getY(b), o.getZ(b)) || !has(o.getX(c), o.getY(c), o.getZ(c))) continue;
-    keep.push(a, b, c);
+  geo.computeVertexNormals();
+  geo.scale(0.12, 0.12, 0.12);
+  return geo;
+}
+
+/** Barbe : même principe — une coque sur la mâchoire, plus épaisse au menton, qui laisse la bouche libre */
+function beardGeometry() {
+  const geo = new THREE.SphereGeometry(1, 80, 60), p = geo.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i), ax = Math.abs(x), a = Math.atan2(x, z);
+    const { sx, sz, low } = skull(y, z, false);
+    let mask = Math.min(z + 0.2, -0.24 + 0.4 * Math.max(0, 0.5 - z) - y); // mâchoire, pattes devant l'oreille
+    mask = Math.max(mask, Math.min(0.21 - ax, y + 0.3, -0.2 - y, z - 0.5) * 2); // moustache
+    mask = Math.min(mask, Math.max(ax - 0.17, Math.abs(y + 0.375) - 0.04) * 2 + 0.02 * (z < 0.5 ? 50 : 0)); // la bouche reste libre
+    const m = sstep(-0.03, 0.03, mask);
+    const k = 0.88 + (0.2 + 0.16 * low * sstep(0.2, 0.7, z) + Math.sin(a * 38 + y * 16) * 0.012) * m;
+    p.setXYZ(i, x * sx * k, y * (1 + 0.14 * low * m) * k - 0.03, z * sz * k);
   }
-  geo.setIndex(keep);
   geo.computeVertexNormals();
   geo.scale(0.12, 0.12, 0.12);
   return geo;
@@ -177,42 +209,21 @@ export function createCharacter(look) {
   // Yeux : globe, iris, paupière supérieure ; sourcils
   for (const side of [-1, 1]) {
     const ex = side * 0.031, ey = 0.0165, ez = 0.0905;
-    add(head, new THREE.SphereGeometry(0.0112, 16, 12), mat('#e4e2da'), ex, ey, ez);
-    add(head, new THREE.SphereGeometry(0.0068, 12, 8), mat(look.eyes ?? '#4a3a2a'), ex, ey - 0.0005, ez + 0.0072);
-    add(head, new THREE.SphereGeometry(0.0032, 8, 6), mat('#0a0a0a'), ex, ey - 0.0005, ez + 0.0112);
-    add(head, new THREE.SphereGeometry(0.0126, 16, 8, 0, TAU, 0, Math.PI * 0.46), skin, ex, ey + 0.0005, ez - 0.0005).rotation.x = -0.18; // paupière : regard posé, pas écarquillé
-    add(head, new THREE.SphereGeometry(0.0122, 16, 6, 0, TAU, Math.PI * 0.72, Math.PI * 0.28), skin, ex, ey, ez - 0.0003).rotation.x = -0.25;
-    const b = add(head, new THREE.CapsuleGeometry(0.0034, 0.024, 4, 8).rotateZ(Math.PI / 2), hair, ex, ey + 0.021, ez + 0.012);
-    b.rotation.z = side * 0.07; // sourcils droits, à peine froncés
+    add(head, new THREE.SphereGeometry(0.0112, 18, 14), mat('#e6e4dc'), ex, ey, ez);
+    add(head, new THREE.SphereGeometry(0.0066, 14, 10), mat(look.eyes ?? '#4a3a2a'), ex, ey - 0.0006, ez + 0.0056);
+    add(head, new THREE.SphereGeometry(0.0034, 10, 8), mat('#0a0a0a'), ex, ey - 0.0006, ez + 0.0092);
+    // paupière supérieure : elle couvre le haut de l'œil (regard posé, pas écarquillé)
+    add(head, new THREE.SphereGeometry(0.0124, 18, 8, 0, TAU, 0, Math.PI * 0.36), skin, ex, ey + 0.0004, ez - 0.0004).rotation.x = -0.5;
+    // sourcil : fin, légèrement arqué, plaqué sur l'arcade
+    const b = add(head, new THREE.TorusGeometry(0.03, 0.0036, 6, 14, 0.95).rotateZ(Math.PI / 2 - 0.475).scale(1, 0.45, 0.8), hair, ex + side * 0.001, ey + 0.0045, 0.1065);
+    b.rotation.y = side * 0.3;
     // oreille
-    add(head, new THREE.SphereGeometry(0.02, 12, 10).scale(0.4, 1, 0.7), skin, side * 0.088, -0.012, -0.004);
+    add(head, new THREE.SphereGeometry(0.021, 14, 12).scale(0.35, 1, 0.7), skin, side * 0.092, -0.008, -0.006).rotation.y = side * 0.35;
   }
   // Cheveux
   const style = look.hairStyle ?? (look.hat === 'scarf' ? 'long' : look.glasses ? 'bald' : 'short');
-  if (look.hat !== 'scarf') add(head, hairGeometry(style), new THREE.MeshLambertMaterial({ color: look.hair ?? '#3e2114', side: THREE.DoubleSide }));
-  if (look.beard) {
-    // barbe : une coque sur la mâchoire, plus épaisse au menton, et la moustache
-    const g = new THREE.SphereGeometry(1, 60, 44), p = g.attributes.position, keep = [], o = g.index.array;
-    for (let i = 0; i < p.count; i++) {
-      const x = p.getX(i), y = p.getY(i), z = p.getZ(i), low = Math.max(0, -y - 0.15) / 0.85;
-      const k = 1.05 + 0.1 * low + Math.sin(Math.atan2(x, z) * 30 + y * 12) * 0.012;
-      p.setXYZ(i, x * 0.78 * (1 - 0.3 * Math.pow(low, 1.3)) * k, y * (1 + 0.16 * low) * k - 0.03, z * 0.92 * (1 - 0.1 * low) * k + 0.01);
-    }
-    const q = new THREE.SphereGeometry(1, 60, 44).attributes.position;
-    // la barbe couvre la mâchoire et le menton, monte en pattes devant l'oreille, laisse la bouche libre
-    const inBeard = (x, y, z) => { const ax = Math.abs(x); return z > -0.25 && y < -0.2 + 0.35 * Math.max(0, 0.55 - z) && !(ax < 0.19 && y > -0.45 && y < -0.3 && z > 0.5); };
-    for (let i = 0; i < o.length; i += 3) {
-      const a = o[i], b = o[i + 1], c2 = o[i + 2];
-      if (!inBeard(q.getX(a), q.getY(a), q.getZ(a)) || !inBeard(q.getX(b), q.getY(b), q.getZ(b)) || !inBeard(q.getX(c2), q.getY(c2), q.getZ(c2))) continue;
-      keep.push(a, b, c2);
-    }
-    g.setIndex(keep);
-    g.computeVertexNormals();
-    g.scale(0.12, 0.12, 0.12);
-    const bm = new THREE.MeshLambertMaterial({ color: look.beard, side: THREE.DoubleSide });
-    add(head, g, bm);
-    add(head, new THREE.CapsuleGeometry(0.0065, 0.036, 4, 8).rotateZ(Math.PI / 2).scale(1, 1, 0.8), bm, 0, -0.034, 0.104);
-  }
+  if (look.hat !== 'scarf') add(head, hairGeometry(style, female), hair);
+  if (look.beard) add(head, beardGeometry(), mat(look.beard));
   if (look.glasses) {
     const wire = mat('#2a2622');
     for (const side of [-1, 1]) {
@@ -238,9 +249,7 @@ export function createCharacter(look) {
   } else if (look.hat === 'scarf') {
     // Fichu noué sous le menton : il encadre le visage
     const c = new THREE.MeshLambertMaterial({ color: look.hatColor ?? '#3e2114', side: THREE.DoubleSide });
-    const g = hairGeometry('long');
-    g.scale(1.04, 0.98, 1.05);
-    add(head, g, c, 0, 0.004, -0.004);
+    add(head, hairGeometry('long', female, 0.1), c);
     add(head, new THREE.SphereGeometry(0.02, 10, 8), c, 0, -0.118, 0.07);
     add(head, new THREE.ConeGeometry(0.018, 0.07, 8), c, 0.016, -0.16, 0.07).rotation.z = 0.35;
     add(head, new THREE.ConeGeometry(0.016, 0.06, 8), c, -0.014, -0.155, 0.07).rotation.z = -0.4;
