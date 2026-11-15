@@ -1,5 +1,5 @@
 {
-  "_comment": "Créatures mutées. speed = nage normale, chargeSpeed = attaque (m/s), aggroRadius = distance à laquelle elles repèrent le sous-marin, damage = dégâts à la morsure (ou par seconde au contact pour la méduse), retreatTime = fuite après une morsure (s), cooldown = repos avant de recharger (s).",
+  "_comment": "Créatures mutées. speed = nage normale, chargeSpeed = attaque (m/s), aggroRadius = distance à laquelle elles repèrent le sous-marin, damage = dégâts à la morsure (ou par seconde au contact pour la méduse), retreatTime = fuite après une morsure (s), cooldown = repos avant de recharger (s). Les identifiants eel / lantern / jelly sont historiques : ce sont aujourd'hui La Sonde, L'Œil et Le Soufflet (world/dreamModels.js).",
   "fish": {
     "perSchool": 18,
     "speed": 2.6,
@@ -8,7 +8,7 @@
   },
   "mutants": {
     "eel": {
-      "name": "Anguille mutée",
+      "name": "La Sonde",
       "speed": 5,
       "chargeSpeed": 19,
       "aggroRadius": 48,
@@ -18,7 +18,7 @@
       "cooldown": 1.2
     },
     "lantern": {
-      "name": "Poisson-lanterne",
+      "name": "L'Œil",
       "speed": 3.5,
       "chargeSpeed": 15,
       "aggroRadius": 55,
@@ -28,7 +28,7 @@
       "cooldown": 1.5
     },
     "jelly": {
-      "name": "Méduse irradiée",
+      "name": "Le Soufflet",
       "speed": 0.8,
       "chargeSpeed": 3.2,
       "aggroRadius": 24,

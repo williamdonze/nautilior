@@ -15,7 +15,7 @@ import { Claw } from '../claw/claw.js';
 import { Aim } from '../claw/aim.js';
 import { CaptureFx } from '../loot/captureFx.js';
 import { Inventory } from '../ui/inventory.js';
-import { SURVIVAL, SUBMARINE, RADIATION, DEFENSE, ECHO, PULSE, NETS } from '../config/settings.js';
+import { SURVIVAL, SUBMARINE, RADIATION, DEFENSE, ECHO, PULSE, NETS, WHALE } from '../config/settings.js';
 import { AirBells } from './airBells.js';
 import { Creatures } from './creatures.js';
 import { Wildlife } from './wildlife.js';
@@ -25,6 +25,7 @@ import { PortalFx } from './portalFx.js';
 import { PaleDiver } from './paleDiver.js';
 import { createSunkenRoom } from './sunkenRoom.js';
 import { NetForest, holdPocket } from './nets.js';
+import { Whale } from './whale.js';
 import voicesData from '../story/voices.json';
 import { zoneAtDepth } from './zones.js';
 import { createPortal } from './portal.js';
@@ -162,6 +163,7 @@ export class Dive {
     // Le plongeur pâle, qui montre où chercher
     this.paleDiver = new PaleDiver(scene);
     this.nets = new NetForest(scene, this.decor.colliders);
+    this.whale = new Whale(scene);
     // dans la cale de la Marie-Morgane, une poche d'air
     if (this.decor.group.userData.marie) this.airBells.spots.push(holdPocket(scene, this.decor.group.userData.marie.userData.hold));
     this.voiceTimer = 12;
@@ -239,6 +241,7 @@ export class Dive {
     this.guardian.reset();
     this.paleDiver.reset();
     this.nets.reset();
+    this.whale.reset();
     this.foundCount = foundFragments.length;
     this.zoneId = null;
     this.claw.reset();
@@ -388,7 +391,7 @@ export class Dive {
     const threat = this.creatures.threat + this.wildlife.threat + this.guardian.threat > 0 ? 1 : 0;
     const effort = Math.min(1, Math.abs(this.sub.throttle) * 0.8 + Math.abs(this.sub.lift) * 0.5);
     const panic = Math.min(1, Math.max(1 - S.oxygenRatio / 0.3, (0.5 - S.hullRatio) * 1.4, 0));
-    const target = PULSE.REST + PULSE.EFFORT * effort + PULSE.THREAT * threat + PULSE.PANIC * panic + (this.pulseJolt ?? 0);
+    const target = PULSE.REST + PULSE.EFFORT * effort + PULSE.THREAT * threat + PULSE.PANIC * panic + (this.pulseJolt ?? 0) - WHALE.CALM * (this.whale?.near ?? 0); // près de la baleine, le cœur se calme
     this.pulseJolt = Math.max(0, (this.pulseJolt ?? 0) - dt * 6); // sursaut après un choc
     this.bpm = this.bpm ?? PULSE.REST;
     this.bpm += (target - this.bpm) * Math.min(1, dt * (target > this.bpm ? PULSE.RISE : PULSE.CALM));
@@ -598,7 +601,10 @@ export class Dive {
     // --- Le plongeur pâle, et les voix de la chambre près de la faille
     if (!survival.dead && !this.autopilot) {
       const frags = this.pickups.fragments;
-      this.paleDiver.update(dt, time, sub, frags.map((f) => f.object.position), 8 - frags.length);
+      const missing = frags.map((f) => f.object.position);
+      this.paleDiver.update(dt, time, sub, missing, 8 - frags.length);
+      // La baleine ne vit que lorsqu'on est assez profond pour l'entendre
+      if (sub.position.z < WHALE.Z_START + 260) this.whale.update(dt, time, sub, missing, sound);
       this.voiceTimer -= dt;
       if (this.voiceTimer <= 0 && this.riftNear > 0.25 && this.portal.open > 0.5) {
         const pool = voicesData.voices.filter((v) => v.near <= this.riftNear && v.text !== this.lastVoice);

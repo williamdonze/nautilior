@@ -461,6 +461,43 @@ export class Sound {
     this.shriek(volume);
   }
 
+  /**
+   * Le chant de la baleine : trois ou quatre longues notes qui glissent, très loin, avec leur écho.
+   * Une berceuse dont on ne retrouve pas les paroles.
+   */
+  whaleSong(volume = 1) {
+    if (!this.ready) return;
+    const ctx = this.ctx, t0 = ctx.currentTime + 0.05;
+    // la même phrase, toujours : la – do – mi… et la retombée
+    const phrase = [[220, 262, 2.6], [262, 330, 2.2], [330, 294, 2.8], [294, 196, 3.6]];
+    const out = ctx.createGain();
+    out.gain.value = 0.16 * Math.min(1, volume);
+    // écho long, étouffé : la mer porte le son
+    const delay = ctx.createDelay(2), fb = ctx.createGain(), lp = ctx.createBiquadFilter();
+    delay.delayTime.value = 0.9; fb.gain.value = 0.45; lp.type = 'lowpass'; lp.frequency.value = 700;
+    out.connect(this.muffle);
+    out.connect(delay); delay.connect(lp).connect(fb).connect(delay); lp.connect(this.muffle);
+    let t = t0;
+    for (const [f0, f1, dur] of phrase) {
+      const o = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain(), vib = ctx.createOscillator(), vg = ctx.createGain();
+      o.type = 'sine'; o2.type = 'triangle';
+      o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur * 0.8);
+      o2.frequency.setValueAtTime(f0 * 2.01, t); o2.frequency.exponentialRampToValueAtTime(f1 * 2.01, t + dur * 0.8);
+      vib.frequency.value = 4.2; vg.gain.value = 3.5;
+      vib.connect(vg); vg.connect(o.frequency); vg.connect(o2.frequency);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(1, t + dur * 0.35);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      const g2 = ctx.createGain();
+      g2.gain.value = 0.18;
+      o.connect(g); o2.connect(g2).connect(g); g.connect(out);
+      o.start(t); o2.start(t); vib.start(t);
+      o.stop(t + dur + 0.1); o2.stop(t + dur + 0.1); vib.stop(t + dur + 0.1);
+      t += dur * 0.82;
+    }
+    setTimeout(() => { fb.gain.value = 0; }, (t - t0 + 6) * 1000);
+  }
+
   /** Hurlement strident qui accompagne la charge : il glace, puis s'effondre dans le grave */
   shriek(volume = 1) {
     if (!this.ready) return;

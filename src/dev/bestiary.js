@@ -26,6 +26,14 @@ else if (set === 'marie') {
   const { createNetPreviews } = await import('../world/nets.js');
   const n = createNetPreviews();
   items = [{ name: 'La Marie-Morgane — tribord, la brèche', make: createMariePreview, view: [0.5, 0.35, 1] }, { name: 'La Marie-Morgane — de dessus', make: createMariePreview, view: [0.3, 1, -0.6] }, { name: 'Une nappe de filet', make: () => n.curtain, view: [0.3, 0.2, 1] }, { name: 'Le sous-marin pris', make: () => n.lost, view: [1, 0.3, 0.6] }];
+} else if (set === 'dream') {
+  const D = await import('../world/dreamModels.js');
+  const pose = (f, o = {}) => () => { const m = f(); if (m.segments) m.segments.forEach((s, i) => s.position.set(Math.sin(i * 0.5) * 1.2, Math.sin(i * 0.3) * 0.4, -(i + 1) * m.spacing * 0.92)); if (o.jaw != null) m.jaw.rotation.x = o.jaw; m.tick?.(1.2, !!o.charge); return m.root; };
+  items = [{ name: 'La Sonde', make: pose(D.createSonde, { jaw: 0.1 }), view: [1, 0.3, 0.9] }, { name: 'La Sonde — elle charge', make: pose(D.createSonde, { jaw: 0.55, charge: true }), view: [0.5, 0.15, 1], focus: [0, 0, 1.2, 3.4] }, { name: "L'Œil", make: pose(D.createOeil, { jaw: 0.15 }), view: [0.7, 0.2, 1] }, { name: "L'Œil — il vous a vu", make: pose(D.createOeil, { jaw: 0.7, charge: true }), view: [0.25, -0.1, 1] }, { name: 'Le Soufflet', make: pose(D.createSoufflet), view: [0.4, 0.1, 1] }, { name: 'Le Soufflet — de dessous', make: pose(D.createSoufflet), view: [0.6, -0.7, 0.7] }];
+} else if (set === 'whale') {
+  const { createWhaleModel } = await import('../world/whale.js');
+  const mk = (t) => () => { const w = createWhaleModel(); w.swim(t); return w.root; };
+  items = [{ name: 'La Baleine — de profil', make: mk(0.5), view: [1, 0.15, 0.2] }, { name: 'La Baleine — de dessous', make: mk(2), view: [0.5, -0.8, 0.6] }, { name: 'La Baleine — de face', make: mk(3.4), view: [0.35, 0.1, 1] }];
 } else if (set === 'people') items = Object.entries(LOOKS).map(([id, look]) => ({ name: id, make: () => createCharacter(look).object, view: [0.5, 0.25, 1] }));
 else if (set === 'faces') items = Object.entries(LOOKS).map(([id, look]) => ({ name: id, make: () => createCharacter(look).object, view: [0.45, 0.08, 1], focus: [0, 1.66, 0, 0.62] }));
 else items = ABYSS_MODELS.map((m) => ({ ...m, view: m.id === 'glaneuse' ? [0.9, 0.25, 1] : m.id === 'linceul' ? [0.6, 0.5, 1] : m.id === "choeur" ? [0.35, 0.15, 1] : m.id === "chapelet" ? [1, 0.35, 0.5] : [0.8, 0.45, 1] }));
