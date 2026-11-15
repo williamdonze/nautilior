@@ -138,22 +138,16 @@ export function buildPort() {
   }
 
   // --- Mer
-  const waterGeo = new THREE.PlaneGeometry(400, 220, 80, 44);
+  // Maillage fin près du quai, plus grossier au large (la caméra regarde surtout le quai)
+  const waterGeo = new THREE.PlaneGeometry(500, 300, 250, 150);
   waterGeo.rotateX(-Math.PI / 2);
-  waterGeo.translate(0, 0, 116);
-  const waterUniforms = { uTime: { value: 0 } };
-  const waterMat = new THREE.MeshLambertMaterial({ color: '#1f4049', flatShading: true });
-  waterMat.onBeforeCompile = (shader) => {
-    shader.uniforms.uTime = waterUniforms.uTime;
-    shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nuniform float uTime;')
-      .replace(
-        '#include <begin_vertex>',
-        `#include <begin_vertex>
-        transformed.y += sin(position.x * 0.21 + uTime * 0.8) * 0.18 + cos(position.z * 0.17 + uTime * 0.6) * 0.18;`
-      );
-  };
-  const water = new THREE.Mesh(waterGeo, waterMat);
+  waterGeo.translate(0, 0, 156);
+  const pw = waterGeo.attributes.position;
+  for (let i = 0; i < pw.count; i++) {
+    const z = pw.getZ(i);
+    pw.setZ(i, 6 + Math.pow((z - 6) / 300, 1.6) * 300); // resserre les lignes près du quai
+  }
+  const water = new THREE.Mesh(waterGeo, null);
   water.position.y = -1.1;
   group.add(water);
 
@@ -185,8 +179,8 @@ export function buildPort() {
       subRoot.position.y = level === 4 ? 0.2 : level >= 5 ? -0.2 : -0.75;
     },
     lighthouseLantern: village.lighthouseLantern,
+    water,
     update(time) {
-      waterUniforms.uTime.value = time;
       village.update(time);
       // Le sous-marin tangue doucement
       subRoot.position.y += (Math.sin(time * 0.9) * 0.08 - (subRoot.userData.bob ?? 0));

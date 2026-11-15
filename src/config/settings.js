@@ -23,7 +23,7 @@ export const SEABED = {
   Z_START: 220, // le fond s'étend de Z_START à Z_END
   Z_END: -1180,
   CHUNK_LENGTH: 200, // découpage en morceaux (culling hors champ)
-  CELL: 5, // taille d'une maille (m)
+  CELL: 4, // taille d'une maille (m)
   // Profil de profondeur le long de Z : [z, profondeur] (interpolation douce entre les points)
   PROFILE: [
     [220, 20], [40, 30], [-150, 145], [-200, 170], [-330, 300], [-380, 320],

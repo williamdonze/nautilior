@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { createHalo } from '../loot/glow.js';
+import { applySkin } from './detail.js';
 
 /**
  * Modèles des créatures, face vers +Z.
@@ -7,8 +8,9 @@ import { createHalo } from '../loot/glow.js';
  * (dos sombre, ventre clair), mâchoires animables, yeux et organes lumineux.
  * Pas de lumières dynamiques : les parties lumineuses sont non éclairées, avec un halo.
  */
-const vmat = () => new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
-const lambert = (color) => new THREE.MeshLambertMaterial({ color, flatShading: true });
+// Peau des créatures : lisse, bords lumineux, translucide, légèrement irisée
+const vmat = () => applySkin(new THREE.MeshLambertMaterial({ vertexColors: true }), { rim: 0.6, translucent: 0.35, iridescent: 0.35 });
+const lambert = (color) => applySkin(new THREE.MeshLambertMaterial({ color }), { rim: 0.5, translucent: 0.3, iridescent: 0.2 });
 const glow = (color) => new THREE.MeshBasicMaterial({ color });
 
 /**
@@ -79,7 +81,8 @@ function fin(points, color) {
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(points.flat(), 3));
   geo.computeVertexNormals();
-  return new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color, flatShading: true, side: THREE.DoubleSide, transparent: true, opacity: 0.85 }));
+  // Nageoires fines : très translucides (la lumière les traverse)
+  return new THREE.Mesh(geo, applySkin(new THREE.MeshLambertMaterial({ color, side: THREE.DoubleSide, transparent: true, opacity: 0.8 }), { rim: 0.9, translucent: 1.2, iridescent: 0.5 }));
 }
 
 /* ================================================================== Anguille mutée */

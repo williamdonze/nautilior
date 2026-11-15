@@ -4,6 +4,9 @@ import { createRandom, paintFaces } from '../core/utils.js';
 import { createNoise2D } from './noise.js';
 import { getFloorHeight } from './seabed.js';
 import { createLandmarks } from './landmarks.js';
+import { applyDetail } from './detail.js';
+import { tileKey } from './tiles.js';
+import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { createFlora } from './flora.js';
 import { createBottomFauna } from './bottomFauna.js';
 import { createProps } from './props.js';
@@ -20,32 +23,32 @@ function randomFloorPoint() {
 
 /* ---------------------------------------------------------------- Rochers */
 
-/** Icosaèdre déformé : les sommets partagés bougent ensemble pour ne pas ouvrir de trous */
+/**
+ * Rocher organique : icosaèdre subdivisé, déformé par un bruit 3D (bosses, arêtes),
+ * légèrement aplati ; normales lisses. Le détail fin vient de la texture triplanaire.
+ */
 function createRockGeometry(seed) {
-  const n = createNoise2D(seed);
-  const geo = new THREE.IcosahedronGeometry(1, seed % 2); // détail 0 ou 1
+  const n1 = createNoise2D(seed), n2 = createNoise2D(seed + 1);
+  let geo = new THREE.IcosahedronGeometry(1, 2);
+  geo.deleteAttribute('normal');
+  geo.deleteAttribute('uv');
+  geo = mergeVertices(geo);
   const pos = geo.attributes.position;
-  const offsets = new Map();
+  const v = new THREE.Vector3();
   for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
-    const key = `${x.toFixed(3)},${y.toFixed(3)},${z.toFixed(3)}`;
-    if (!offsets.has(key)) offsets.set(key, 0.75 + (n(x * 1.7 + z, y * 1.7) * 0.5 + 0.5) * 0.5);
-    const k = offsets.get(key);
-    pos.setXYZ(i, x * k, y * k * 0.75, z * k);
+    v.fromBufferAttribute(pos, i).normalize();
+    const big = n1(v.x * 1.3 + v.z * 0.7, v.y * 1.3 + seed) * 0.22;
+    const ridge = (1 - Math.abs(n2(v.x * 2.4 - v.z, v.y * 2.4 + v.z))) * 0.14;
+    const k = 0.85 + big + ridge;
+    pos.setXYZ(i, v.x * k, v.y * k * (v.y < 0 ? 0.55 : 0.8), v.z * k);
   }
   geo.computeVertexNormals();
-  const c = new THREE.Color();
-  paintFaces(geo, (center) => {
-    const v = 0.85 + rand() * 0.3;
-    // Le dessus des rochers est légèrement verdi
-    return center.y > 0.45 ? c.setRGB(0.12 * v, 0.17 * v, 0.12 * v) : c.setRGB(0.13 * v, 0.14 * v, 0.145 * v);
-  });
   return geo;
 }
 
 function createRocks(colliders) {
   const group = new THREE.Group();
-  const material = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+  const material = applyDetail(new THREE.MeshLambertMaterial({ color: '#6b6e6a' }), 'rock', 1);
   const variants = 4;
   const perVariant = Math.ceil(DECOR.ROCKS / variants);
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3();
@@ -53,7 +56,8 @@ function createRocks(colliders) {
   const tint = new THREE.Color();
 
   for (let v = 0; v < variants; v++) {
-    const mesh = new THREE.InstancedMesh(createRockGeometry(WORLD.SEED + v * 13), material, perVariant);
+    const geo = createRockGeometry(WORLD.SEED + v * 13);
+    const tiles = new Map(); // rochers regroupés par tuile (culling hors champ)
     for (let i = 0; i < perVariant; i++) {
       const pt = randomFloorPoint();
       // Quelques gros blocs, beaucoup de petits
@@ -63,12 +67,23 @@ function createRocks(colliders) {
       q.setFromEuler(e);
       p.set(pt.x, pt.y + s.y * 0.25, pt.z);
       m.compose(p, q, s);
-      mesh.setMatrixAt(i, m);
-      const t = rand.range(0.85, 1.2);
-      mesh.setColorAt(i, tint.setRGB(t, t, t));
+      // Teintes de granit variées : gris, gris-brun, gris-vert
+      const t = rand.range(0.8, 1.2);
+      tint.setRGB(t * rand.range(0.9, 1.08), t * rand.range(0.92, 1.05), t * rand.range(0.9, 1.0));
+      const key = tileKey(p.x, p.z);
+      if (!tiles.has(key)) tiles.set(key, []);
+      tiles.get(key).push({ m: m.clone(), c: tint.clone() });
       if (size > 1.4) colliders.push({ x: p.x, y: p.y, z: p.z, r: Math.min(s.x, s.z) * 0.85 });
     }
-    group.add(mesh);
+    for (const list of tiles.values()) {
+      const mesh = new THREE.InstancedMesh(geo, material, list.length);
+      list.forEach((it, i) => {
+        mesh.setMatrixAt(i, it.m);
+        mesh.setColorAt(i, it.c);
+      });
+      mesh.computeBoundingSphere();
+      group.add(mesh);
+    }
   }
   return group;
 }

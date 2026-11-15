@@ -4,6 +4,7 @@ import { createRandom, paintFaces } from '../core/utils.js';
 import { getFloorHeight, canyonCenter } from './seabed.js';
 import { WRECK_SPOTS } from './landmarks.js';
 import { tileKey, registerSmall } from './tiles.js';
+import { applyDetail } from './detail.js';
 
 /**
  * Tout ce qui peuple le fond en dehors des plantes :
@@ -13,7 +14,9 @@ import { tileKey, registerSmall } from './tiles.js';
  * Les objets répétés sont instanciés et regroupés par bandes (culling hors champ).
  */
 const rand = createRandom(WORLD.SEED + 909);
-const vmat = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+// Débris : métal rouillé ; éboulis : roche (détail triplanaire)
+const vmat = applyDetail(new THREE.MeshLambertMaterial({ vertexColors: true }), 'metal', 1.6);
+const rockMat = applyDetail(new THREE.MeshLambertMaterial({ vertexColors: true }), 'rock', 1);
 const lambert = (color) => new THREE.MeshLambertMaterial({ color, flatShading: true });
 
 function weathered(geo, base, rust = '#63321b', amount = 0.35) {
@@ -194,6 +197,6 @@ export function createProps(colliders) {
   for (const [sx, sz] of rubbleSites) {
     blocks.push(...floorPoints(14, 0, 3000, [sx, sz], 20).map((p) => ({ ...p, y: p.y + 0.2, rx: rand.range(-0.4, 0.4), rz: rand.range(-0.4, 0.4), s: rand.range(0.6, 2.2) })));
   }
-  scatterInstanced(group, GEOS.block(), blocks);
+  scatterInstanced(group, GEOS.block(), blocks, rockMat);
   return group;
 }

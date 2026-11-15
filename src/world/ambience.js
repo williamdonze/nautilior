@@ -81,6 +81,88 @@ function createWaterDome(scene) {
   return dome;
 }
 
+/**
+ * La surface vue par en dessous (d'après Abyssal Garden) :
+ *  - des vagues (somme de sinusoïdes) donnent une normale qui ondule ;
+ *  - « fenêtre de Snell » : dans un cône d'environ 48° au-dessus de soi, on voit le ciel
+ *    à travers la surface (avec le soleil qui scintille) ;
+ *  - au-delà, la réflexion totale renvoie l'image de l'eau elle-même (sombre) ;
+ *  - transmission de Fresnel au bord de la fenêtre ; brouillard d'eau par-dessus.
+ */
+function createUnderSurface(scene, uniforms) {
+  const geo = new THREE.PlaneGeometry(1800, 1800, 1, 1);
+  geo.rotateX(Math.PI / 2); // face tournée vers le bas
+  const mat = new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: uniforms.uTime,
+      uWaterCol: { value: scene.fog.color },
+      uDensity: { get value() { return scene.fog.density; } },
+      uSunDir: { value: new THREE.Vector3(0.3, 1, 0.2).normalize() },
+    },
+    vertexShader: /* glsl */ `
+      varying vec3 vWorld;
+      void main() {
+        vec4 w = modelMatrix * vec4(position, 1.0);
+        vWorld = w.xyz;
+        gl_Position = projectionMatrix * viewMatrix * w;
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      uniform float uTime;
+      uniform vec3 uWaterCol;
+      uniform float uDensity;
+      uniform vec3 uSunDir;
+      varying vec3 vWorld;
+      ${WATER_GLSL}
+      // Pente de la surface : vagues de directions et longueurs variées
+      vec2 slope(vec2 p) {
+        vec2 s = vec2(0.0);
+        vec3 W[8];
+        W[0] = vec3(1.0, 2.0, 1.0); W[1] = vec3(-2.0, 1.0, 0.9); W[2] = vec3(3.0, 1.0, 0.6); W[3] = vec3(1.0, -4.0, 0.5);
+        W[4] = vec3(4.0, 3.0, 0.4); W[5] = vec3(-3.0, 5.0, 0.32); W[6] = vec3(6.0, -2.0, 0.28); W[7] = vec3(5.0, 7.0, 0.2);
+        for (int i = 0; i < 8; i++) {
+          vec3 k = W[i];
+          float ph = dot(k.xy, p) * 0.5 + uTime * (0.6 + 0.3 * sqrt(length(k.xy))) * (mod(float(i), 2.0) < 0.5 ? 1.0 : -1.0) + float(i) * 1.7;
+          s += k.xy * k.z * cos(ph);
+        }
+        return s * 0.05;
+      }
+      void main() {
+        vec3 v = vWorld - cameraPosition;
+        float d = length(v);
+        vec3 V = v / d;
+        // Les vagues s'estompent au loin (sinon, scintillement)
+        float fl = smoothstep(260.0, 40.0, d);
+        vec2 s = (slope(vWorld.xz / 6.0) + slope(vWorld.zx / 2.3 + 0.2) * 0.6) * fl;
+        vec3 n = normalize(vec3(-s.x, -1.0, -s.y));
+        float ci = clamp(dot(V, -n), 0.0, 1.0);
+        float k = 1.0 - 1.769 * (1.0 - ci * ci); // 1.33² : seuil de la réflexion totale
+        float win = smoothstep(0.0, 0.22, k);
+        vec3 rr = refract(V, n, 1.33);
+        float sd = max(dot(rr, uSunDir), 0.0);
+        float fr = pow(1.0 - sqrt(max(k, 0.0)), 5.0);
+        // Ciel gris breton vu à travers l'eau, et le soleil voilé qui scintille
+        vec3 sky = (vec3(0.42, 0.62, 0.66) * 1.4 * clamp(1.0 + 3.0 * (s.x * 0.6 - s.y * 0.8), 0.3, 2.6)
+                 + vec3(1.0, 0.97, 0.9) * (pow(sd, 40.0) * 1.2 + pow(sd, 400.0) * 9.0)) * (1.0 - fr);
+        // Réflexion totale : on voit l'eau elle-même, en dessous
+        vec3 R = reflect(V, n);
+        vec3 refl = waterInscatter(R, uWaterCol, cameraPosition.y, cameraPosition.y - 60.0) * 0.9;
+        vec3 c = mix(refl, sky, win);
+        // L'eau entre la caméra et la surface
+        vec3 T = waterTransmittance(d, uDensity);
+        c = c * T + waterInscatter(V, uWaterCol, cameraPosition.y, vWorld.y) * (1.0 - T);
+        gl_FragColor = vec4(c, 1.0);
+      }
+    `,
+    side: THREE.DoubleSide,
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.raycast = () => {};
+  mesh.frustumCulled = false;
+  scene.add(mesh);
+  return mesh;
+}
+
 export function createAmbience(scene) {
   scene.fog = new THREE.FogExp2(0x000000, 0.02);
   scene.background = new THREE.Color();
@@ -105,30 +187,9 @@ export function createAmbience(scene) {
   scene.add(sun);
   scene.add(sun.target);
 
-  // Surface de l'eau vue par en dessous : plan ondulant
-  const surfaceGeo = new THREE.PlaneGeometry(900, 900, 60, 60);
-  surfaceGeo.rotateX(Math.PI / 2); // face tournée vers le bas
+  // Surface de l'eau vue par en dessous (voir createUnderSurface)
   const surfaceUniforms = { uTime: { value: 0 } };
-  const surfaceMat = new THREE.MeshBasicMaterial({
-    color: '#a8bdb2',
-    side: THREE.DoubleSide,
-    transparent: true,
-    opacity: 0.85,
-  });
-  surfaceMat.onBeforeCompile = (shader) => {
-    shader.uniforms.uTime = surfaceUniforms.uTime;
-    shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nuniform float uTime;')
-      .replace(
-        '#include <begin_vertex>',
-        `#include <begin_vertex>
-        vec3 wp = (modelMatrix * vec4(position, 1.0)).xyz; // vagues en coordonnées monde
-        transformed.y += sin(wp.x * 0.08 + uTime * 0.7) * 0.4 + cos(wp.z * 0.06 + uTime * 0.5) * 0.4;`
-      );
-  };
-  const surface = new THREE.Mesh(surfaceGeo, surfaceMat);
-  surface.position.y = 0.3;
-  scene.add(surface);
+  const surface = createUnderSurface(scene, surfaceUniforms);
 
   const state = {};
 
@@ -157,8 +218,7 @@ export function createAmbience(scene) {
       sun.target.position.set(fx, focus.y, fz);
       // Plus de soleil en profondeur : on ne recalcule plus l'ombre
       sun.shadow.autoUpdate = state.sun > 0.03;
-      surface.position.x = focus.x;
-      surface.position.z = focus.z;
+      surface.position.set(focus.x, 0.3, focus.z);
       surfaceUniforms.uTime.value = time;
     },
   };
