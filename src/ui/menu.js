@@ -1,3 +1,4 @@
+import { getEndings } from '../save/save.js';
 import { preferences, savePreferences, QUALITY_LEVELS } from '../save/preferences.js';
 
 /**
@@ -75,9 +76,14 @@ export class Menu {
 
   render_main() {
     const save = this.hasSave();
+    // L'écran-titre garde la trace de la dernière fin vue
+    const last = getEndings().at(-1);
+    document.body.dataset.ending = last ?? '';
+    const after = { close: 'Il n\'y a plus personne à réveiller.', cross: 'Il manque quelqu\'un.', depart: 'La montre s\'est remise à tourner.' }[last];
     return `<div class="menu-frame">
       <div class="menu-title">NAUTILIAR</div>
       <div class="menu-sub">Port-Kermor, 1984</div>
+      ${after ? `<div class="menu-after">${after}</div>` : ''}
       <div class="menu-buttons">
         ${save ? '<button data-menu="continue">CONTINUER</button>' : ''}
         <button data-menu="new">NOUVELLE PARTIE</button>

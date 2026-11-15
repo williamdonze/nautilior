@@ -12,31 +12,31 @@
       "Un craquement. Le froid partout."
     ]
   },
-  "doctor": "Encore toi…",
+  "doctor": "Encore vous…",
   "followUps": [
     {
       "fragmentsMax": 1,
       "lines": [
-        "Tu as eu de la chance. Repose-toi.",
-        "Le mécano t'a repêché près de la jetée.",
-        "Tu nous as fait peur. Ne remonte pas si tard, la prochaine fois."
+        "Vous avez eu de la chance. Reposez-vous.",
+        "Vous nous avez fait peur.",
+        "Ne remontez pas si tard, la prochaine fois."
       ]
     },
     {
       "fragmentsMin": 2,
       "fragmentsMax": 4,
       "lines": [
-        "La mer t'a rendu. Elle le fait souvent, avec toi.",
-        "Ne pose pas de questions. Repose-toi.",
-        "Tu as de la chance. Ou autre chose."
+        "On vous a rattrapé. Cette fois encore.",
+        "Ne posez pas de questions. Reposez-vous.",
+        "Vous descendez trop vite."
       ]
     },
     {
       "fragmentsMin": 5,
       "lines": [
-        "Tu respirais à peine. Comme la première fois.",
-        "Elle finit toujours par te rendre. Toujours.",
-        "Tu reviens toujours ici."
+        "Je ne sais pas combien de fois je pourrai encore vous ramener.",
+        "Vous revenez de plus en plus loin.",
+        "Restez avec nous. S'il vous plaît."
       ]
     }
   ],

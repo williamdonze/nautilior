@@ -72,6 +72,49 @@ const ART = {
     c.restore();
   },
 
+  // Couteau de plongée pris dans des mailles, dans le faisceau d'une lampe
+  knife(c) {
+    grad(c, '#0c1a22', '#020407');
+    disc(c, '#17323b', 80, 46, 46);
+    disc(c, '#234a52', 80, 46, 26);
+    for (let i = 0; i < 12; i++) { rect(c, '#4a7472', 10 + i * 13, 0, 1, 100); rect(c, '#4a7472', 0, 6 + i * 9, 160, 1); }
+    rect(c, '#020407', 60, 30, 46, 34); // mailles coupées : un trou dans le filet
+    rect(c, '#cdd8d4', 66, 44, 34, 4); // lame
+    rect(c, '#e8ece2', 96, 45, 5, 2);
+    rect(c, '#26292b', 52, 42, 14, 8); // manche
+    rect(c, '#b9917a', 44, 40, 10, 12); // la main qui coupe
+  },
+
+  // Deux garçons sur une barque, un été
+  boat(c) {
+    rect(c, '#2a2c2e', 0, 0, ART_W, ART_H);
+    rect(c, '#e8ece2', 22, 6, 116, 88);
+    c.save(); c.beginPath(); c.rect(28, 12, 104, 70); c.clip();
+    grad(c, '#efe3bb', '#cdb57c', 12, 40);
+    rect(c, '#5b8fc0', 28, 40, 104, 42);
+    for (let i = 0; i < 9; i++) rect(c, '#8fb8d8', 30 + i * 12, 48 + (i % 3) * 9, 8, 1);
+    rect(c, '#63321b', 56, 60, 50, 9); // la plate
+    rect(c, '#3e2114', 60, 69, 42, 3);
+    person(c, '#b9917a', 70, 60, 1.0); // le grand
+    person(c, '#b9917a', 92, 61, 0.72); // le petit
+    rect(c, '#7d6f48', 40, 56, 30, 1); // la rame
+    c.restore();
+  },
+
+  // Feuille de soins : en-tête, lignes, une note dans la marge, un tracé
+  chart(c) {
+    grad(c, '#0c1a22', '#020407');
+    rect(c, '#e8ece2', 30, 6, 100, 88);
+    rect(c, '#2f4a66', 36, 12, 60, 5);
+    for (let i = 0; i < 9; i++) rect(c, '#878a85', 36, 24 + i * 6, i % 3 === 2 ? 40 : 66, 1);
+    text(c, '#26292b', 'JOUR 112', 38, 86, 8, 'left');
+    for (let i = 0; i < 4; i++) rect(c, '#2f4a66', 108, 30 + i * 5, 16 - i * 2, 1); // écriture dans la marge
+    // tracé vert
+    c.fillStyle = '#3c9a5a';
+    const pts = [0, 0, 0, -1, 0, 2, -10, 6, -2, 0, 0, 0, 1, 0, 0];
+    pts.forEach((v, i) => c.fillRect(38 + i * 4, 76 + v, 4, 1));
+  },
+
   // Une main, un anneau d'or, une porte
   ring(c) {
     grad(c, '#17323b', '#05090d');

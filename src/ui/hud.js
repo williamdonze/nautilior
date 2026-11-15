@@ -81,7 +81,7 @@ export class Hud {
       if (o2 < 0.25) w.push(['OXYGÈNE FAIBLE', '']);
       if (S.overDepth > 0) w.push(['PRESSION CRITIQUE', '']);
       else if (depth > S.stats.crushDepth - 10) w.push(['LIMITE DE LA COQUE', '']);
-      if (S.radiation > 0.05) w.push(['RADIATIONS', 'rad']);
+      if (S.radiation > 0.05) w.push(['LA LUMIÈRE BRÛLE', 'rad']);
     }
     const key = w.map((x) => x[0]).join('|');
     if (key !== this.lastWarnings) {
@@ -169,6 +169,19 @@ export class Hud {
     this.shroudEl.classList.toggle('on', !!on);
   }
 
+  /** Une voix venue d'ailleurs, étouffée : elle flotte un instant au milieu de l'écran */
+  voice(text) {
+    if (!this.voiceEl) {
+      this.voiceEl = document.createElement('div');
+      this.voiceEl.id = 'voice';
+      document.body.appendChild(this.voiceEl);
+    }
+    this.voiceEl.textContent = text;
+    this.voiceEl.classList.remove('on');
+    void this.voiceEl.offsetWidth;
+    this.voiceEl.classList.add('on');
+  }
+
   /** Petit message passager, en bas de l'écran */
   notice(text) {
     if (!this.noticeEl) {
@@ -180,6 +193,18 @@ export class Hud {
     this.noticeEl.classList.add('on');
     clearTimeout(this.noticeTimer);
     this.noticeTimer = setTimeout(() => this.noticeEl.classList.remove('on'), 2600);
+  }
+
+  /** Le pouls (battements par minute) : toujours visible, même en vue cockpit */
+  setPulse2(bpm) {
+    this.pulseGauge ??= document.getElementById('g-pulse');
+    const v = Math.round(bpm);
+    if (v === this.lastBpm) return;
+    this.lastBpm = v;
+    const k = Math.min(1, Math.max(0, (bpm - 50) / 70));
+    this.pulseGauge.querySelector('.fill').style.width = `${Math.round(k * 100)}%`;
+    this.pulseGauge.querySelector('.pct').textContent = v;
+    this.pulseGauge.className = `gauge${bpm > 84 ? ' critical' : bpm > 78 ? ' low' : ''}`;
   }
 
   /** Recharge de l'impulsion de défense (0..1) */

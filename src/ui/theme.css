@@ -131,3 +131,26 @@ body.mode-port #reticle { display: none; }
   font-size: 16px; letter-spacing: 0.22em; color: var(--hud-fg); background: var(--glass); border: 1px solid var(--line); border-radius: 3px; pointer-events: none;
 }
 #notice.on { opacity: 1; }
+
+/* Voix de la chambre, comme entendues à travers l'eau */
+#voice {
+  position: fixed; left: 50%; top: 30%; transform: translateX(-50%); max-width: 70vw; text-align: center; pointer-events: none; opacity: 0;
+  font-size: 22px; font-style: italic; font-weight: 300; letter-spacing: 0.14em; color: #dff5e8; text-shadow: 0 0 18px rgba(127, 232, 154, 0.6); filter: blur(0.6px);
+}
+#voice.on { animation: voiceDrift 6.5s ease-in-out forwards; }
+@keyframes voiceDrift { 0% { opacity: 0; transform: translate(-50%, 8px); filter: blur(5px); } 25% { opacity: 0.8; filter: blur(0.6px); } 70% { opacity: 0.7; } 100% { opacity: 0; transform: translate(-50%, -14px); filter: blur(4px); } }
+body.mode-port #voice { display: none; }
+/* Carnet des souvenirs : huit pages, dans l'ordre de la journée ; les pages vides se voient */
+.memories-list { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.memory-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 10px; text-align: left; min-height: 58px; }
+.memory-btn .when { font-size: 11px; letter-spacing: 0.25em; color: var(--hud-dim); }
+.memory-btn.locked { border: 1px dashed var(--line); background: none; color: var(--hud-dim); opacity: 0.6; }
+/* Relecture (après une fin) : ce que c'était vraiment */
+.truth { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); font-style: italic; color: #bfe8d0; }
+.truth::before { content: 'EN RÉALITÉ'; display: block; font-style: normal; font-size: 11px; letter-spacing: 0.3em; color: var(--hud-dim); margin-bottom: 3px; }
+.menu-after { margin-top: 6px; font-size: 15px; letter-spacing: 0.2em; font-style: italic; color: var(--hud-dim); }
+
+/* Le pouls : seule jauge qui reste à l'écran en vue cockpit */
+body.view-first #gauges { display: flex; bottom: 20px; left: 150px; }
+body.view-first #gauges .gauge:not(#g-pulse) { display: none; }
+#g-pulse { --gauge-col: #7fe89a; }

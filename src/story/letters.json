@@ -1,0 +1,17 @@
+{
+  "_comment": "Les lettres d'Anna, dans la boîte aux lettres du village : une nouvelle après chaque plongée (dans la chambre, ce sont les lettres qu'elle lui lit). Jamais explicites : ni « coma », ni « hôpital ». 'fragments' = nombre de souvenirs à avoir retrouvés pour que la lettre arrive.",
+  "intro": "Une enveloppe, sur le dessus. Elle n'y était pas hier. Ton prénom, de la même écriture.",
+  "none": "Rien de nouveau aujourd'hui. Les autres enveloppes sont toujours là.",
+  "letters": [
+    { "fragments": 0, "lines": ["« Il a plu toute la nuit. Je t'ai parlé quand même. »", "« Je ne sais pas si tu aimes ça, qu'on te parle. Tu ne disais jamais rien, le matin. — A. »"] },
+    { "fragments": 0, "lines": ["« Ta mère est venue avec un far. Elle l'a posé là. Elle l'a remporté. »", "« Elle dit que tu as bonne mine. Elle le dit à chaque fois. — A. »"] },
+    { "fragments": 0, "lines": ["« J'ai retrouvé ta veste sur la chaise de la cuisine. »", "« Je ne l'ai pas rangée. — A. »"] },
+    { "fragments": 1, "lines": ["« Ton père ne dit plus rien. Il reste assis. Il regarde ses mains. »", "« Hier, il a réglé la pendule. Elle n'en avait pas besoin. — A. »"] },
+    { "fragments": 2, "lines": ["« On m'a demandé si tu serrais les doigts, des fois. »", "« J'ai dit oui. Je crois que j'ai menti. — A. »"] },
+    { "fragments": 3, "lines": ["« La maison fait du bruit, la nuit. Je laisse la lampe de l'entrée. »", "« Au cas où. — A. »"] },
+    { "fragments": 4, "lines": ["« Personne ne prononce son nom. »", "« Ta mère met son bol sur la table. C'est tout. C'est sa façon. — A. »"] },
+    { "fragments": 5, "lines": ["« J'ai posé ta montre près de toi. Elle ne marche plus. »", "« Je la remonte quand même. — A. »"] },
+    { "fragments": 6, "lines": ["« Ils veulent nous voir demain. Tous les trois. »", "« Je sais ce qu'ils vont dire. Je n'irai pas sans toi. — A. »"] },
+    { "fragments": 7, "lines": ["« Reviens. »", "« Avant la nuit, après la nuit, je m'en fiche. Reviens. — A. »"] }
+  ]
+}

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { createSubmarineModel, spinPropellers } from '../submarine/subModel.js';
-import { createCharacter } from '../port/characters.js';
+import { createCharacter, LOOKS } from '../port/characters.js';
 import { createNoise2D } from '../world/noise.js';
 
 /**
@@ -149,7 +149,7 @@ export function createHospital(aspect) {
   scene.background = new THREE.Color('#c9d4ce');
   scene.fog = new THREE.FogExp2('#c9d4ce', 0.012);
   // On est couché : la tête sur l'oreiller, le regard vers le plafond et le pied du lit (−Z)
-  const camera = new THREE.PerspectiveCamera(74, aspect, 0.05, 60);
+  const camera = new THREE.PerspectiveCamera(82, aspect, 0.05, 60);
   const eye = new THREE.Vector3(0, 0.98, 0.1);
   const add = (geo, mat, x = 0, y = 0, z = 0, parent = scene) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); parent.add(m); return m; };
   const lam = (c, extra = {}) => new THREE.MeshLambertMaterial({ color: c, ...extra });
@@ -259,6 +259,51 @@ export function createHospital(aspect) {
   // son bras se tend vers notre main
   for (const a of anna.arms) { a.rotation.x = -1.0; a.rotation.z *= -2.5; }
 
+  // Les trois autres : les mêmes visages que dans le village (c'est là qu'on comprend qui ils étaient)
+  const stand = (look, x, z, lean = 0.06) => {
+    const c = createCharacter(look);
+    c.object.position.set(x, 0, z);
+    c.object.rotation.y = Math.atan2(eye.x - x, eye.z - z);
+    c.body.rotation.x = lean;
+    c.head.rotation.x = 0.22; // ils nous regardent, de haut
+    scene.add(c.object);
+    return c;
+  };
+  const mother = stand(LOOKS.merchant, 1.55, -2.0, 0.1);
+  const father = stand({ ...LOOKS.mechanic, hat: null }, 0.15, -2.75);
+  const doctor = stand(LOOKS.doctor, -0.95, -1.75);
+  // Marcel tient sa casquette dans ses mains
+  for (const a of father.arms) { a.rotation.x = -0.75; a.rotation.z *= -3; }
+  add(new THREE.SphereGeometry(0.1, 20, 10, 0, Math.PI * 2, 0, Math.PI * 0.45).scale(1, 0.7, 1.05), lam(LOOKS.mechanic.hatColor), 0.15, 1.02, -2.52);
+  // La chaise vide près de la fenêtre, et la photo posée dessus : deux garçons sur une barque
+  const wood = lam('#6a4e36');
+  add(new THREE.BoxGeometry(0.42, 0.04, 0.42), wood, -2.2, 0.46, -2.3);
+  add(new THREE.BoxGeometry(0.42, 0.5, 0.04), wood, -2.2, 0.72, -2.5);
+  for (const [dx, dz] of [[-0.18, -0.18], [0.18, -0.18], [-0.18, 0.18], [0.18, 0.18]]) add(new THREE.CylinderGeometry(0.018, 0.018, 0.46, 6), wood, -2.2 + dx, 0.23, -2.3 + dz);
+  const pc = document.createElement('canvas');
+  pc.width = 128; pc.height = 96;
+  const pk = pc.getContext('2d');
+  pk.fillStyle = '#efe6c8'; pk.fillRect(0, 0, 128, 96);
+  pk.fillStyle = '#7fb0d0'; pk.fillRect(6, 40, 116, 50);
+  pk.fillStyle = '#e8dcae'; pk.fillRect(6, 6, 116, 34);
+  pk.fillStyle = '#5a3a22'; pk.fillRect(34, 62, 62, 10);
+  pk.fillStyle = '#b9917a'; pk.fillRect(48, 40, 9, 22); pk.fillRect(74, 47, 7, 15);
+  pk.beginPath(); pk.arc(52, 36, 6, 0, TAU); pk.arc(77, 44, 5, 0, TAU); pk.fill();
+  const photo = new THREE.CanvasTexture(pc);
+  photo.colorSpace = THREE.SRGBColorSpace;
+  const frame = add(new THREE.BoxGeometry(0.2, 0.16, 0.012), lam('#2a2622'), -2.2, 0.58, -2.34);
+  frame.rotation.x = -0.35;
+  add(new THREE.PlaneGeometry(0.17, 0.13), new THREE.MeshLambertMaterial({ map: photo }), 0, 0, 0.007, frame);
+  // Table de chevet : la maquette du Nautiliar, les lettres d'Anna, la montre arrêtée
+  add(new THREE.BoxGeometry(0.45, 0.72, 0.4), lam('#d8ddd8'), -0.85, 0.36, -0.1);
+  const toy = createSubmarineModel(0).group;
+  toy.scale.setScalar(0.035);
+  toy.position.set(-0.86, 0.79, -0.18);
+  toy.rotation.y = 0.9;
+  scene.add(toy);
+  for (let i = 0; i < 7; i++) add(new THREE.BoxGeometry(0.16, 0.004, 0.11), lam(i % 2 ? '#f2efe4' : '#e6e0cc'), -0.74, 0.722 + i * 0.004, 0.02).rotation.y = 0.2 + i * 0.13;
+  add(new THREE.CylinderGeometry(0.022, 0.022, 0.008, 18), lam('#c8ccc8'), -0.96, 0.725, 0.03);
+
   const look = new THREE.Vector3();
   const cine = {
     scene, camera, exposure: 1,
@@ -271,9 +316,11 @@ export function createHospital(aspect) {
       anna.head.rotation.x = -0.12 + e * 0.1 + Math.sin(time * 0.8) * 0.02;
       anna.head.rotation.z = Math.sin(time * 0.5) * 0.04;
       anna.body.position.y = Math.sin(time * 1.4) * 0.006;
+      // les autres se penchent à leur tour ; chacun respire
+      [mother, father, doctor].forEach((c, i) => { c.body.rotation.x = 0.06 + e * (i === 0 ? 0.16 : 0.07); c.body.position.y = Math.sin(time * 1.3 + i * 2) * 0.005; c.head.rotation.y = Math.sin(time * 0.4 + i) * 0.05; });
       // le regard : d'abord perdu au plafond, il dérive, puis trouve son visage
       const drift = 1 - e;
-      look.set(Math.sin(time * 0.31) * 0.5 * drift + 0.5 * e, 2.6 - e * 0.8 + Math.sin(time * 0.23) * 0.25 * drift, -1.5 + e * 0.2);
+      look.set(Math.sin(time * 0.31) * 0.5 * drift + 0.3 * e, 2.6 - e * 0.95 + Math.sin(time * 0.23) * 0.25 * drift, -1.5 - e * 0.3);
       camera.position.copy(eye).add({ x: Math.sin(time * 0.9) * 0.004, y: Math.sin(time * 1.4) * 0.003, z: 0 }); // on respire
       camera.lookAt(look);
       camera.rotation.z += Math.sin(time * 0.27) * 0.03 * drift;

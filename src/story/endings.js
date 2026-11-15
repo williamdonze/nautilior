@@ -4,7 +4,7 @@ import { createTunnel, createHospital } from './cinema3d.js';
 import texts from './endings.json';
 import { storyState } from './state.js';
 import { gameState } from '../save/gameState.js';
-import { markEnding, getEndings, hasPrechoice, restorePrechoice, clearSave } from '../save/save.js';
+import { markEnding, getEndings, clearSave } from '../save/save.js';
 import { setRadiationScale } from '../world/radiation.js';
 import { ITEMS } from '../loot/loot.js';
 import fragmentsData from './fragments.json';
@@ -46,9 +46,22 @@ async function fadeIn(seconds) {
   await wait(seconds * 1000);
 }
 
+/** Joue une suite de lignes : { who, text } = réplique d'un personnage, sinon narration */
+async function say(dialogue, lines) {
+  for (const l of lines ?? []) {
+    if (l.who) await dialogue.line(l.who, l.text);
+    else await dialogue.narrate(l.text ?? l);
+  }
+}
+
 export async function playEnding(game, kind) {
   const { dive, port, dialogue, sound } = game;
+  // Traverser avec les huit souvenirs : Loïc se réveille en sachant (troisième fin)
+  const complete = storyState.fragments.length >= fragmentsData.fragments.length;
+  if (kind === 'cross' && complete) kind = 'depart';
   const T = texts[kind];
+  // « Fermer » est définitif : la sauvegarde disparaît au moment du choix
+  if (kind === 'close') clearSave();
   game.busy = true;
   game.paused = false;
   document.body.classList.add('cinema');
@@ -97,28 +110,7 @@ export async function playEnding(game, kind) {
     game.hud.flash('#8fffb0');
     await narration;
     await wait(2200);
-    await fadeOut('#020407', 2);
-
-    // Retour au port : ils attendent tous les trois sur le quai
     dive.autopilot = null;
-    dive.leave();
-    game.setMode('port');
-    port.enter('quay');
-    port.gatherVillagers();
-    port.holdCamera = true; // la caméra reste où le script la laisse
-    port.player.place(13.6, 2.6, Math.PI * 1.08);
-    port.cameraMove([10, 2.2, 9], [10.8, 2.4, 6.2], [12, 1.5, -2], [12, 1.6, -2], 6);
-    await fadeIn(2);
-    for (const l of T.port) {
-      if (l.who === 'doctor') {
-        // Plan rapproché sur le médecin pour la dernière réplique
-        await port.cameraMove(port.camera.position.clone(), [11.6, 1.9, 1.0], port.lookAt.clone(), [12, 1.75, -2.2], 3);
-      }
-      if (l.who) await dialogue.line(l.who, l.text);
-      else await dialogue.narrate(l.text);
-    }
-    await wait(800);
-    await fadeOut('#020407', 3);
   } else {
     /* ---------- Traverser : le Nautiliar entre dans la lumière ---------- */
     // La plaie s'élargit, vient au-devant du Nautiliar et l'avale
@@ -134,7 +126,7 @@ export async function playEnding(game, kind) {
       pull += dt * 2.5; // elle aspire de plus en plus fort
       sub.velocity.lerp(to.normalize().multiplyScalar(pull), Math.min(1, dt * 2));
     };
-    const narration = (async () => { for (const line of T.abyss) await dialogue.narrate(line); })();
+    const narration = (async () => { for (const line of texts.cross.abyss) await dialogue.narrate(line); })();
     const growing = tween(5, (t) => {
       const e = t * t;
       P.group.scale.setScalar(1 + e * 3.2);
@@ -171,16 +163,21 @@ export async function playEnding(game, kind) {
     await cinema.blackout(0.1);
     await fadeIn(1.8);
     await wait(1200);
-    await cinema.synapses(7, sound);
+    // Dans le noir, les phrases du village reviennent — cette fois dans leur vrai sens
+    const lightning = cinema.synapses(16, sound, true); // avec les correspondances (faille → moniteur…)
+    await wait(2500);
+    await say(dialogue, texts.cross.echo);
+    await lightning;
     await wait(900);
     // Les paupières s'ouvrent sur la chambre (scène 3D) : le bip n'a pas cessé, mais ce n'est plus un sonar
     const room = createHospital(game.pixel.aspect);
     game.cine = room;
     const opening = cinema.eyelids(13, (t, el) => room.update(1 / 60, t, el), () => sound.sonarBeep(1.1));
-    await wait(6000);
-    for (const line of T.pulse ?? []) await dialogue.narrate(line);
     await opening;
-    await wait(2500);
+    await wait(1200);
+    // Les yeux ouverts, on est dans le vrai monde : ils parlent clairement
+    await say(dialogue, T.awake);
+    await wait(2000);
     await fadeOut('#020407', 3);
     cinema.close();
     game.cine = null;
@@ -201,8 +198,8 @@ export async function playEnding(game, kind) {
     }
   })();
   for (const [i, line] of (T.pulse ?? []).entries()) {
-    if (kind === 'close' && i === 2) { alive = false; sound.sonarFlat(9); }
-    await dialogue.narrate(line);
+    if (i === 2) { alive = false; sound.sonarFlat(9); }
+    await say(dialogue, [line]);
   }
   alive = false;
   await wait(1500);
@@ -211,7 +208,8 @@ export async function playEnding(game, kind) {
   // Fin : on la note et on affiche l'écran de fin
   storyState.ending = kind;
   markEnding(kind);
-  game.persist();
+  if (kind === 'close') clearSave(); // il n'y a plus personne à réveiller
+  else game.persist();
   showEndScreen(kind);
   document.body.classList.remove('cinema');
 }
@@ -223,19 +221,18 @@ export function showEndScreen(kind) {
   const endings = getEndings();
   const stats = [
     `${gameState.day} jours`,
-    `${storyState.deaths} réveil${storyState.deaths > 1 ? 's' : ''} à l'hôpital`,
+    `${storyState.deaths} alerte${storyState.deaths > 1 ? 's' : ''}`,
     `${storyState.fragments.length}/${fragmentsData.fragments.length} souvenirs`,
     `${gameState.collection.length}/${ITEMS.length} objets remontés`,
   ];
   el.innerHTML = `
     <div class="end-frame">
-      <div class="end-kicker">FIN ${kind === 'close' ? '— FERMER' : '— TRAVERSER'}</div>
+      <div class="end-kicker">FIN ${kind === 'close' ? '— FERMER' : kind === 'depart' ? '— TRAVERSER, EN SACHANT' : '— TRAVERSER'}</div>
       <h1>${T.title}</h1>
       <p class="end-sub">${T.subtitle}</p>
       <p class="end-stats">${stats.join(' · ')}</p>
-      <p class="end-found">Fins découvertes : ${endings.length}/2</p>
+      <p class="end-found">Fins découvertes : ${endings.length}/3</p>
       <div class="end-buttons">
-        ${hasPrechoice() ? '<button data-end="retry">REVENIR DEVANT LE PORTAIL</button>' : ''}
         <button data-end="new">NOUVELLE PARTIE</button>
       </div>
     </div>`;
@@ -243,7 +240,6 @@ export function showEndScreen(kind) {
   el.onclick = (e) => {
     const b = e.target.closest('[data-end]');
     if (!b) return;
-    if (b.dataset.end === 'retry' && restorePrechoice()) location.reload();
     if (b.dataset.end === 'new') {
       clearSave();
       try {

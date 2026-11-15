@@ -1,0 +1,13 @@
+{
+  "_comment": "Voix de la chambre, entendues comme à travers l'eau quand on approche de la faille (docs/LORE.md, section 10). Jamais attribuées, jamais expliquées. 'near' = proximité minimale de la faille (0 loin … 1 tout près).",
+  "voices": [
+    { "near": 0.25, "text": "… tension stable ce matin…" },
+    { "near": 0.25, "text": "… je repasse en fin de journée…" },
+    { "near": 0.35, "text": "… il fait beau, dehors. Tu verrais ça…" },
+    { "near": 0.4, "text": "… on en reparle demain, avec la famille…" },
+    { "near": 0.45, "text": "… serre ma main, si tu m'entends…" },
+    { "near": 0.55, "text": "… cent douze jours, madame…" },
+    { "near": 0.6, "text": "… il a bougé. Je vous dis qu'il a bougé…" },
+    { "near": 0.7, "text": "… Loïc ? Loïc, tu m'entends ?…" }
+  ]
+}

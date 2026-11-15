@@ -420,6 +420,27 @@ const SHAPES = {
     g.add(paper);
     return g;
   },
+  keepsake_knife(main, dark) {
+    // Couteau de plongée : lame, garde, manche strié
+    const g = new THREE.Group();
+    const steel = new THREE.MeshLambertMaterial({ color: '#aab4b2' });
+    const blade = mesh(new THREE.BoxGeometry(0.34, 0.012, 0.07), steel);
+    blade.position.x = 0.14;
+    g.add(blade);
+    g.add(mesh(new THREE.BoxGeometry(0.03, 0.03, 0.13), dark));
+    const grip = mesh(new THREE.CylinderGeometry(0.03, 0.034, 0.24, 8), dark);
+    grip.rotation.z = Math.PI / 2;
+    grip.position.x = -0.13;
+    g.add(grip);
+    g.userData.extraMaterials = [steel];
+    return g;
+  },
+  keepsake_boat(main) {
+    return SHAPES.keepsake_photo(main);
+  },
+  keepsake_chart(main) {
+    return SHAPES.keepsake_newspaper(main);
+  },
   keepsake_watch(main, dark) {
     return SHAPES.watch(main, dark);
   },

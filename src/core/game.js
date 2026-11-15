@@ -9,7 +9,7 @@ import { WakeUp } from '../story/wakeup.js';
 import { pickConversation } from '../story/dialogue.js';
 import { storyState, resetStoryState } from '../story/state.js';
 import { gameState, resetGameState } from '../save/gameState.js';
-import { save, load, clearSave, savePrechoice } from '../save/save.js';
+import { save, load, clearSave, getEndings } from '../save/save.js';
 import { playEnding, showEndScreen } from '../story/endings.js';
 import { applyUpgrades, stats } from '../submarine/stats.js';
 import { PICKUPS, SURVIVAL } from '../config/settings.js';
@@ -21,6 +21,8 @@ import { waterUniform } from './waterFog.js';
 import { Menu } from '../ui/menu.js';
 import { hasSave } from '../save/save.js';
 import fragmentsData from '../story/fragments.json';
+import lettersData from '../story/letters.json';
+import cluesData from '../story/clues.json';
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -40,6 +42,8 @@ export class Game {
     this.music = new Music(sound);
 
     this.loaded = load();
+    // Souvenirs d'une ancienne version de l'histoire : on ne garde que ceux qui existent encore
+    storyState.fragments = storyState.fragments.filter((id) => fragmentsData.fragments.some((f) => f.id === id));
     applyUpgrades(gameState.upgrades);
 
     this.hold = new Hold();
@@ -285,6 +289,7 @@ export class Game {
       }
     }
     waterUniform.y = 0; // pas de reflets d'eau sur le quai
+    this.port.setMemories(storyState.fragments.length); // le village se rouvre avec la mémoire
     this.setMode('port');
     this.port.enter(spot);
     this.pixel.setDistortion(0, 0);
@@ -360,6 +365,8 @@ export class Game {
 
   async interact(it) {
     if (it.kind === 'npc') return this.talk(it.npcId);
+    // La maison de Yann : la seule qui ne se rouvre pas. Elle ne dit ce qu'elle est qu'à mesure qu'on se souvient.
+    if (it.kind === 'house' && it.yann) return this.examine({ id: 'yann_house', lines: cluesData.yannHouse[Math.min(2, Math.floor(storyState.fragments.length / 3))], truth: cluesData.yannHouseTruth });
     if (it.kind === 'house') return this.talk('house');
     if (it.kind === 'clue') return this.examine(it);
     if (it.action === 'openCollection') return this.panels.open('collection');
@@ -372,7 +379,21 @@ export class Game {
   /** Examine un indice du village : quelques lignes de narration, sans explication */
   async examine(clue) {
     if (this.busy || this.dialogue.isOpen) return;
+    if (clue.id === 'clue_boite') {
+      // Une lettre d'Anna par plongée (et selon les souvenirs retrouvés), dans l'ordre
+      const read = storyState.flags.lettersRead ?? 0, next = lettersData.letters[read];
+      if (next && gameState.day - 1 > read && storyState.fragments.length >= next.fragments) {
+        await this.dialogue.narrate(lettersData.intro, false);
+        for (const line of next.lines) await this.dialogue.narrate(line, false);
+        storyState.flags.lettersRead = read + 1;
+        this.persist();
+        return;
+      }
+      if (read > 0) return this.dialogue.narrate(lettersData.none, false);
+    }
     for (const line of clue.lines) await this.dialogue.narrate(line, false);
+    // Relecture : après une fin, on sait ce que c'était
+    if (getEndings().length && clue.truth) await this.dialogue.narrate(`(${clue.truth})`, false);
   }
 
   /** Lance la conversation adaptée avec un personnage, puis l'action éventuelle */
@@ -393,7 +414,6 @@ export class Game {
     if (this.busy) return;
     this.busy = true;
     this.paused = true;
-    savePrechoice();
     const action = await this.dialogue.play('portal', pickConversation('portal'));
     this.paused = false;
     if (action === 'ending_close') return playEnding(this, 'close');

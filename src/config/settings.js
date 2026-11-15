@@ -134,6 +134,29 @@ export const DEFENSE = {
   COOLDOWN: 18, // recharge (s)
 };
 
+/**
+ * Le pouls de Loïc (battements par minute). C'est le bip du sonar.
+ * L'effort (moteurs), le danger et le manque d'air le font monter ; l'immobilité le calme.
+ * Les bêtes le sentent : au-dessus de HUNT, elles chargent ; le ver ne se jette que sur un cœur qui s'emballe.
+ */
+export const PULSE = {
+  REST: 56, // au repos
+  EFFORT: 38, // ajouté moteurs à fond
+  THREAT: 14, // ajouté quand une bête charge (pas assez, seul, pour entretenir la chasse : on peut se calmer)
+  PANIC: 30, // ajouté quand l'air ou la coque sont au plus bas
+  RISE: 0.9, // vitesse de montée (1/s)
+  CALM: 0.3, // vitesse de retour au calme (1/s)
+  HUNT: 78, // au-dessus, les bêtes hostiles osent charger
+  WORM: 84, // au-dessus, le ver se jette sur le sous-marin
+};
+
+/** Cloches à air : des étapes dans les grandes descentes. x, z = position ; on y refait le plein d'air. */
+export const AIR_BELLS = {
+  RADIUS: 7, // distance à laquelle l'air se renouvelle (m)
+  REFILL: 14, // air rendu par seconde
+  SPOTS: [[-30, -200], [60, -350], [-70, -500], [20, -640], [-25, -790], [40, -930], [-55, -1010]],
+};
+
 /** Le gardien du portail (créature colossale des abysses) */
 export const GUARDIAN = {
   SEGMENTS: 44, // tronçons du corps

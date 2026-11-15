@@ -167,8 +167,48 @@ function bolt(c, x, y, a, len, w, depth) {
   c.beginPath(); c.arc(px, py, w * 1.6, 0, TAU); c.fill();
 }
 
+/*
+ * Correspondances : entre deux éclairs, une chose du rêve devient ce qu'elle était.
+ * Chaque paire est une ligne de 60 points qui se déforme de la première forme vers la seconde.
+ */
+const N_PT = 60;
+const shape = (fn) => Array.from({ length: N_PT }, (_, i) => fn(i / (N_PT - 1)));
+const MORPHS = [
+  { // la faille verte → le tracé du moniteur
+    color: '120, 255, 160',
+    a: shape((t) => [Math.sin(t * 9) * 0.05 + Math.sin(t * 23) * 0.02, t - 0.5]),
+    b: shape((t) => [t * 1.5 - 0.75, -ecgShape((t * 2.2) % 1) * 0.22 + 0.05]),
+  },
+  { // le Linceul → le drap sur un corps
+    color: '200, 235, 240',
+    a: shape((t) => [(t - 0.5) * 0.9 * (1 + Math.sin(t * 30) * 0.03), -0.3 * Math.sin(t * Math.PI) + Math.abs(Math.sin(t * 14)) * 0.07 * Math.abs(t - 0.5) * 2]),
+    b: shape((t) => [(t - 0.5) * 1.5, 0.1 - 0.13 * Math.exp(-(((t - 0.45) / 0.2) ** 2)) - 0.09 * Math.exp(-(((t - 0.86) / 0.04) ** 2))]),
+  },
+  { // le ver → une tubulure
+    color: '230, 240, 235',
+    a: shape((t) => [(t - 0.5) * 1.3, Math.sin(t * 7) * 0.2 * (1 - t * 0.5)]),
+    b: shape((t) => [-0.45 + t * 0.2 + Math.sin(t * 3.1) * 0.5 * t, -0.42 + t * 0.84]),
+  },
+];
+function ecgShape(p) { return 0.12 * Math.exp(-(((p - 0.12) / 0.03) ** 2)) - 0.15 * Math.exp(-(((p - 0.28) / 0.008) ** 2)) + Math.exp(-(((p - 0.3) / 0.01) ** 2)) - 0.3 * Math.exp(-(((p - 0.32) / 0.01) ** 2)) + 0.22 * Math.exp(-(((p - 0.52) / 0.05) ** 2)); }
+function drawMorph(c, W, H, m, k, alpha) {
+  const e = k * k * (3 - 2 * k), S = Math.min(W, H) * 0.7;
+  c.globalCompositeOperation = 'lighter';
+  c.lineJoin = c.lineCap = 'round';
+  for (const [w, a] of [[9, 0.12], [3, 0.9]]) {
+    c.strokeStyle = `rgba(${m.color}, ${a * alpha})`;
+    c.lineWidth = w * (W / 1400);
+    c.beginPath();
+    for (let i = 0; i < N_PT; i++) {
+      const x = W / 2 + (m.a[i][0] + (m.b[i][0] - m.a[i][0]) * e) * S, y = H / 2 + (m.a[i][1] + (m.b[i][1] - m.a[i][1]) * e) * S;
+      if (i) c.lineTo(x, y); else c.moveTo(x, y);
+    }
+    c.stroke();
+  }
+}
+
 /** Le noir, puis des éclairs fins qui se répondent : quelque chose se rallume */
-export function synapses(seconds = 7, sound = null) {
+export function synapses(seconds = 7, sound = null, morphs = false) {
   const c = open(), W = canvas.width, H = canvas.height;
   let next = 0.8;
   return play(seconds, (t, el, dt) => {
@@ -188,6 +228,14 @@ export function synapses(seconds = 7, sound = null) {
       }
       c.shadowBlur = 0;
       sound?.crackle?.(0.3 + t * 0.5);
+    }
+    // Trois correspondances, l'une après l'autre : la forme du rêve, puis ce qu'elle était
+    if (morphs) {
+      const u = (t - 0.12) / 0.78 * MORPHS.length, i = Math.floor(u);
+      if (u >= 0 && i < MORPHS.length) {
+        const f = u - i; // 0..1 dans la paire : apparaît, se transforme, s'efface
+        drawMorph(c, W, H, MORPHS[i], Math.max(0, Math.min(1, (f - 0.25) / 0.4)), Math.min(1, f * 6) * Math.min(1, (1 - f) * 5) * 0.5);
+      }
     }
     if (t > 0.93) { c.fillStyle = `rgba(0,0,0,${(t - 0.93) / 0.07})`; c.fillRect(0, 0, W, H); }
   });

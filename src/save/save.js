@@ -116,7 +116,9 @@ export function getEndings() {
 export function markEnding(id) {
   try {
     const list = getEndings();
-    if (!list.includes(id)) list.push(id);
+    const i = list.indexOf(id);
+    if (i >= 0) list.splice(i, 1);
+    list.push(id); // la dernière fin vue est en fin de liste (écran-titre)
     localStorage.setItem(ENDINGS_KEY, JSON.stringify(list));
   } catch {
     /* rien */

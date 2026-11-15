@@ -1,19 +1,21 @@
 {
-  "_comment": "Fragments de mémoire : objets personnels du joueur venus du vrai monde. Positions fixes (x, z) ; ils ne réapparaissent pas une fois trouvés. 'art' = image pixel dessinée dans ui/memoryArt.js. 'lines' = le souvenir, affiché ligne par ligne.",
+  "_comment": "Les huit souvenirs de Loïc (voir docs/LORE.md, section 7), dans l'ordre de la journée de l'accident. Positions fixes (x, z ; inCanyon = x relatif au lit du canyon) ; ils ne réapparaissent pas une fois trouvés. 'art' = image dessinée dans ui/memoryArt.js et forme de l'objet (loot/models.js, keepsake_<art>). 'lines' = le souvenir, affiché ligne par ligne. 'when' = moment de la journée (carnet) ; 'truth' = ce que c'était vraiment, montré seulement après une fin (relecture).",
   "fragments": [
     {
       "id": "photo",
-      "name": "Photographie délavée",
+      "name": "Photographie",
       "x": 38,
       "z": -70,
       "art": "photo",
-      "description": "Le papier a gondolé. Deux silhouettes sur un quai, au soleil.",
-      "title": "Un quai plein de monde",
+      "description": "Le papier a gondolé. Un quai, au soleil, plein de monde.",
+      "title": "Le quai",
       "lines": [
         "Le quai de Port-Kermor, un dimanche. Il y a du monde partout.",
-        "Des enfants courent entre les casiers. Quelqu'un rit à côté de toi.",
+        "Quelqu'un rit à côté de toi. Tu connais ce rire. Tu n'arrives pas à tourner la tête.",
         "C'est le même quai. Les mêmes maisons. Mais les volets sont ouverts."
-      ]
+      ],
+      "when": "AVANT",
+      "truth": "Ton port, tel qu'il est vraiment : plein de monde."
     },
     {
       "id": "alliance",
@@ -21,27 +23,31 @@
       "x": -72,
       "z": -135,
       "art": "ring",
-      "description": "Un anneau d'or tout simple. Il glisse à ton doigt comme s'il l'attendait.",
+      "description": "Un anneau d'or tout simple. À l'intérieur, deux lettres : L. & A.",
       "title": "Une promesse",
       "lines": [
         "Une main serre la tienne, sur le pas d'une porte.",
         "« Reviens avant la nuit. »",
-        "Tu avais promis. Tu promets toujours."
-      ]
+        "Tu as dit oui. Tu ne sais plus quelle nuit c'était."
+      ],
+      "when": "LE MATIN",
+      "truth": "Anna. Elle te tient la main depuis cent douze jours."
     },
     {
-      "id": "plaque",
-      "name": "Plaque de plongée",
+      "id": "montre",
+      "name": "Montre de plongée",
       "x": 24,
       "z": -262,
-      "art": "tag",
-      "description": "Une plaque d'identité gravée à ton nom. Tu le lis, et il ne te dit rien.",
-      "title": "Le jour de la plongée",
+      "art": "watch",
+      "description": "Le verre est fêlé. Les aiguilles n'ont pas bougé depuis longtemps.",
+      "title": "4 h 12",
       "lines": [
-        "Le bateau tangue. Quelqu'un vérifie tes bouteilles, deux fois.",
-        "« Pas plus de quarante mètres. Tu m'entends ? Pas plus. »",
-        "Tu as souri. Tu as basculé en arrière, dans l'eau grise."
-      ]
+        "Elle s'est arrêtée à 4 h 12. Comme l'horloge du clocher. Comme toutes les autres.",
+        "Tu la retournes. Le bracelet est sec. Il a toujours été sec.",
+        "Tu n'étais pas dans l'eau, à cette heure-là. Où étais-tu ?"
+      ],
+      "when": "4 H 12",
+      "truth": "L'heure où ton cœur s'est arrêté, à l'hôpital."
     },
     {
       "id": "carnet",
@@ -49,57 +55,82 @@
       "x": -46,
       "z": -462,
       "art": "logbook",
-      "description": "Les pages ont collé entre elles. La dernière se lit encore.",
+      "description": "La couverture a gonflé. La dernière page est encore lisible.",
       "title": "La dernière page",
       "lines": [
-        "« 14 octobre 1984. Mer calme. Descente à 15 h 50. »",
-        "Ton écriture. Puis, en dessous, une autre main, qui tremble :",
-        "« 17 h. Toujours pas remonté. »"
-      ]
+        "Ton écriture. « 14 octobre 1984. Épave de la Marie-Morgane. Descente à 15 h 50. »",
+        "« Fond annoncé : quarante mètres. On verra bien. »",
+        "En bas de la page : « Équipage : 2. »"
+      ],
+      "when": "15 H 50",
+      "truth": "Vous étiez deux à bord. Tu l'avais écrit."
     },
     {
-      "id": "journal",
-      "name": "Coupure de journal",
+      "id": "plaque",
+      "name": "Plaque de plongée",
       "x": -6,
-      "z": -650,
-      "art": "newspaper",
+      "z": -620,
       "inCanyon": true,
-      "description": "Du papier journal, miraculeusement lisible. Une photo en noir et blanc.",
-      "title": "Les recherches",
+      "art": "tag",
+      "description": "Une plaque de métal, comme on en fixe au tableau de bord. Deux lignes gravées.",
+      "title": "Les noms",
       "lines": [
-        "« Disparition en mer au large de Port-Kermor. »",
-        "Des bateaux quadrillent la baie pendant des jours. Sur le quai, on t'appelle.",
-        "« Les recherches sont suspendues. » Ils ont écrit ton nom en entier."
-      ]
+        "La première ligne : ton nom.",
+        "La seconde a été rayée, au couteau, à petits coups serrés.",
+        "Tu reconnais ce geste. C'est le tien."
+      ],
+      "when": "À BORD",
+      "truth": "Tu as rayé le nom de ton frère pour ne plus le lire."
     },
     {
-      "id": "montre",
-      "name": "Montre de plongée",
-      "x": 0,
-      "z": -805,
-      "art": "watch",
+      "id": "couteau",
+      "name": "Couteau de plongée",
+      "x": 4,
+      "z": -705,
       "inCanyon": true,
-      "description": "Le verre est fendu. Les aiguilles ne bougent plus.",
-      "title": "4 h 12",
+      "art": "knife",
+      "description": "La lame est ébréchée. Des mailles de filet y sont encore prises.",
+      "title": "Les filets",
       "lines": [
-        "L'eau est froide. Le détendeur siffle, puis se tait.",
-        "Tu tires sur le tuyau. Rien. Tu regardes ta montre : 4 h 12.",
-        "Tu ne l'as plus jamais regardée après."
-      ]
+        "Le Nautiliar ne bouge plus. Des filets, partout, sur le hublot, dans l'hélice.",
+        "Quelqu'un ouvre le sas. « Je m'en occupe. Bouge pas. »",
+        "Par le hublot, une lampe. Une main qui coupe, maille après maille. Puis le sous-marin se libère, d'un coup."
+      ],
+      "when": "AU FOND",
+      "truth": "Yann est sorti couper les filets. Il t'a libéré."
     },
     {
-      "id": "stele",
-      "name": "Plaque commémorative",
-      "x": 34,
-      "z": -985,
-      "art": "memorial",
-      "description": "Une plaque de granit arrachée à un quai. Les noms sont presque effacés.",
-      "title": "À nos disparus",
+      "id": "enfance",
+      "name": "Vieille photographie",
+      "x": -8,
+      "z": -795,
+      "inCanyon": true,
+      "art": "boat",
+      "description": "Deux garçons sur une barque, torse nu, qui rient vers l'objectif.",
+      "title": "La plate",
       "lines": [
-        "Une plaque de granit, arrachée à un quai. « À nos disparus en mer. »",
-        "Le sel a rongé les noms. Tu en devines trois, et un mot sous chacun : « docteur », « mécanicien », « commerçante ».",
-        "La date a été effacée par l'eau. Tu as froid, tout à coup."
-      ]
+        "Un été. La plate tangue, vous êtes deux dedans. Tu rames. Le petit écope avec une boîte de conserve.",
+        "Au dos, une écriture de femme : « Loïc et Yann, été 1961. »",
+        "Yann."
+      ],
+      "when": "AUTREFOIS",
+      "truth": "Ton petit frère."
+    },
+    {
+      "id": "soins",
+      "name": "Feuille de soins",
+      "x": 9,
+      "z": -1040,
+      "art": "chart",
+      "description": "Une feuille à en-tête, sèche, posée sur le fond comme sur une table.",
+      "title": "Jour 112",
+      "lines": [
+        "« Hôpital de Port-Kermor. Arrêt cardiaque à 4 h 12, réanimé. Coma. »",
+        "« Jour 1… Jour 47… Jour 112. Famille reçue ce jour au sujet de la poursuite des soins. »",
+        "Dans la marge, une écriture que tu connais : « Je suis là. »"
+      ],
+      "when": "JOUR 112",
+      "truth": "Ta vraie feuille de soins, au pied de ton lit."
     }
   ]
 }

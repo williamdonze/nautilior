@@ -15,12 +15,16 @@ import { Claw } from '../claw/claw.js';
 import { Aim } from '../claw/aim.js';
 import { CaptureFx } from '../loot/captureFx.js';
 import { Inventory } from '../ui/inventory.js';
-import { SURVIVAL, SUBMARINE, RADIATION, DEFENSE, ECHO } from '../config/settings.js';
+import { SURVIVAL, SUBMARINE, RADIATION, DEFENSE, ECHO, PULSE } from '../config/settings.js';
+import { AirBells } from './airBells.js';
 import { Creatures } from './creatures.js';
 import { Wildlife } from './wildlife.js';
 import { gpuMode } from '../gpu/mode.js';
 import { Guardian } from './guardian.js';
 import { PortalFx } from './portalFx.js';
+import { PaleDiver } from './paleDiver.js';
+import { createSunkenRoom } from './sunkenRoom.js';
+import voicesData from '../story/voices.json';
 import { zoneAtDepth } from './zones.js';
 import { createPortal } from './portal.js';
 import { pointScale } from '../core/renderer.js';
@@ -51,6 +55,7 @@ export class Dive {
     scene.add(this.snow.object);
     this.radiationSource = createRadiationSource(scene);
     this.portal = createPortal(scene);
+    this.sunkenRoom = createSunkenRoom(scene, this.decor.colliders); // la chambre d'hôpital, à l'échelle d'un rêve
     this.portalFx = new PortalFx(scene, this.portal);
     this.radar = new Radar(sound);
     this.radar.setWorld(this.decor.group); // nuage de points du sonar 3D
@@ -151,6 +156,11 @@ export class Dive {
         hud.damageFlash(0.7);
       },
     });
+    // Cloches à air : des étapes dans les grandes descentes
+    this.airBells = new AirBells(scene, this.decor.colliders);
+    // Le plongeur pâle, qui montre où chercher
+    this.paleDiver = new PaleDiver(scene);
+    this.voiceTimer = 12;
     this.zoneId = null;
     this.whisperTimer = 0;
 
@@ -223,6 +233,8 @@ export class Dive {
     this.creatures.clear();
     this.wildlife.clear();
     this.guardian.reset();
+    this.paleDiver.reset();
+    this.foundCount = foundFragments.length;
     this.zoneId = null;
     this.claw.reset();
     this.sub.applyLight(stats);
@@ -259,6 +271,7 @@ export class Dive {
 
   impact(speed) {
     if (speed < SURVIVAL.IMPACT_THRESHOLD || this.survival.dead) return;
+    this.pulseJolt = 18;
     const strength = Math.min(1.5, (speed - SURVIVAL.IMPACT_THRESHOLD) / 3);
     this.survival.impact(speed);
     this.sound.impact(strength);
@@ -287,6 +300,7 @@ export class Dive {
       if (near(a.pos.x, a.pos.z)) C.push({ id: a.object.id, kind: a.spec.damage > 0 ? 'creature' : 'fish', x: a.pos.x, y: a.pos.y, z: a.pos.z, size: a.size });
     }
     this.guardian.contacts(C);
+    for (const b of this.airBells.spots) if (near(b.x, b.z)) C.push({ id: `bell${b.x}`, kind: 'wreck', x: b.x, y: b.y, z: b.z });
     for (const l of this.landmarkContacts) if (near(l.x, l.z)) C.push(l);
     return C;
   }
@@ -357,9 +371,19 @@ export class Dive {
       return;
     }
     this.flat = false;
-    const threat = this.creatures.threat + this.wildlife.threat + this.guardian.threat > 0 ? 0.6 : 0;
-    const stress = Math.min(1, Math.max(threat, 1 - S.oxygenRatio / 0.3, (0.5 - S.hullRatio) * 1.4, 0));
-    this.bpm = (this.bpm ?? 56) + (56 + 64 * stress - (this.bpm ?? 56)) * Math.min(1, dt * 0.8);
+    // Le pouls : l'effort, le danger et la détresse le font monter vite ; il ne redescend que lentement, au calme
+    const threat = this.creatures.threat + this.wildlife.threat + this.guardian.threat > 0 ? 1 : 0;
+    const effort = Math.min(1, Math.abs(this.sub.throttle) * 0.8 + Math.abs(this.sub.lift) * 0.5);
+    const panic = Math.min(1, Math.max(1 - S.oxygenRatio / 0.3, (0.5 - S.hullRatio) * 1.4, 0));
+    const target = PULSE.REST + PULSE.EFFORT * effort + PULSE.THREAT * threat + PULSE.PANIC * panic + (this.pulseJolt ?? 0);
+    this.pulseJolt = Math.max(0, (this.pulseJolt ?? 0) - dt * 6); // sursaut après un choc
+    this.bpm = this.bpm ?? PULSE.REST;
+    this.bpm += (target - this.bpm) * Math.min(1, dt * (target > this.bpm ? PULSE.RISE : PULSE.CALM));
+    const stress = Math.min(1, Math.max(0, (this.bpm - PULSE.REST) / 60));
+    // les bêtes sentent un cœur qui s'emballe
+    this.wildlife.bold = this.bpm > PULSE.HUNT;
+    this.guardian.provoked = this.bpm > PULSE.WORM;
+    this.hud.setPulse2?.(this.bpm);
     this.beatPhase = (this.beatPhase ?? 0) + (dt * this.bpm) / 60;
     if (this.beatPhase >= 1) {
       this.beatPhase -= 1;
@@ -471,6 +495,10 @@ export class Dive {
     }
     this.pixel.setDistortion(rad * 1.2, time);
     this.radiationSource.update(time, camera.position);
+    // Sous une cloche à air, on refait le plein
+    const wasAtBell = this.atBell;
+    this.atBell = !survival.dead && this.airBells.update(dt, time, sub, survival);
+    if (this.atBell && !wasAtBell) { hud.notice('Cloche à air : tu respires mieux'); sound.clank?.(0.4); }
     this.survivalEffects(dt);
     hud.updateSurvival(survival, sub.depth);
     sub.setBeamVisibility(this.ambience.state.beam);
@@ -516,13 +544,14 @@ export class Dive {
     const portalDist = sub.position.distanceTo(this.portal.center);
     // Effets de la déchirure : de plus en plus forts à l'approche (0 à 300 m … 1 à 25 m)
     this.riftNear = Math.max(0, Math.min(1, (300 - portalDist) / 275));
+    if (this.riftNear > 0) this.sunkenRoom.update(time);
     if (this.portalFx.update(dt, time, this.riftNear) && this.riftNear > 0.15) sound.crackle?.(this.riftNear);
     sound.setRift?.(this.riftNear * this.portal.open, this.bpm ?? 56);
     this.portal.update(time, this.camera.position, pointScale.value);
     sound.setDrone(Math.max(0, 1 - portalDist / 160) * this.portal.open);
     this.nearPortal = portalDist < 32 && this.portal.open > 0.5 && !survival.dead && !this.autopilot && this.canFacePortal();
     hud.setPrompt(
-      survival.dead || this.autopilot ? '' : survival.atSurface ? 'Rentrer au port' : this.nearPortal ? 'Faire face au portail' : ''
+      survival.dead || this.autopilot ? '' : survival.atSurface ? 'Rentrer au port' : this.nearPortal ? 'Faire face à la lumière' : ''
     );
 
     // --- Zones et faune
@@ -545,6 +574,24 @@ export class Dive {
     // --- Radar : objets, fragments, créatures, bancs, épaves dans le rayon du sonar
     if (!survival.dead) this.radar.update(dt, sub, this.gatherContacts(), this.decor.colliders, this.movers());
     sound.setSonar(!survival.dead);
+
+    // --- Le plongeur pâle, et les voix de la chambre près de la faille
+    if (!survival.dead && !this.autopilot) {
+      const frags = this.pickups.fragments;
+      this.paleDiver.update(dt, time, sub, frags.map((f) => f.object.position), 8 - frags.length);
+      this.voiceTimer -= dt;
+      if (this.voiceTimer <= 0 && this.riftNear > 0.25 && this.portal.open > 0.5) {
+        const pool = voicesData.voices.filter((v) => v.near <= this.riftNear && v.text !== this.lastVoice);
+        if (pool.length) {
+          // les plus proches de la surface de l'eau… et du réveil, en dernier
+          const v = pool[Math.floor(Math.pow(Math.random(), 0.6) * pool.length)];
+          this.lastVoice = v.text;
+          hud.voice(v.text);
+          sound.whisper(0.3 + this.riftNear * 0.5);
+        }
+        this.voiceTimer = 22 - this.riftNear * 12 + Math.random() * 6;
+      }
+    }
 
     // --- Un fragment de mémoire tout proche « appelle »
     this.whisperTimer -= dt;

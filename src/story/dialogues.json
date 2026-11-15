@@ -1,79 +1,9 @@
 {
-  "_comment": "Dialogues par personnage. La conversation jouée est celle de plus haute priorité dont la condition 'when' est vraie. Conditions : drapeau = valeur, ou <variable>Min / <variable>Max (deaths, fragments). 'once' : une seule fois ; 'oncePer': 'deaths' / 'fragments' : une fois par réveil / par nouveau fragment. Un texte peut être une liste de variantes. Paliers : 0–1 fragment = banal et évasif ; 2–4 = gêne, explications rationnelles ; 5–6 = lapsus ; 7 = culpabilité à demi-mot ; coque abyssale = suppliques et fausses raisons. Rien sur la vérité ne doit être dit directement.",
+  "_comment": "Dialogues par personnage (voir docs/LORE.md). La conversation jouée est celle de plus haute priorité dont la condition 'when' est vraie. Conditions : drapeau = valeur, ou <variable>Min / <variable>Max (deaths, fragments). 'once' : une seule fois ; 'oncePer': 'deaths' / 'fragments' : une fois par réveil / par nouveau souvenir. Un texte peut être une liste de variantes. Paliers : 0–2 souvenirs = acte I (presque normal, une bizarrerie par personnage) ; 3–4 = acte II (gêne dès qu'on parle de la plongée) ; 5–7 = acte III (quelqu'un manque) ; 8 = tout est remonté ; coque abyssale = le docteur et Marcel demandent de fermer, Hélène non. Règles : dans le rêve, personne ne raconte l'histoire ; chaque réplique se relit comme une phrase dite au chevet de Loïc ; le docteur vouvoie toujours. 'anna' et 'loic' ne servent qu'aux répliques du réveil (story/endings.json).",
   "npcs": {
     "doctor": {
-      "name": "Le médecin",
+      "name": "Le docteur",
       "conversations": [
-        {
-          "id": "doctor_abyssal",
-          "once": true,
-          "priority": 85,
-          "when": {
-            "abyssalHull": true
-          },
-          "start": "a",
-          "nodes": {
-            "a": {
-              "text": "Le mécano m'a dit, pour la coque. (Il pose ses lunettes.) Assieds-toi.",
-              "next": "b"
-            },
-            "b": {
-              "text": "Au fond, il y a une ouverture. Tu vas vouloir passer de l'autre côté. Tout le monde voudrait.",
-              "choices": [
-                {
-                  "text": "Qu'est-ce qu'il y a, de l'autre côté ?",
-                  "next": "other"
-                },
-                {
-                  "text": "Je ne comprends pas.",
-                  "next": "other"
-                }
-              ]
-            },
-            "other": {
-              "text": "Ce qui remontera de l'autre côté, ce ne sera pas toi.",
-              "next": "c"
-            },
-            "c": {
-              "text": "Ferme-la. Reste ici, où on peut te soigner. Je te le demande. (Sa voix se casse.) Je t'en supplie.",
-              "end": true
-            }
-          }
-        },
-        {
-          "id": "doctor_plead",
-          "priority": 75,
-          "when": {
-            "abyssalHull": true
-          },
-          "start": "a",
-          "nodes": {
-            "a": {
-              "text": [
-                "Ce qui remontera de l'autre côté, ce ne sera pas toi.",
-                "Tu as ta place ici. Tu l'as toujours eue.",
-                "(Il te prend le poignet. Ses doigts sont glacés.) Ferme-la."
-              ],
-              "choices": [
-                {
-                  "text": "Pourquoi vous tenez tant à ce que je reste ?",
-                  "next": "why"
-                },
-                {
-                  "text": "D'accord.",
-                  "end": true
-                }
-              ]
-            },
-            "why": {
-              "text": [
-                "Parce que je suis médecin. Et qu'on ne laisse pas partir un patient qui n'est pas guéri.",
-                "Parce que c'est mieux pour toi. Crois-moi."
-              ],
-              "end": true
-            }
-          }
-        },
         {
           "id": "doctor_intro",
           "priority": 100,
@@ -83,15 +13,15 @@
           "start": "a",
           "nodes": {
             "a": {
-              "text": "Doucement. Ne te lève pas trop vite.",
+              "text": "Doucement, Loïc. Ne vous levez pas trop vite.",
               "next": "b"
             },
             "b": {
-              "text": "Tu es à l'hôpital de Port-Kermor. Tu as dormi longtemps.",
+              "text": "Vous êtes à l'hôpital de Port-Kermor. Vous avez dormi longtemps.",
               "next": "c"
             },
             "c": {
-              "text": "(Il te dévisage, comme s'il cherchait quelque chose sur ton visage.)",
+              "text": "(Il regarde vos yeux l'un après l'autre, avec une petite lampe.)",
               "choices": [
                 {
                   "text": "Combien de temps ?",
@@ -104,15 +34,15 @@
               ]
             },
             "d": {
-              "text": "Assez longtemps. Ne compte pas les jours, ça n'aide pas.",
+              "text": "Assez longtemps. Ne comptez pas les jours, ça n'aide pas.",
               "next": "f"
             },
             "e": {
-              "text": "Ça reviendra. Ou pas. Ce n'est pas toujours une mauvaise chose.",
+              "text": "Ça reviendra. Ne forcez rien.",
               "next": "f"
             },
             "f": {
-              "text": "Va voir le mécano, sur le quai. Il t'a gardé quelque chose.",
+              "text": "Allez voir Marcel, sur le quai. Il a quelque chose pour vous.",
               "set": {
                 "introDone": true
               },
@@ -131,61 +61,14 @@
           "start": "a",
           "nodes": {
             "a": {
-              "text": "(Il te pose une couverture de laine sur les épaules.)",
+              "text": "(Il vous pose une couverture sur les épaules.)",
               "next": "b"
             },
             "b": {
               "text": [
-                "Tu as avalé la moitié de la baie. Repose-toi.",
-                "Le mécano t'a sorti de l'eau près de la jetée. Tu as eu de la chance.",
-                "Pas de fièvre. C'est déjà ça. La prochaine fois, remonte plus tôt."
-              ],
-              "end": true
-            }
-          },
-          "oncePer": "deaths"
-        },
-        {
-          "id": "doctor_after_death_b",
-          "priority": 50,
-          "when": {
-            "deathsMin": 1,
-            "fragmentsMin": 3,
-            "fragmentsMax": 5
-          },
-          "start": "a",
-          "nodes": {
-            "a": {
-              "text": "(Il prend ton pouls. Longtemps.)",
-              "next": "b"
-            },
-            "b": {
-              "text": [
-                "Lent. Très lent. Mais tu es là.",
-                "La mer t'a rendu. Elle le fait souvent, avec toi."
-              ],
-              "end": true
-            }
-          },
-          "oncePer": "deaths"
-        },
-        {
-          "id": "doctor_after_death_c",
-          "priority": 50,
-          "when": {
-            "deathsMin": 1,
-            "fragmentsMin": 6
-          },
-          "start": "a",
-          "nodes": {
-            "a": {
-              "text": "(Il prend ton pouls, puis repose ton poignet sans rien dire.)",
-              "next": "b"
-            },
-            "b": {
-              "text": [
-                "Froid. Toujours aussi froid.",
-                "Tu reviens toujours ici. C'est bien."
+                "Vous nous avez fait peur.",
+                "Marcel vous a sorti de l'eau près de la jetée. Vous avez eu de la chance.",
+                "La prochaine fois, remontez plus tôt."
               ],
               "end": true
             }
@@ -202,171 +85,28 @@
           "start": "a",
           "nodes": {
             "a": {
-              "text": "(Il regarde ce que tu tiens, une seconde de trop.) Tu ramasses de drôles de choses, en bas.",
+              "text": "(Il regarde ce que vous tenez, une seconde de trop.) Où avez-vous trouvé ça ?",
               "choices": [
+                {
+                  "text": "Au fond.",
+                  "next": "deep"
+                },
                 {
                   "text": "Je crois que c'est à moi.",
                   "next": "mine"
-                },
-                {
-                  "text": "Vous savez ce que c'est ?",
-                  "next": "know"
                 }
               ]
+            },
+            "deep": {
+              "text": "Ne descendez pas trop. Rien ne presse.",
+              "end": true
             },
             "mine": {
-              "text": "La mer mélange tout. Les affaires des uns finissent chez les autres.",
-              "end": true
-            },
-            "know": {
-              "text": "Un objet abîmé. Ne te mets pas des idées en tête.",
+              "text": "C'est possible. La mer mélange tout.",
               "end": true
             }
           },
           "oncePer": "fragments"
-        },
-        {
-          "id": "doctor_frag_b",
-          "priority": 60,
-          "when": {
-            "fragmentsMin": 3,
-            "fragmentsMax": 4
-          },
-          "start": "a",
-          "nodes": {
-            "a": {
-              "text": "(Il ferme la porte derrière toi.) Tu dors mal, n'est-ce pas ?",
-              "choices": [
-                {
-                  "text": "Je rêve d'un quai plein de monde.",
-                  "next": "quay"
-                },
-                {
-                  "text": "Des souvenirs me reviennent.",
-                  "next": "mem"
-                }
-              ]
-            },
-            "quay": {
-              "text": "Un rêve. Les convalescents en font beaucoup. Ça passe.",
-              "end": true
-            },
-            "mem": {
-              "text": "Des bribes. Le cerveau invente pour combler les trous. Ne t'y fie pas trop.",
-              "end": true
-            }
-          },
-          "oncePer": "fragments"
-        },
-        {
-          "id": "doctor_frag_c",
-          "priority": 60,
-          "when": {
-            "fragmentsMin": 5,
-            "fragmentsMax": 6
-          },
-          "start": "a",
-          "nodes": {
-            "a": {
-              "text": "(Il ne lève pas les yeux de son registre.) Encore une trouvaille ?",
-              "choices": [
-                {
-                  "text": "Je rêve que je me noie.",
-                  "next": "drown"
-                },
-                {
-                  "text": "J'ai lu mon nom dans un journal.",
-                  "next": "paper"
-                },
-                {
-                  "text": "Vous me mentez.",
-                  "next": "lie"
-                }
-              ]
-            },
-            "drown": {
-              "text": "Les noyés en font beaucoup, des rêves comme ça.",
-              "next": "slip"
-            },
-            "slip": {
-              "text": "(Il se reprend, trop vite.) Ceux qui ont failli se noyer, je veux dire.",
-              "end": true
-            },
-            "paper": {
-              "text": "(Sa plume s'arrête.) Les journaux disent beaucoup de choses. Ils ne disent pas tout.",
-              "end": true
-            },
-            "lie": {
-              "text": "Je te soigne. C'est tout ce que je fais.",
-              "end": true
-            }
-          },
-          "oncePer": "fragments"
-        },
-        {
-          "id": "doctor_frag_d",
-          "priority": 60,
-          "when": {
-            "fragmentsMin": 7
-          },
-          "start": "a",
-          "nodes": {
-            "a": {
-              "text": "(Il te regarde enfin. Il a l'air très fatigué.) Tu es descendu loin.",
-              "next": "b"
-            },
-            "b": {
-              "text": "Il y a des choses qu'on ne rend pas à la mer. Va dormir.",
-              "end": true
-            }
-          },
-          "oncePer": "fragments"
-        },
-        {
-          "id": "doctor_uneasy",
-          "priority": 5,
-          "when": {
-            "introDone": true,
-            "fragmentsMin": 4
-          },
-          "start": "a",
-          "nodes": {
-            "a": {
-              "text": [
-                "Tu as froid ? Tu as toujours froid.",
-                "On parlera une autre fois.",
-                "(Il range des flacons vides. Encore.)"
-              ],
-              "choices": [
-                {
-                  "text": "Qu'est-ce qui s'est passé, ici ?",
-                  "next": "what"
-                },
-                {
-                  "text": "Pourquoi vous me regardez comme ça ?",
-                  "next": "look"
-                },
-                {
-                  "text": "Rien.",
-                  "end": true
-                }
-              ]
-            },
-            "what": {
-              "text": [
-                "Je t'ai déjà répondu.",
-                "La mer a changé. On ne va pas revenir là-dessus."
-              ],
-              "end": true
-            },
-            "look": {
-              "text": [
-                "Je vérifie que tu es toujours là.",
-                "Tout le monde finit par partir. Presque tout le monde."
-              ],
-              "end": true
-            }
-          }
         },
         {
           "id": "doctor_default",
@@ -378,10 +118,10 @@
           "nodes": {
             "a": {
               "text": [
-                "Tu as meilleure mine qu'hier.",
-                "Mange quelque chose avant de replonger.",
+                "Vous avez meilleure mine qu'hier.",
+                "Mangez quelque chose avant de replonger.",
                 "La brume ne se lève jamais vraiment, ici. On s'y fait.",
-                "(Il note quelque chose dans un registre et tourne la page quand tu approches.)"
+                "(Il note quelque chose dans un registre. La même ligne qu'hier.)"
               ],
               "choices": [
                 {
@@ -404,35 +144,209 @@
             },
             "what": {
               "text": [
-                "La mer a changé. Les gens aussi.",
-                "Un mauvais hiver. Puis un autre."
+                "Un mauvais hiver. Puis un autre.",
+                "Rien. Il ne se passe plus rien, ici."
               ],
               "end": true
             },
             "others": {
               "text": [
-                "Partis. Il ne reste que nous. Et toi, maintenant.",
-                "À la ville, pour la plupart. Il n'y a plus de travail, ici."
+                "Partis. Il ne reste que nous.",
+                "À la ville, pour la plupart."
               ],
               "end": true
             },
             "look": {
               "text": [
                 "Déformation professionnelle.",
-                "Tu as été long à te réveiller. Je m'assure que tu restes réveillé."
+                "Je m'assure que vous allez bien. C'est tout."
               ],
               "end": true
             }
           }
-        }
-      ]
-    },
-    "mechanic": {
-      "name": "Le mécano",
-      "conversations": [
+        },
         {
-          "id": "mechanic_abyssal",
-          "once": true,
+          "id": "doctor_frag_b",
+          "priority": 60,
+          "when": {
+            "fragmentsMin": 3,
+            "fragmentsMax": 4
+          },
+          "start": "a",
+          "nodes": {
+            "a": {
+              "text": "(Il voit ce que vous avez remonté. Il ôte ses lunettes.) Vous cherchez quelque chose, en bas.",
+              "choices": [
+                {
+                  "text": "Je cherche ce qui m'est arrivé.",
+                  "next": "what"
+                },
+                {
+                  "text": "Quelle heure est-il ?",
+                  "next": "time"
+                }
+              ]
+            },
+            "what": {
+              "text": "Vous êtes tombé à l'eau. On vous en a sorti. Le reste, laissez-le venir.",
+              "end": true
+            },
+            "time": {
+              "text": "(Il regarde sa montre. Il ne répond pas tout de suite.) Tard.",
+              "end": true
+            }
+          },
+          "oncePer": "fragments"
+        },
+        {
+          "id": "doctor_frag_c",
+          "priority": 60,
+          "when": {
+            "fragmentsMin": 5,
+            "fragmentsMax": 7
+          },
+          "start": "a",
+          "nodes": {
+            "a": {
+              "text": "Vous ne dormez plus. Je le vois.",
+              "choices": [
+                {
+                  "text": "Qui plongeait avec moi ?",
+                  "next": "who"
+                },
+                {
+                  "text": "Pourquoi tout s'arrête à 4 h 12 ?",
+                  "next": "hour"
+                }
+              ]
+            },
+            "who": {
+              "text": "(Un silence.) Ce n'est pas à moi de vous le dire.",
+              "end": true
+            },
+            "hour": {
+              "text": "Parce que c'est l'heure où je vous ai récupéré. Je ne l'oublie pas, moi non plus.",
+              "end": true
+            }
+          },
+          "oncePer": "fragments"
+        },
+        {
+          "id": "doctor_frag_d",
+          "priority": 60,
+          "when": {
+            "fragmentsMin": 8
+          },
+          "start": "a",
+          "nodes": {
+            "a": {
+              "text": "Vous avez tout remonté, alors.",
+              "next": "b"
+            },
+            "b": {
+              "text": "Je ne peux pas vous retenir. Je n'ai jamais pu. Je peux seulement vous dire ce que ça coûte.",
+              "end": true
+            }
+          },
+          "oncePer": "fragments"
+        },
+        {
+          "id": "doctor_after_death_b",
+          "priority": 50,
+          "when": {
+            "deathsMin": 1,
+            "fragmentsMin": 3,
+            "fragmentsMax": 5
+          },
+          "start": "a",
+          "nodes": {
+            "a": {
+              "text": "(Il vous pose une couverture sur les épaules. Ses mains sont froides.)",
+              "next": "b"
+            },
+            "b": {
+              "text": [
+                "Encore une nuit comme celle-là, et je ne réponds plus de rien.",
+                "Votre cœur n'aime pas ces profondeurs. Je vous l'ai dit.",
+                "On vous a rattrapé. Cette fois encore."
+              ],
+              "end": true
+            }
+          },
+          "oncePer": "deaths"
+        },
+        {
+          "id": "doctor_after_death_c",
+          "priority": 50,
+          "when": {
+            "deathsMin": 1,
+            "fragmentsMin": 6
+          },
+          "start": "a",
+          "nodes": {
+            "a": {
+              "text": "(Il reste debout près du lit, sans rien noter.)",
+              "next": "b"
+            },
+            "b": {
+              "text": [
+                "Je ne sais pas combien de fois je pourrai encore vous ramener.",
+                "Marcel était là. Il n'a rien dit. Il ne dit plus rien.",
+                "Chaque fois, vous revenez d'un peu plus loin."
+              ],
+              "end": true
+            }
+          },
+          "oncePer": "deaths"
+        },
+        {
+          "id": "doctor_uneasy",
+          "priority": 5,
+          "when": {
+            "introDone": true,
+            "fragmentsMin": 3
+          },
+          "start": "a",
+          "nodes": {
+            "a": {
+              "text": [
+                "Vous descendez de plus en plus bas.",
+                "(Il écoute quelque chose que vous n'entendez pas, puis reprend son registre.)",
+                "Reposez-vous. Je n'aime pas ce que je vois, ces jours-ci."
+              ],
+              "choices": [
+                {
+                  "text": "Qu'est-ce que vous écrivez ?",
+                  "next": "write"
+                },
+                {
+                  "text": "J'entends des voix, en bas.",
+                  "next": "voices"
+                },
+                {
+                  "text": "À plus tard.",
+                  "end": true
+                }
+              ]
+            },
+            "write": {
+              "text": [
+                "La même chose qu'hier. C'est bien ce qui m'inquiète.",
+                "Ce que je vois. Rien de plus."
+              ],
+              "end": true
+            },
+            "voices": {
+              "text": [
+                "(Il lève les yeux.) Que disent-elles ?",
+                "L'eau porte les sons. Ne vous y fiez pas."
+              ],
+              "end": true
+            }
+          }
+        },
+        {
+          "id": "doctor_abyssal",
           "priority": 85,
           "when": {
             "abyssalHull": true
@@ -440,38 +354,26 @@
           "start": "a",
           "nodes": {
             "a": {
-              "text": "(Il passe la main sur la coque neuve, longtemps, comme on flatte une bête.) Voilà. Elle descendra jusqu'au fond, maintenant.",
+              "text": "Marcel m'a dit, pour la coque. (Il pose ses lunettes.) Asseyez-vous.",
               "next": "b"
             },
             "b": {
-              "text": "Tout au fond, il y a une déchirure. Une porte, si tu veux. C'est elle qui rend les bêtes folles.",
-              "choices": [
-                {
-                  "text": "Une porte vers où ?",
-                  "next": "where"
-                },
-                {
-                  "text": "Qu'est-ce que je dois faire ?",
-                  "next": "do"
-                }
-              ]
-            },
-            "where": {
-              "text": "Ça ne te regarde pas. (Il se reprend.) Vers rien de bon.",
-              "next": "do"
-            },
-            "do": {
-              "text": "La mer souffre. Ferme-la, c'est tout.",
+              "text": "Il y a une lumière, tout en bas. Vous l'avez vue.",
               "next": "c"
             },
             "c": {
-              "text": "Quand tu seras devant, tu sauras comment. Elle t'obéira. Elle t'attend, toi.",
+              "text": "Si vous la traversez… ce qui remontera, ce ne sera plus vous. Pas celui qu'ils attendent.",
+              "next": "d"
+            },
+            "d": {
+              "text": "Fermez-la. C'est ce qu'il y a de plus doux. Pour vous. Pour eux.",
               "end": true
             }
-          }
+          },
+          "once": true
         },
         {
-          "id": "mechanic_plead",
+          "id": "doctor_plead",
           "priority": 75,
           "when": {
             "abyssalHull": true
@@ -480,32 +382,19 @@
           "nodes": {
             "a": {
               "text": [
-                "La mer souffre. Ferme-la, c'est tout.",
-                "Ne la regarde pas trop longtemps, la porte. Ferme-la et remonte.",
-                "(Il ne lâche pas ta coque des yeux.) Ferme-la. Promets-le-moi."
+                "Ce qui remontera, ce ne sera plus vous.",
+                "Fermez-la. Il n'y a pas de honte à être fatigué.",
+                "J'ai dit ce que j'avais à dire. La décision ne m'appartient pas."
               ],
-              "choices": [
-                {
-                  "text": "Améliorer le Nautiliar",
-                  "action": "openUpgrades",
-                  "end": true
-                },
-                {
-                  "text": "Et si je ne la ferme pas ?",
-                  "next": "if"
-                },
-                {
-                  "text": "D'accord.",
-                  "end": true
-                }
-              ]
-            },
-            "if": {
-              "text": "(Sa clé à molette tombe par terre. Il ne la ramasse pas.) Alors tout ça n'aura servi à rien.",
               "end": true
             }
           }
-        },
+        }
+      ]
+    },
+    "mechanic": {
+      "name": "Marcel",
+      "conversations": [
         {
           "id": "mechanic_wait",
           "priority": 100,
@@ -515,7 +404,7 @@
           "start": "a",
           "nodes": {
             "a": {
-              "text": "Va voir le docteur d'abord. Il n'aime pas qu'on lui vole ses patients.",
+              "text": "Va voir le docteur d'abord. C'est lui qui décide, ici.",
               "end": true
             }
           }
@@ -530,14 +419,14 @@
           "start": "a",
           "nodes": {
             "a": {
-              "text": "Te voilà debout. Le docteur disait que tu tiendrais.",
+              "text": "Te voilà debout. (Il s'essuie les mains, longtemps.) Le docteur disait que tu tiendrais.",
               "next": "b"
             },
             "b": {
-              "text": "Ça, c'est le Nautiliar. Vieux, rouillé, comme moi. Mais il plonge encore.",
+              "text": "Le Nautiliar. Je l'ai remis en état. Il t'attendait.",
               "choices": [
                 {
-                  "text": "Pourquoi me le confier ?",
+                  "text": "Pourquoi moi ?",
                   "next": "why"
                 },
                 {
@@ -547,19 +436,19 @@
               ]
             },
             "why": {
-              "text": "Parce que personne d'autre ne descend. Et qu'il faut bien que quelqu'un s'en serve.",
+              "text": "Parce que c'est le tien. Tu ne te rappelles pas ? … Ça ne fait rien.",
               "next": "c"
             },
             "safe": {
-              "text": "Rien n'est sûr. Il tient jusqu'à cent trente mètres. Après, il gémit. Quand il gémit, tu remontes.",
+              "text": "Il tient ce qu'il tient. Pas plus de quarante mètres, Loïc. Tu m'entends ? Pas plus de quarante.",
               "next": "c"
             },
             "c": {
-              "text": "Ramène ce que tu trouves. La marchande achète tout. Moi, je t'arrangerai la bête.",
+              "text": "Ramène ce que tu trouves. Hélène prend tout. Moi, je te l'arrange.",
               "next": "d"
             },
             "d": {
-              "text": "Quand tu remontes, je la répare. Pour rien. Ce n'est pas comme si j'avais autre chose à faire.",
+              "text": "Je répare quand tu remontes. Je n'ai que ça à faire.",
               "set": {
                 "subGiven": true
               },
@@ -580,47 +469,13 @@
           "nodes": {
             "a": {
               "text": [
-                "On t'a repêché. Ta bête est à quai, elle a eu plus de chance que ta soute.",
-                "Tu l'as poussée trop loin. Elle me l'a dit. Les coques parlent, si on écoute."
+                "On t'a repêché. Ta bête est à quai.",
+                "Tu l'as poussée trop loin. Tu fais toujours ça."
               ],
               "next": "b"
             },
             "b": {
               "text": "Bon. Tu veux quelque chose ?",
-              "choices": [
-                {
-                  "text": "Améliorer le Nautiliar",
-                  "action": "openUpgrades",
-                  "end": true
-                },
-                {
-                  "text": "Non.",
-                  "end": true
-                }
-              ]
-            }
-          },
-          "oncePer": "deaths"
-        },
-        {
-          "id": "mechanic_after_death_b",
-          "priority": 50,
-          "when": {
-            "deathsMin": 1,
-            "subGiven": true,
-            "fragmentsMin": 4
-          },
-          "start": "a",
-          "nodes": {
-            "a": {
-              "text": [
-                "(Il vérifie la coque sans un mot.)",
-                "Tu remontes toujours. Le bateau aussi. C'est déjà ça."
-              ],
-              "next": "b"
-            },
-            "b": {
-              "text": "Tu veux quelque chose ?",
               "choices": [
                 {
                   "text": "Améliorer le Nautiliar",
@@ -651,128 +506,11 @@
               "next": "b"
             },
             "b": {
-              "text": "(Il hausse les épaules.) La mer recrache n'importe quoi. Vends-le, ou rejette-le.",
+              "text": "(Il le regarde longtemps, puis te le rend sans un mot.)",
               "end": true
             }
           },
           "oncePer": "fragments"
-        },
-        {
-          "id": "mechanic_frag_b",
-          "priority": 60,
-          "when": {
-            "subGiven": true,
-            "fragmentsMin": 3,
-            "fragmentsMax": 4
-          },
-          "start": "a",
-          "nodes": {
-            "a": {
-              "text": "Encore un ? Certaines épaves, on les laisse tranquilles. Par respect.",
-              "choices": [
-                {
-                  "text": "Le respect de qui ?",
-                  "next": "who"
-                },
-                {
-                  "text": "D'accord.",
-                  "end": true
-                }
-              ]
-            },
-            "who": {
-              "text": "De ceux qui ont coulé avec, pardi. (Il se détourne.) Tu veux une amélioration, oui ou non ?",
-              "choices": [
-                {
-                  "text": "Améliorer le Nautiliar",
-                  "action": "openUpgrades",
-                  "end": true
-                },
-                {
-                  "text": "Non.",
-                  "end": true
-                }
-              ]
-            }
-          },
-          "oncePer": "fragments"
-        },
-        {
-          "id": "mechanic_frag_c",
-          "priority": 60,
-          "when": {
-            "subGiven": true,
-            "fragmentsMin": 5,
-            "fragmentsMax": 6
-          },
-          "start": "a",
-          "nodes": {
-            "a": {
-              "text": "Plus tu descends, moins tu remontes entier. Je dis ça pour toi.",
-              "end": true
-            }
-          },
-          "oncePer": "fragments"
-        },
-        {
-          "id": "mechanic_frag_d",
-          "priority": 60,
-          "when": {
-            "subGiven": true,
-            "fragmentsMin": 7
-          },
-          "start": "a",
-          "nodes": {
-            "a": {
-              "text": "(Il serre sa clé à molette jusqu'à ce que ses doigts blanchissent.)",
-              "next": "b"
-            },
-            "b": {
-              "text": "Laisse le fond tranquille. Il y a des noms qu'on n'aime pas relire.",
-              "end": true
-            }
-          },
-          "oncePer": "fragments"
-        },
-        {
-          "id": "mechanic_uneasy",
-          "priority": 5,
-          "when": {
-            "subGiven": true,
-            "fragmentsMin": 4
-          },
-          "start": "a",
-          "nodes": {
-            "a": {
-              "text": [
-                "Hm. Toi.",
-                "Elle tient, ta bête. C'est toi qui m'inquiètes.",
-                "(Il fait semblant de ne pas t'avoir vu.)"
-              ],
-              "choices": [
-                {
-                  "text": "Améliorer le Nautiliar",
-                  "action": "openUpgrades",
-                  "end": true
-                },
-                {
-                  "text": "Vous me cachez quelque chose.",
-                  "next": "hide"
-                },
-                {
-                  "text": "Rien.",
-                  "end": true
-                }
-              ]
-            },
-            "hide": {
-              "text": [
-                "Je cache des boulons, des clés et une bouteille de lambig. C'est tout.",
-                "Tu poses beaucoup de questions pour un gars qui sort du coma."
-              ],
-              "end": true
-            }
-          }
         },
         {
           "id": "mechanic_default",
@@ -785,9 +523,9 @@
             "a": {
               "text": [
                 "Hm.",
-                "Elle a encore grincé, hein ? Je l'ai entendue d'ici.",
-                "Le sel mange tout. Faut graisser, graisser, graisser.",
-                "(Il essuie une clé à molette qui n'a pas besoin de l'être.)"
+                "Pas plus de quarante mètres. Je le dis, je le redis.",
+                "(Il resserre un boulon sous le second siège. Tu n'avais pas remarqué qu'il y en avait deux.)",
+                "Le sel mange tout. Faut graisser, graisser, graisser."
               ],
               "choices": [
                 {
@@ -811,28 +549,162 @@
             },
             "what": {
               "text": [
-                "Les autres sont partis. Point. On répare ta pince ou on fait la causette ?",
+                "On répare ta pince ou on cause ?",
                 "La pêche s'est arrêtée. Le reste a suivi."
               ],
               "end": true
             },
             "sub": {
               "text": [
-                "À la commune. Pour les câbles, les épaves, ce genre de travail.",
-                "Il était à quai, et personne ne s'en servait. Voilà."
+                "À nous. (Il se reprend.) À toi.",
+                "On l'a construit ici, dans cet atelier. Trois hivers."
               ],
               "end": true
             }
           }
-        }
-      ]
-    },
-    "merchant": {
-      "name": "La marchande",
-      "conversations": [
+        },
         {
-          "id": "merchant_abyssal",
-          "once": true,
+          "id": "mechanic_frag_b",
+          "priority": 60,
+          "when": {
+            "subGiven": true,
+            "fragmentsMin": 3,
+            "fragmentsMax": 4
+          },
+          "start": "a",
+          "nodes": {
+            "a": {
+              "text": "(Il prend l'objet. Ses mains tremblent un peu.)",
+              "next": "b"
+            },
+            "b": {
+              "text": "Où t'as trouvé ça ? … Non. Ne me dis pas.",
+              "end": true
+            }
+          },
+          "oncePer": "fragments"
+        },
+        {
+          "id": "mechanic_frag_c",
+          "priority": 60,
+          "when": {
+            "subGiven": true,
+            "fragmentsMin": 5,
+            "fragmentsMax": 7
+          },
+          "start": "a",
+          "nodes": {
+            "a": {
+              "text": "(Il ne lève pas la tête de son établi.)",
+              "next": "b"
+            },
+            "b": {
+              "text": "Je t'avais dit quarante mètres. Je vous l'avais dit, à…",
+              "next": "c"
+            },
+            "c": {
+              "text": "(Il s'arrête. Il reprend sa lime.)",
+              "end": true
+            }
+          },
+          "oncePer": "fragments"
+        },
+        {
+          "id": "mechanic_frag_d",
+          "priority": 60,
+          "when": {
+            "subGiven": true,
+            "fragmentsMin": 8
+          },
+          "start": "a",
+          "nodes": {
+            "a": {
+              "text": "(Il te regarde enfin. Longtemps.)",
+              "next": "b"
+            },
+            "b": {
+              "text": "Il aimait les bateaux. Depuis tout petit.",
+              "end": true
+            }
+          },
+          "oncePer": "fragments"
+        },
+        {
+          "id": "mechanic_after_death_b",
+          "priority": 50,
+          "when": {
+            "deathsMin": 1,
+            "subGiven": true,
+            "fragmentsMin": 4
+          },
+          "start": "a",
+          "nodes": {
+            "a": {
+              "text": [
+                "Je ne peux pas te repêcher à chaque fois.",
+                "Un jour, tu ne remonteras pas. Je le sais, ça. Je le sais mieux que personne."
+              ],
+              "next": "b"
+            },
+            "b": {
+              "text": "Bon. Tu veux quelque chose ?",
+              "choices": [
+                {
+                  "text": "Améliorer le Nautiliar",
+                  "action": "openUpgrades",
+                  "end": true
+                },
+                {
+                  "text": "Non.",
+                  "end": true
+                }
+              ]
+            }
+          },
+          "oncePer": "deaths"
+        },
+        {
+          "id": "mechanic_uneasy",
+          "priority": 5,
+          "when": {
+            "subGiven": true,
+            "fragmentsMin": 3
+          },
+          "start": "a",
+          "nodes": {
+            "a": {
+              "text": [
+                "(Il te regarde arriver comme s'il comptait. Un. Il s'arrête à un.)",
+                "Pas plus de quarante. … Tu ne m'écoutes pas. Tu n'as jamais écouté.",
+                "Elle est prête. Elle est toujours prête."
+              ],
+              "choices": [
+                {
+                  "text": "Améliorer le Nautiliar",
+                  "action": "openUpgrades",
+                  "end": true
+                },
+                {
+                  "text": "Qui s'asseyait sur le second siège ?",
+                  "next": "seat"
+                },
+                {
+                  "text": "Rien.",
+                  "end": true
+                }
+              ]
+            },
+            "seat": {
+              "text": [
+                "(Il serre la mâchoire.) Personne. Va-t'en plonger.",
+                "Quelqu'un de plus prudent que toi."
+              ],
+              "end": true
+            }
+          }
+        },
+        {
+          "id": "mechanic_abyssal",
           "priority": 85,
           "when": {
             "abyssalHull": true
@@ -840,38 +712,30 @@
           "start": "a",
           "nodes": {
             "a": {
-              "text": "(Elle laisse tomber ses pièces. Elles roulent sous le comptoir.) Alors tu vas y descendre.",
+              "text": "Voilà. C'est la dernière. Je ne peux pas faire plus solide.",
               "next": "b"
             },
             "b": {
-              "text": "Écoute-moi bien. Ce qui est derrière nous tuera tous si tu la laisses ouverte.",
-              "choices": [
-                {
-                  "text": "Nous tuera… vous voulez dire vous trois ?",
-                  "next": "us"
-                },
-                {
-                  "text": "Qu'est-ce qui est derrière ?",
-                  "next": "what"
-                }
-              ]
-            },
-            "us": {
-              "text": "(Un temps.) Je veux dire tout le monde. Tout le village.",
-              "next": "c"
-            },
-            "what": {
-              "text": "Des choses qu'on ne vend pas. Des choses qu'on n'achète pas.",
+              "text": "Avec ça, tu iras jusqu'en bas. Jusqu'à la lumière.",
               "next": "c"
             },
             "c": {
-              "text": "Ferme-la. Et reviens me vendre tes babioles, comme avant. Comme toujours.",
+              "text": "(Il s'essuie les mains. Longtemps.)",
+              "next": "d"
+            },
+            "d": {
+              "text": "Ça souffre, là-dessous. Toi aussi. Je le vois bien.",
+              "next": "e"
+            },
+            "e": {
+              "text": "Ferme-la, mon grand. C'est tout. Je ne t'en voudrai pas.",
               "end": true
             }
-          }
+          },
+          "once": true
         },
         {
-          "id": "merchant_plead",
+          "id": "mechanic_plead",
           "priority": 75,
           "when": {
             "abyssalHull": true
@@ -880,24 +744,28 @@
           "nodes": {
             "a": {
               "text": [
-                "Ce qui est derrière nous tuera tous si tu la laisses ouverte.",
-                "Tu l'as fermée ? Non ? Alors qu'est-ce que tu fais ici ?",
-                "(Elle sourit. C'est la première fois. Ça ne lui va pas.) Ferme-la, mon petit."
+                "Ça souffre. Ferme-la, c'est tout.",
+                "J'en ai déjà trop vu. Ferme-la."
               ],
               "choices": [
                 {
-                  "text": "Vendre ma soute",
-                  "action": "openShop",
+                  "text": "Améliorer le Nautiliar",
+                  "action": "openUpgrades",
                   "end": true
                 },
                 {
-                  "text": "D'accord.",
+                  "text": "…",
                   "end": true
                 }
               ]
             }
           }
-        },
+        }
+      ]
+    },
+    "merchant": {
+      "name": "Hélène",
+      "conversations": [
         {
           "id": "merchant_intro",
           "priority": 90,
@@ -905,11 +773,11 @@
           "start": "a",
           "nodes": {
             "a": {
-              "text": "Un nouveau visage. Ça faisait longtemps.",
+              "text": "Te voilà. (Elle te regarde longtemps.) Tu as maigri.",
               "next": "b"
             },
             "b": {
-              "text": "Je rachète tout ce que la mer rend. Je ne pose pas de questions. N'en pose pas non plus.",
+              "text": "Je prends tout ce que tu remontes. Je ne pose pas de questions.",
               "choices": [
                 {
                   "text": "Vendre ma soute",
@@ -935,7 +803,7 @@
           "start": "a",
           "nodes": {
             "a": {
-              "text": "(Elle fronce le nez.) Ça, je ne l'achète pas. C'est trop… personnel.",
+              "text": "(Elle repousse ta main, doucement.) Ça, je ne l'achète pas.",
               "choices": [
                 {
                   "text": "Vendre ma soute",
@@ -949,116 +817,11 @@
               ]
             },
             "why": {
-              "text": "Il y a des choses qui n'ont pas de prix. Garde-le, si tu y tiens.",
+              "text": "Il y a des choses qui ne se vendent pas. Garde-le.",
               "end": true
             }
           },
           "oncePer": "fragments"
-        },
-        {
-          "id": "merchant_frag_b",
-          "priority": 60,
-          "when": {
-            "fragmentsMin": 3,
-            "fragmentsMax": 4
-          },
-          "start": "a",
-          "nodes": {
-            "a": {
-              "text": "Les objets, ça porte des choses. Les vieilles le disaient.",
-              "choices": [
-                {
-                  "text": "Vendre ma soute",
-                  "action": "openShop",
-                  "end": true
-                },
-                {
-                  "text": "Quelles choses ?",
-                  "next": "what"
-                }
-              ]
-            },
-            "what": {
-              "text": "Ce qu'on a oublié. Ce qu'on ferait mieux d'oublier.",
-              "end": true
-            }
-          },
-          "oncePer": "fragments"
-        },
-        {
-          "id": "merchant_frag_c",
-          "priority": 60,
-          "when": {
-            "fragmentsMin": 5
-          },
-          "start": "a",
-          "nodes": {
-            "a": {
-              "text": "(Elle compte ses pièces sans lever les yeux.) Reviens quand tu auras quelque chose à vendre.",
-              "choices": [
-                {
-                  "text": "Vendre ma soute",
-                  "action": "openShop",
-                  "end": true
-                },
-                {
-                  "text": "Partir.",
-                  "end": true
-                }
-              ]
-            }
-          },
-          "oncePer": "fragments"
-        },
-        {
-          "id": "merchant_uneasy",
-          "priority": 5,
-          "when": {
-            "fragmentsMin": 4
-          },
-          "start": "a",
-          "nodes": {
-            "a": {
-              "text": [
-                "Vite, qu'est-ce que tu as ?",
-                "Ne reste pas planté là.",
-                "(Elle regarde la mer par-dessus ton épaule.)"
-              ],
-              "choices": [
-                {
-                  "text": "Vendre ma soute",
-                  "action": "openShop",
-                  "end": true
-                },
-                {
-                  "text": "Vous les connaissiez, les autres ?",
-                  "next": "others"
-                },
-                {
-                  "text": "À qui revendez-vous tout ça ?",
-                  "next": "who"
-                },
-                {
-                  "text": "Rien.",
-                  "end": true
-                }
-              ]
-            },
-            "others": {
-              "text": [
-                "Tout le monde se connaît, ici. Se connaissait.",
-                "On avait dit : pas de questions."
-              ],
-              "end": true
-            },
-            "who": {
-              "text": [
-                "Ils viennent la nuit. Tu dors, la nuit.",
-                "À ceux qui en ont besoin."
-              ],
-              "end": true
-            }
-          }
         },
         {
           "id": "merchant_default",
@@ -1069,9 +832,9 @@
             "a": {
               "text": [
                 "Qu'est-ce que tu m'apportes ?",
-                "La mer a été généreuse ?",
-                "Les prix bougent avec la marée. Ne te plains pas.",
-                "(Elle compte des pièces. De vieux francs, usés jusqu'à la corde.)"
+                "Tu as mangé ?",
+                "(Elle pose trois bols sur la table. Elle en reprend un.)",
+                "Les prix bougent avec la marée. Ne te plains pas."
               ],
               "choices": [
                 {
@@ -1095,17 +858,214 @@
             },
             "what": {
               "text": [
-                "Les autres sont partis. Par la route, par la mer… Qu'est-ce que ça change ?",
-                "On avait dit : pas de questions."
+                "Pas aujourd'hui, Loïc.",
+                "Les gens partent. C'est comme ça."
               ],
               "end": true
             },
             "who": {
               "text": [
                 "À des brocanteurs de Quimper. Ils passent quand ils peuvent.",
-                "Ça ne te regarde pas, mon petit."
+                "Ça ne te regarde pas, mon grand."
               ],
               "end": true
+            }
+          }
+        },
+        {
+          "id": "merchant_frag_b",
+          "priority": 60,
+          "when": {
+            "fragmentsMin": 3,
+            "fragmentsMax": 4
+          },
+          "start": "a",
+          "nodes": {
+            "a": {
+              "text": "(Elle regarde l'objet, puis toi.) Tu dors bien ? Tu rêves de quoi ?",
+              "choices": [
+                {
+                  "text": "Vendre ma soute",
+                  "action": "openShop",
+                  "end": true
+                },
+                {
+                  "text": "D'une plongée.",
+                  "next": "dive"
+                }
+              ]
+            },
+            "dive": {
+              "text": "Raconte-moi. Même le bout que tu as. Je veux l'entendre.",
+              "end": true
+            }
+          },
+          "oncePer": "fragments"
+        },
+        {
+          "id": "merchant_frag_c",
+          "priority": 60,
+          "when": {
+            "fragmentsMin": 5,
+            "fragmentsMax": 7
+          },
+          "start": "a",
+          "nodes": {
+            "a": {
+              "text": "(Elle te prend le poignet, comme pour y sentir quelque chose.)",
+              "next": "b"
+            },
+            "b": {
+              "text": "Continue. Va chercher le reste. Ne les écoute pas.",
+              "choices": [
+                {
+                  "text": "Vendre ma soute",
+                  "action": "openShop",
+                  "end": true
+                },
+                {
+                  "text": "…",
+                  "end": true
+                }
+              ]
+            }
+          },
+          "oncePer": "fragments"
+        },
+        {
+          "id": "merchant_frag_d",
+          "priority": 60,
+          "when": {
+            "fragmentsMin": 8
+          },
+          "start": "a",
+          "nodes": {
+            "a": {
+              "text": "Tu les as tous. (Elle sourit, pour la première fois.)",
+              "next": "b"
+            },
+            "b": {
+              "text": "Alors tu sais où aller.",
+              "end": true
+            }
+          },
+          "oncePer": "fragments"
+        },
+        {
+          "id": "merchant_uneasy",
+          "priority": 5,
+          "when": {
+            "fragmentsMin": 3
+          },
+          "start": "a",
+          "nodes": {
+            "a": {
+              "text": [
+                "Tu as mangé ?",
+                "(Elle pose trois bols. Elle en reprend un. Elle le garde dans ses mains.)",
+                "Je te parle, tu sais. Même quand tu es en bas."
+              ],
+              "choices": [
+                {
+                  "text": "Vendre ma soute",
+                  "action": "openShop",
+                  "end": true
+                },
+                {
+                  "text": "Pour qui, le troisième bol ?",
+                  "next": "bowl"
+                },
+                {
+                  "text": "Rien.",
+                  "end": true
+                }
+              ]
+            },
+            "bowl": {
+              "text": [
+                "(Elle le repose. Très doucement.) Pour personne. Une habitude.",
+                "Pas aujourd'hui, Loïc."
+              ],
+              "end": true
+            }
+          }
+        },
+        {
+          "id": "merchant_abyssal",
+          "priority": 85,
+          "when": {
+            "abyssalHull": true
+          },
+          "start": "a",
+          "nodes": {
+            "a": {
+              "text": "Marcel t'a donné la dernière coque. Je l'ai su avant lui.",
+              "next": "b"
+            },
+            "b": {
+              "text": "Ils vont te demander de fermer. Tous les deux.",
+              "next": "c"
+            },
+            "c": {
+              "text": "Ils sont fatigués. Il ne faut pas leur en vouloir.",
+              "next": "d"
+            },
+            "d": {
+              "text": "Moi, je crois que tu m'entends. Je l'ai toujours cru.",
+              "end": true
+            }
+          },
+          "once": true
+        },
+        {
+          "id": "merchant_missing",
+          "priority": 76,
+          "when": {
+            "abyssalHull": true,
+            "fragmentsMax": 7
+          },
+          "start": "a",
+          "nodes": {
+            "a": {
+              "text": "Il te reste des choses à toi, là-dessous. Ne pars pas sans.",
+              "choices": [
+                {
+                  "text": "Vendre ma soute",
+                  "action": "openShop",
+                  "end": true
+                },
+                {
+                  "text": "…",
+                  "end": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "merchant_plead",
+          "priority": 75,
+          "when": {
+            "abyssalHull": true
+          },
+          "start": "a",
+          "nodes": {
+            "a": {
+              "text": [
+                "Moi, je crois que tu m'entends.",
+                "Reviens. C'est tout ce que je demande."
+              ],
+              "choices": [
+                {
+                  "text": "Vendre ma soute",
+                  "action": "openShop",
+                  "end": true
+                },
+                {
+                  "text": "…",
+                  "end": true
+                }
+              ]
             }
           }
         }
@@ -1122,11 +1082,11 @@
           "nodes": {
             "a": {
               "text": [
-                "Les volets sont cloués de l'intérieur.",
-                "Une table est mise derrière la vitre. La poussière a tout recouvert.",
+                "Les volets sont fermés. Tu ne te rappelles pas qui habitait là.",
+                "Une table est mise derrière la vitre. Pour combien, tu n'arrives pas à compter.",
                 "Tu frappes. Personne ne répond.",
-                "Le nom sur la boîte aux lettres a été gratté.",
-                "Un calendrier, derrière le carreau, arrêté sur un mois que tu ne reconnais pas."
+                "Un nom sur la boîte aux lettres. Tu le lis, et il s'efface aussitôt de ta tête.",
+                "Un calendrier, derrière le carreau. Octobre."
               ],
               "end": true
             }
@@ -1144,7 +1104,7 @@
           "start": "a",
           "nodes": {
             "a": {
-              "text": "Un vieux sous-marin rouillé, amarré au quai. Il faudrait parler au mécano.",
+              "text": "Un sous-marin, amarré au quai. Tu en connais chaque rivet, sans savoir pourquoi. Il faudrait parler à Marcel.",
               "end": true
             }
           }
@@ -1161,22 +1121,22 @@
           "start": "a",
           "nodes": {
             "a": {
-              "text": "(La déchirure respire, lentement. Elle est plus haute qu'une église.)",
+              "text": "(La déchirure respire, lentement. Elle bat. Elle bat au rythme du sonar.)",
               "next": "b"
             },
             "b": {
-              "text": "(De l'autre côté, une lumière que tu reconnais. Très loin, le bruit d'un port. Des voix. Ton nom.)",
+              "text": "(De l'autre côté, une lumière blanche. Des voix, tout près. L'une d'elles dit ton prénom.)",
               "next": "c"
             },
             "c": {
               "text": [
-                "(Tu entends encore le médecin : « Ce qui remontera de l'autre côté, ce ne sera pas toi. »)",
-                "(Tu entends encore le mécano : « La mer souffre. Ferme-la, c'est tout. »)",
-                "(Tu entends encore la marchande : « Ce qui est derrière nous tuera tous. »)"
+                "(Tu entends encore le docteur : « Ce qui remontera, ce ne sera plus vous. »)",
+                "(Tu entends encore Marcel : « Ça souffre. Ferme-la, c'est tout. »)",
+                "(Tu entends encore Hélène : « Moi, je crois que tu m'entends. »)"
               ],
               "choices": [
                 {
-                  "text": "Fermer le portail",
+                  "text": "Fermer la faille",
                   "next": "close"
                 },
                 {
@@ -1190,10 +1150,10 @@
               ]
             },
             "close": {
-              "text": "(Tu poses la main du Nautiliar sur le bord de la déchirure. Elle attend que tu décides.)",
+              "text": "(Le bras du Nautiliar se pose sur le bord de la lumière. Tu es fatigué. Tellement fatigué.)",
               "choices": [
                 {
-                  "text": "La fermer. Rester.",
+                  "text": "La fermer. Dormir.",
                   "action": "ending_close",
                   "end": true
                 },
@@ -1204,10 +1164,10 @@
               ]
             },
             "cross": {
-              "text": "(La lumière t'appelle. Derrière toi, quelque chose retient son souffle.)",
+              "text": "(La lumière fait mal. De l'autre côté, quelqu'un te tient la main.)",
               "choices": [
                 {
-                  "text": "Traverser. Rentrer.",
+                  "text": "Traverser. Ouvrir les yeux.",
                   "action": "ending_cross",
                   "end": true
                 },
@@ -1220,6 +1180,14 @@
           }
         }
       ]
+    },
+    "anna": {
+      "name": "Anna",
+      "conversations": []
+    },
+    "loic": {
+      "name": "Loïc",
+      "conversations": []
     }
   }
 }

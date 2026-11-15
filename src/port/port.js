@@ -50,7 +50,7 @@ export class Port {
     this.interactables = [
       ...this.npcs.map((n) => n.interact),
       ...layout.interactables,
-      ...cluesData.clues.map((c) => ({ id: `clue_${c.id}`, kind: 'clue', x: c.x, z: c.z, label: c.label, lines: c.lines })),
+      ...cluesData.clues.map((c) => ({ id: `clue_${c.id}`, kind: 'clue', x: c.x, z: c.z, label: c.label, lines: c.lines, truth: c.truth })),
       ...this.world.interactables,
     ];
     this.circles = this.npcs.map((n) => ({ x: n.x, z: n.z, r: 0.45 }));
@@ -148,6 +148,24 @@ export class Port {
   }
 
   /** Place le joueur à un point d'apparition ('hospital' ou 'quay') */
+  /**
+   * Le village se réveille avec la mémoire : chaque souvenir retrouvé rouvre des volets et rallume
+   * des fenêtres, maison après maison. Une seule reste close jusqu'au bout : celle de Yann.
+   * @param {number} n souvenirs retrouvés (0 à 8)
+   */
+  setMemories(n) {
+    const houses = (this.world.tagged.houses ?? []).filter((h) => h.kind === 'house' || h.kind === 'cafe');
+    const others = houses.filter((h) => !h.yann);
+    const open = Math.round((Math.min(8, n) / 8) * others.length);
+    this.darkGlass ??= others[0]?.windows[0]?.material;
+    others.forEach((h, i) => {
+      const on = i < open;
+      h.shutters.forEach((m) => (m.rotation.y = on ? m.userData.side * -1.45 : 0));
+      // une fenêtre sur deux s'éclaire
+      h.windows.forEach((m, k) => { if (this.darkGlass) m.material = on && (k + i) % 2 === 0 ? this.world.glowMaterial : this.darkGlass; });
+    });
+  }
+
   enter(spotId) {
     const s = layout.spawns[spotId] ?? layout.spawns.quay;
     this.player.place(s.x, s.z, s.yaw);
