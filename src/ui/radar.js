@@ -53,7 +53,7 @@ export class Radar {
     this.pulseT = 0;
   }
 
-  update(dt, sub, contacts, colliders = []) {
+  update(dt, sub, contacts, colliders = [], movers = []) {
     this.fit();
     if (this.pulseT != null && (this.pulseT += dt) > 1.2) this.pulseT = null;
     // Sonar volumétrique (amélioration) : nuage de points en relief à la place du balayage
@@ -65,7 +65,7 @@ export class Radar {
       this.size = 0;
       this.fit();
     }
-    if (mode3d) return this.update3d(dt, sub, contacts, colliders);
+    if (mode3d) return this.update3d(dt, sub, contacts, colliders, movers);
     const range = stats.radarRange ?? 45;
     if (range !== this.lastRange) {
       this.lastRange = range;
@@ -103,121 +103,172 @@ export class Radar {
   }
 
   /**
-   * Sonar volumétrique : le relief devant le sous-marin, dessiné en lignes de niveau (fil de fer
-   * avec faces cachées), vu de trois quarts arrière. Tout ce qui dépasse la hauteur du sous-marin
-   * passe à l'ambre : c'est un obstacle. Les bêtes ont une tige jusqu'au fond et leur distance.
-   * Pas de fond : seules les lignes et les marqueurs sont dessinés par-dessus l'image.
+   * Prépare le nuage de points du monde fixe : on prélève des sommets sur les épaves, les rochers,
+   * les piliers et les arches, rangés dans une grille pour retrouver vite ceux qui sont à portée.
+   * @param {THREE.Object3D} root décor de la plongée
    */
-  update3d(dt, sub, contacts, colliders) {
+  setWorld(root) {
+    root.updateMatrixWorld(true);
+    const CELL = 24, grid = (this.worldGrid = new Map());
+    const put = (x, y, z) => {
+      const k = Math.floor(x / CELL) * 4099 + Math.floor(z / CELL);
+      let l = grid.get(k);
+      if (!l) grid.set(k, (l = []));
+      l.push(x, y, z);
+    };
+    const e = new Float32Array(16);
+    root.traverse((o) => {
+      if (!o.isMesh || !o.geometry?.attributes.position) return;
+      const kind = o.material?.userData?.detail;
+      if (kind === 'sand' || kind === 'coral' || kind === 'sponge' || o.material?.wireframe) return;
+      const pos = o.geometry.attributes.position, n = pos.count;
+      const sample = (m, budget, minSize) => {
+        const sc = Math.hypot(m[0], m[1], m[2]);
+        if (sc * (o.geometry.boundingSphere?.radius ?? 1) < minSize) return;
+        const step = Math.max(1, Math.floor(n / budget));
+        for (let i = 0; i < n; i += step) {
+          const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+          put(m[0] * x + m[4] * y + m[8] * z + m[12], m[1] * x + m[5] * y + m[9] * z + m[13], m[2] * x + m[6] * y + m[10] * z + m[14]);
+        }
+      };
+      if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
+      if (o.isInstancedMesh) {
+        const w = o.matrixWorld.elements, a = o.instanceMatrix.array;
+        for (let k = 0; k < o.count; k++) {
+          // matrice monde × matrice d'instance
+          for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) e[c * 4 + r] = w[r] * a[k * 16 + c * 4] + w[4 + r] * a[k * 16 + c * 4 + 1] + w[8 + r] * a[k * 16 + c * 4 + 2] + w[12 + r] * a[k * 16 + c * 4 + 3];
+          sample(e, 90, 2.2);
+        }
+      } else sample(o.matrixWorld.elements, 700, 1.2);
+    });
+    this.worldCell = CELL;
+  }
+
+  /**
+   * Sonar volumétrique : un nuage de points serrés, comme un relevé bathymétrique.
+   * Le fond, les épaves, les rochers et les bêtes sont faits de points ; la couleur dit la hauteur
+   * (bleu = profond, vert, jaune, rouge = à hauteur du sous-marin ou au-dessus). Les bêtes hostiles
+   * sont rouges vif, les paisibles blanches. Vue de trois quarts arrière, l'avant vers le haut.
+   */
+  update3d(dt, sub, contacts, colliders, movers = []) {
     const range = stats.radarRange ?? 45;
     if (range !== this.lastRange) { this.lastRange = range; this.rangeEl.textContent = `${range} m`; }
-    this.sweep = (this.sweep + dt * 0.45) % 1;
     const sin = Math.sin(sub.yaw), cos = Math.cos(sub.yaw), P = sub.position;
-    const NR = 24, NC = 26, F0 = -range * 0.22, F1 = range, HW = range * 0.45;
-    // Relief sondé quelques fois par seconde : hauteurs relatives au sous-marin, rochers et piliers compris
+    // --- Relevé (quelques fois par seconde) : points du fond sur une grille fixe dans le monde,
+    //     plus les points des épaves et des rochers à portée
     this.scanTimer = (this.scanTimer ?? 0) - dt;
-    if (this.scanTimer <= 0 || !this.heights) {
-      this.scanTimer = 0.18;
-      const Hh = (this.heights ??= new Float32Array((NR + 1) * (NC + 1)));
-      for (let i = 0; i <= NR; i++) for (let j = 0; j <= NC; j++) {
-        const lf = F1 + (F0 - F1) * (i / NR), lr = -HW + 2 * HW * (j / NC);
-        Hh[i * (NC + 1) + j] = getFloorHeight(P.x + lf * sin - lr * cos, P.z + lf * cos + lr * sin) - P.y;
+    if (this.scanTimer <= 0 || !this.cloud) {
+      this.scanTimer = 0.3;
+      const pts = (this.cloud ??= []);
+      pts.length = 0;
+      const step = range / 34, x0 = Math.floor((P.x - range) / step) * step, z0 = Math.floor((P.z - range) / step) * step;
+      for (let x = x0; x <= P.x + range; x += step) for (let z = z0; z <= P.z + range; z += step) {
+        // léger décalage fixe par point : pas d'alignement en grille visible
+        const h = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453, jx = (h - Math.floor(h) - 0.5) * step * 0.8, jz = ((h * 7.13) % 1) * step * 0.4;
+        const wx = x + jx, wz = z + jz, dx = wx - P.x, dz = wz - P.z;
+        if (dx * dx + dz * dz > range * range) continue;
+        pts.push(wx, getFloorHeight(wx, wz), wz);
       }
-      const cw = (2 * HW) / NC, ch = (F1 - F0) / NR;
-      for (const c of colliders) {
-        const dx = c.x - P.x, dz = c.z - P.z;
-        if (c.r < 1.5 || dx * dx + dz * dz > range * range * 1.5) continue;
-        const lf = dx * sin + dz * cos, lr = -dx * cos + dz * sin, top = c.y + c.r - P.y;
-        const i0 = Math.round(((lf - F1) / (F0 - F1)) * NR), j0 = Math.round(((lr + HW) / (2 * HW)) * NC), n = Math.ceil(c.r / Math.min(cw, ch));
-        for (let i = i0 - n; i <= i0 + n; i++) for (let j = j0 - n; j <= j0 + n; j++) {
-          if (i < 0 || i > NR || j < 0 || j > NC) continue;
-          const k = i * (NC + 1) + j, d = Math.hypot((i - i0) * ch, (j - j0) * cw);
-          if (d <= c.r) Hh[k] = Math.max(Hh[k], top - (d / c.r) * c.r * 0.4);
+      this.nFloor = pts.length;
+      if (this.worldGrid) {
+        const C = this.worldCell, r2 = range * range;
+        for (let cx = Math.floor((P.x - range) / C); cx <= Math.floor((P.x + range) / C); cx++) for (let cz = Math.floor((P.z - range) / C); cz <= Math.floor((P.z + range) / C); cz++) {
+          const l = this.worldGrid.get(cx * 4099 + cz);
+          if (!l) continue;
+          for (let i = 0; i < l.length; i += 3) { const dx = l[i] - P.x, dz = l[i + 2] - P.z; if (dx * dx + dz * dz < r2) pts.push(l[i], l[i + 1], l[i + 2]); }
         }
       }
     }
-    const Hh = this.heights, { ctx, canvas } = this, W = canvas.width, H = canvas.height;
+    const { ctx, canvas } = this, W = canvas.width, H = canvas.height, pts = this.cloud;
     ctx.clearRect(0, 0, W, H);
-    // Caméra : derrière et au-dessus du sous-marin, plongeant vers l'avant
-    // (cadrée sur la hauteur moyenne du fond ; le relief est accentué pour se lire d'un coup d'œil)
-    let mean = 0;
-    for (let k = 0; k < Hh.length; k++) mean += Hh[k];
-    mean /= Hh.length;
-    const T = 0.85, cT = Math.cos(T), sT = Math.sin(T), camY = mean + range * 0.55, camZ = -range * 0.95, FOC = W * 1.05, cx = W / 2, cy = H * 1.12, EX = 1.6;
-    const proj = (lr, u, lf) => {
-      const ry = mean + (u - mean) * EX - camY, rz = lf - camZ, d = Math.max(1, rz * cT - ry * sT);
-      return [cx + (lr * FOC) / d, cy - ((ry * cT + rz * sT) * FOC) / d, d];
+    ctx.fillStyle = 'rgba(0, 3, 8, 0.72)';
+    ctx.fillRect(0, 0, W, H);
+    // --- Projection : caméra derrière et au-dessus, qui plonge vers le sous-marin
+    const T = 0.95, cT = Math.cos(T), sT = Math.sin(T), D = range * 2.1, FOC = W * 1.25, cx = W / 2, cy = H * 0.5;
+    const proj = (wx, wy, wz) => {
+      const dx = wx - P.x, dz = wz - P.z, lf = dx * sin + dz * cos, lr = -dx * cos + dz * sin, u = wy - P.y;
+      const d = D + lf * cT - u * sT;
+      return [cx - (lr * FOC) / d, cy - ((u * cT + lf * sT) * FOC) / d, d];
     };
-    const px = Math.max(1, W / 420);
-    ctx.lineJoin = 'round';
-    const wave = F0 + this.sweep * (F1 - F0) * 1.1;
-    const pts = (this._pts ??= new Float32Array((NC + 1) * 2)), prev = (this._prev ??= new Float32Array((NC + 1) * 2));
-    for (let i = 0; i <= NR; i++) {
-      const lf = F1 + (F0 - F1) * (i / NR);
-      for (let j = 0; j <= NC; j++) {
-        const q = proj(-HW + 2 * HW * (j / NC), Hh[i * (NC + 1) + j], lf);
-        pts[j * 2] = q[0]; pts[j * 2 + 1] = q[1];
-      }
-      if (i > 0) {
-        // face cachée : la bande entre deux lignes masque ce qui est derrière
-        ctx.beginPath();
-        ctx.moveTo(prev[0], prev[1]);
-        for (let j = 1; j <= NC; j++) ctx.lineTo(prev[j * 2], prev[j * 2 + 1]);
-        for (let j = NC; j >= 0; j--) ctx.lineTo(pts[j * 2], pts[j * 2 + 1]);
-        ctx.closePath();
-        ctx.fillStyle = 'rgba(2, 12, 14, 0.62)';
-        ctx.fill();
-      }
-      const near = i / NR, lit = Math.max(0, 1 - Math.abs(lf - wave) / (range * 0.1));
-      ctx.lineWidth = px * (0.9 + near * 0.9 + lit * 0.8);
-      for (let j = 0; j < NC; j++) {
-        // ambre si le relief arrive à la hauteur du sous-marin, turquoise sinon
-        const h = Math.max(Hh[i * (NC + 1) + j], Hh[i * (NC + 1) + j + 1]);
-        const danger = Math.max(0, Math.min(1, (h + 7) / 7));
-        const a = (0.3 + 0.6 * near + 0.4 * lit) * (1 - Math.abs(j / NC - 0.5) * 0.7);
-        ctx.strokeStyle = `rgba(${Math.round(90 + 165 * danger)}, ${Math.round(225 - 70 * danger)}, ${Math.round(200 - 150 * danger)}, ${Math.min(1, a)})`;
-        ctx.beginPath(); ctx.moveTo(pts[j * 2], pts[j * 2 + 1]); ctx.lineTo(pts[j * 2 + 2], pts[j * 2 + 3]); ctx.stroke();
-      }
-      // lignes de fuite, discrètes
-      if (i > 0) {
-        ctx.strokeStyle = `rgba(110, 215, 195, ${0.1 + 0.16 * near})`; ctx.lineWidth = px * 0.7;
-        ctx.beginPath();
-        for (let j = 0; j <= NC; j += 2) { ctx.moveTo(prev[j * 2], prev[j * 2 + 1]); ctx.lineTo(pts[j * 2], pts[j * 2 + 1]); }
-        ctx.stroke();
-      }
-      prev.set(pts);
+    // Palette « jet » selon la hauteur par rapport au sous-marin : −0,6 portée (bleu) … +0,1 portée (rouge)
+    const jet = (u) => {
+      const t = Math.max(0, Math.min(1, (u + range * 0.6) / (range * 0.7)));
+      const r = Math.max(0, Math.min(1, 1.5 - Math.abs(4 * t - 3))), g = Math.max(0, Math.min(1, 1.5 - Math.abs(4 * t - 2))), b = Math.max(0, Math.min(1, 1.5 - Math.abs(4 * t - 1)));
+      return `rgb(${Math.round(40 + 215 * r)}, ${Math.round(60 + 195 * g)}, ${Math.round(90 + 165 * b)})`;
+    };
+    const px = Math.max(1.6, W / 300);
+    // on dessine par bandes de hauteur pour ne changer de couleur que quelques fois
+    const bands = (this.bands ??= Array.from({ length: 14 }, () => []));
+    for (const b of bands) b.length = 0;
+    for (let i = 0; i < pts.length; i += 3) {
+      const q = proj(pts[i], pts[i + 1], pts[i + 2]);
+      if (q[0] < 0 || q[0] > W || q[1] < 0 || q[1] > H) continue;
+      const u = pts[i + 1] - P.y, k = Math.max(0, Math.min(13, Math.floor(((u + range * 0.6) / (range * 0.7)) * 14)));
+      bands[k].push(q[0], q[1], i >= this.nFloor ? 1.35 : 1);
     }
-    // Contacts : marqueur, tige jusqu'au fond, distance pour ce qui est hostile
-    ctx.font = `500 ${Math.round(W / 26)}px 'Barlow Condensed', sans-serif`;
-    ctx.textAlign = 'center';
+    bands.forEach((b, k) => {
+      ctx.fillStyle = jet(((k + 0.5) / 14) * range * 0.7 - range * 0.6);
+      for (let i = 0; i < b.length; i += 3) { const s = px * b[i + 2]; ctx.fillRect(b[i] - s / 2, b[i + 1] - s / 2, s, s); }
+    });
+    // --- Ce qui bouge : chaque bête est dessinée avec les points de son propre corps
+    const v = [0, 0, 0];
+    for (const m of movers) {
+      const o = m.object, dx = o.position.x - P.x, dz = o.position.z - P.z;
+      if (dx * dx + dz * dz > range * range) continue;
+      ctx.fillStyle = m.hostile ? '#ff4a3a' : '#f0f6ff';
+      const s = px * (m.hostile ? 1.7 : 1.4);
+      o.traverse((c) => {
+        const pos = c.isMesh && c.geometry?.attributes.position;
+        if (!pos) return;
+        const e = c.matrixWorld.elements, n = c.isInstancedMesh ? 0 : pos.count, st = Math.max(1, Math.floor(n / 70));
+        for (let i = 0; i < n; i += st) {
+          const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+          const q = proj(e[0] * x + e[4] * y + e[8] * z + e[12], e[1] * x + e[5] * y + e[9] * z + e[13], e[2] * x + e[6] * y + e[10] * z + e[14]);
+          ctx.fillRect(q[0] - s / 2, q[1] - s / 2, s, s);
+        }
+      });
+      // corps en chaîne (le ver) : un anneau de points par tronçon
+      if (m.chain) for (let k = 0; k < m.chain.length; k++) {
+        const c = m.chain[k], rr = m.radius * (1 - 0.7 * Math.pow(k / m.chain.length, 2.2));
+        for (let i = 0; i < 7; i++) { const a = i * 0.9 + k, q = proj(c.x + Math.cos(a) * rr, c.y + Math.sin(a) * rr, c.z); ctx.fillRect(q[0] - s / 2, q[1] - s / 2, s, s); }
+      }
+      if (m.hostile) {
+        const q = proj(o.position.x, o.position.y, o.position.z);
+        ctx.font = `600 ${Math.round(W / 30)}px 'Barlow Condensed', sans-serif`; ctx.textAlign = 'center';
+        ctx.fillText(`${Math.round(Math.hypot(dx, dz, o.position.y - P.y))} m`, q[0], q[1] - px * 6);
+      }
+    }
+    // --- Repères : objets importants, épaves, portail
+    ctx.lineWidth = Math.max(1, px * 0.7);
     for (const c of contacts) {
-      const dx = c.x - P.x, dz = c.z - P.z, lf = dx * sin + dz * cos, lr = -dx * cos + dz * sin;
-      if (lf < F0 || lf > F1 || Math.abs(lr) > HW) continue;
-      const u = c.y - P.y, [x, y] = proj(lr, u, lf), [fx, fy] = proj(lr, getFloorHeight(c.x, c.z) - P.y, lf);
-      const hostile = c.kind === 'creature', col = hostile ? '#ff6a4a' : c.kind === 'fish' ? '#9fe0f0' : (STYLE[c.kind] ?? STYLE.item).color;
-      const s = px * (hostile ? 6 + Math.sin(this.sweep * 40) * 1.5 : 4);
-      ctx.strokeStyle = ctx.fillStyle = col;
-      ctx.lineWidth = px; ctx.globalAlpha = 0.55;
-      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(fx, fy); ctx.stroke();
-      ctx.beginPath(); ctx.ellipse(fx, fy, s * 0.9, s * 0.35, 0, 0, Math.PI * 2); ctx.stroke();
-      ctx.globalAlpha = 1;
-      ctx.beginPath();
-      if (hostile) { ctx.moveTo(x, y - s); ctx.lineTo(x + s, y + s * 0.8); ctx.lineTo(x - s, y + s * 0.8); ctx.closePath(); ctx.fill(); }
-      else if (c.kind === 'fish') { ctx.arc(x, y, s * 0.8, 0, Math.PI * 2); ctx.fill(); }
-      else if (c.kind === 'wreck') { ctx.lineWidth = px * 1.5; ctx.strokeRect(x - s, y - s, s * 2, s * 2); }
-      else { ctx.lineWidth = px * 1.5; ctx.moveTo(x, y - s); ctx.lineTo(x + s, y); ctx.lineTo(x, y + s); ctx.lineTo(x - s, y); ctx.closePath(); ctx.stroke(); }
-      if (hostile) ctx.fillText(`${Math.round(Math.hypot(dx, dz, u))} m`, x, y - s - px * 3);
+      if (c.kind === 'creature' || c.kind === 'fish') continue;
+      const dx = c.x - P.x, dz = c.z - P.z;
+      if (dx * dx + dz * dz > range * range) continue;
+      const q = proj(c.x, c.y + 1, c.z), s = px * 3.2;
+      ctx.strokeStyle = ctx.fillStyle = c.kind === 'fragment' ? '#ffffff' : c.kind === 'wreck' ? '#ffd27a' : '#ffe46a';
+      ctx.beginPath(); ctx.moveTo(q[0], q[1] - s); ctx.lineTo(q[0] + s, q[1]); ctx.lineTo(q[0], q[1] + s); ctx.lineTo(q[0] - s, q[1]); ctx.closePath();
+      if (c.kind === 'wreck') ctx.stroke(); else ctx.fill();
     }
-    // Le sous-marin, sa tige jusqu'au fond, et l'onde de l'impulsion
-    const [sx, sy] = proj(0, 0, 0), [gx, gy] = proj(0, getFloorHeight(P.x, P.z) - P.y, 0);
-    ctx.strokeStyle = 'rgba(239, 227, 187, 0.6)'; ctx.lineWidth = px;
-    ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(gx, gy); ctx.stroke();
-    ctx.fillStyle = '#efe3bb';
-    ctx.beginPath(); ctx.moveTo(sx, sy - px * 9); ctx.lineTo(sx + px * 6, sy + px * 5); ctx.lineTo(sx, sy + px * 2); ctx.lineTo(sx - px * 6, sy + px * 5); ctx.closePath(); ctx.fill();
+    // --- Le sous-marin : flèche blanche, sa tige jusqu'au fond, un cercle de 20 m pour l'échelle
+    const a = proj(P.x, P.y, P.z), f = proj(P.x, getFloorHeight(P.x, P.z), P.z);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+    ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(f[0], f[1]); ctx.stroke();
+    ctx.beginPath();
+    for (let k = 0; k <= 40; k++) { const t = (k / 40) * Math.PI * 2, q = proj(P.x + Math.cos(t) * 20, P.y, P.z + Math.sin(t) * 20); if (k) ctx.lineTo(q[0], q[1]); else ctx.moveTo(q[0], q[1]); }
+    ctx.stroke();
+    const n1 = proj(P.x + sin * 5, P.y, P.z + cos * 5), l1 = proj(P.x - sin * 3 - cos * 2.6, P.y, P.z - cos * 3 + sin * 2.6), r1 = proj(P.x - sin * 3 + cos * 2.6, P.y, P.z - cos * 3 - sin * 2.6);
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.moveTo(n1[0], n1[1]); ctx.lineTo(l1[0], l1[1]); ctx.lineTo(a[0], a[1]); ctx.lineTo(r1[0], r1[1]); ctx.closePath(); ctx.fill();
+    ctx.font = `500 ${Math.round(W / 34)}px 'Barlow Condensed', sans-serif`; ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.fillText('20 m', proj(P.x + cos * 20, P.y, P.z - sin * 20)[0] + px * 2, proj(P.x + cos * 20, P.y, P.z - sin * 20)[1]);
+    // légende des couleurs
+    for (let k = 0; k < 14; k++) { ctx.fillStyle = jet(((k + 0.5) / 14) * range * 0.7 - range * 0.6); ctx.fillRect(px * 4, H - px * 6 - (k + 1) * px * 5, px * 4, px * 5); }
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.fillText('haut', px * 11, H - px * 6 - 13 * px * 5); ctx.fillText('profond', px * 11, H - px * 8);
     if (this.pulseT != null) {
       const k = this.pulseT / 1.2;
-      ctx.strokeStyle = `rgba(127, 208, 192, ${1 - k})`; ctx.lineWidth = px * 2.5;
-      ctx.beginPath(); ctx.ellipse(sx, sy, k * W * 0.55, k * W * 0.2, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = `rgba(127, 208, 192, ${1 - k})`; ctx.lineWidth = px * 2;
+      ctx.beginPath(); ctx.ellipse(a[0], a[1], k * W * 0.5, k * W * 0.5 * cT, 0, 0, Math.PI * 2); ctx.stroke();
     }
   }
 

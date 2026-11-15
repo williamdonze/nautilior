@@ -23,7 +23,7 @@ function skin(opts, anim) {
 const glow = (color) => new THREE.MeshBasicMaterial({ color });
 
 /** Assemble une géométrie à partir de sommets { p, c, u, g } et d'indices */
-function build(verts, idx) {
+export function build(verts, idx) {
   const n = verts.length, pos = new Float32Array(n * 3), col = new Float32Array(n * 3), aU = new Float32Array(n), aG = new Float32Array(n);
   verts.forEach((v, i) => {
     pos.set(v.p, i * 3); col[i * 3] = v.c.r; col[i * 3 + 1] = v.c.g; col[i * 3 + 2] = v.c.b; aU[i] = v.u; aG[i] = v.g ?? 0;
@@ -38,7 +38,7 @@ function build(verts, idx) {
   return geo;
 }
 /** Grille de (nu+1) × (nv+1) sommets : fn(i, j) → sommet */
-function grid(verts, idx, nu, nv, fn, flip = false) {
+export function grid(verts, idx, nu, nv, fn, flip = false) {
   const base = verts.length;
   for (let i = 0; i <= nu; i++) for (let j = 0; j <= nv; j++) verts.push(fn(i / nu, j / nv));
   for (let i = 0; i < nu; i++) for (let j = 0; j < nv; j++) {

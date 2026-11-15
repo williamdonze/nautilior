@@ -580,6 +580,41 @@ export class Sound {
    * Bourdonnement continu du portail (0 = silence).
    * Deux oscillateurs graves légèrement désaccordés, créés à la première utilisation.
    */
+  /** Bip du sonar : bref, net, régulier. Il bat la mesure de toute la plongée. */
+  sonarBeep(volume = 1) {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    const o = this.ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.value = 920;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.05 * volume, t + 0.008);
+    g.gain.setValueAtTime(0.05 * volume, t + 0.07);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+    o.connect(g).connect(this.master);
+    g.connect(this.echo);
+    o.start(t);
+    o.stop(t + 0.16);
+  }
+
+  /** Le bip ne retombe plus : une note tenue, qui s'éteint */
+  sonarFlat(duration = 2.2) {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    const o = this.ctx.createOscillator();
+    o.type = 'sine';
+    o.frequency.value = 920;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.045, t + 0.01);
+    g.gain.setValueAtTime(0.045, t + duration * 0.7);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+    o.connect(g).connect(this.master);
+    o.start(t);
+    o.stop(t + duration + 0.05);
+  }
+
   /** Sonar : un ronronnement léger et continu, qui palpite doucement */
   setSonar(on) {
     if (!this.ready) return;

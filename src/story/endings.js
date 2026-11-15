@@ -134,6 +134,27 @@ export async function playEnding(game, kind) {
     await fadeOut('#e8ece2', 3);
   }
 
+  /*
+   * Épilogue commun : écran noir, et le bip du sonar qui n'a jamais cessé.
+   * Traverser : il continue, régulier — c'est un moniteur cardiaque, dans une chambre d'hôpital.
+   * Fermer : il ralentit, puis ne retombe plus.
+   */
+  await fadeOut('#020407', 2.5);
+  let alive = true, beats = 0;
+  (async () => {
+    while (alive) {
+      sound.sonarBeep(1.2);
+      beats++;
+      await wait(kind === 'close' ? 1070 + beats * 160 : 1070);
+    }
+  })();
+  for (const [i, line] of (T.pulse ?? []).entries()) {
+    if (kind === 'close' && i === 2) { alive = false; sound.sonarFlat(9); }
+    await dialogue.narrate(line);
+  }
+  alive = false;
+  await wait(1500);
+
   // Fin : on la note et on affiche l'écran de fin
   storyState.ending = kind;
   markEnding(kind);

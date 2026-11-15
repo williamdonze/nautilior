@@ -128,11 +128,14 @@ class FishSchools {
           f.vel.set(0, 0, 0);
         }
         school.active = true;
+        school.fade = 0; // entre en fondu (voir bridge.js)
       } else if (!shouldLive && school.active && far) {
         school.active = false;
       }
 
       school.mesh.visible = school.active;
+      school.fade = Math.min(1, (school.fade ?? 1) + dt / 3);
+      school.mesh.userData.fade = school.fade;
       if (school.active) {
         let idx = 0;
         // Le banc erre vers une cible qui change de temps en temps
@@ -194,6 +197,7 @@ class Mutant {
     this.vel.set(0, 0, 0);
     this.state = 'wander';
     this.cooldown = 2;
+    this.fadeIn = 0;
     if (this.model.segments) for (const s of this.model.segments) s.position.copy(p);
   }
 
@@ -265,6 +269,8 @@ class Mutant {
       }
     }
 
+    this.fadeIn = Math.min(1, (this.fadeIn ?? 1) + dt / 2.5);
+    this.object.userData.fade = this.fadeIn;
     this.animate(dt, time);
     return damage;
   }

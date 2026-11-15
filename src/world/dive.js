@@ -50,6 +50,7 @@ export class Dive {
     this.radiationSource = createRadiationSource(scene);
     this.portal = createPortal(scene);
     this.radar = new Radar(sound);
+    this.radar.setWorld(this.decor.group); // nuage de points du sonar 3D
     this.wake = new Wake();
     this._contacts = [];
     this.pulseCooldown = 0;
@@ -284,6 +285,16 @@ export class Dive {
     return C;
   }
 
+  /** Tout ce qui bouge, pour le sonar 3D (dessiné avec les points de son propre corps) */
+  movers() {
+    const M = (this._movers ??= []);
+    M.length = 0;
+    for (const a of this.wildlife.animals) M.push({ object: a.object, hostile: a.spec.damage > 0 });
+    for (const m of this.creatures.mutants) M.push({ object: m.object, hostile: true });
+    if (this.guardian.group.visible) M.push({ object: this.guardian.head, hostile: true, chain: this.guardian.segs, radius: this.guardian.spacing * 0.8 });
+    return M;
+  }
+
   /** Clic gauche : la pince (en vue cockpit, le premier clic capture la souris) */
   click() {
     if (this.inventory.isOpen || this.survival.dead) return;
@@ -325,6 +336,32 @@ export class Dive {
     this.pulseFx = 1;
     this.shake(0.25);
     this.hud.flash('#7fd0c0');
+  }
+
+  /**
+   * Le bip du sonar. Régulier comme un pouls : calme en temps normal (≈ 56 par minute), il s'emballe
+   * quand l'air manque, que la coque cède ou qu'une bête charge. La déchirure du portail bat au même
+   * rythme. Et quand tout s'arrête, il ne retombe plus.
+   */
+  heart(dt) {
+    const S = this.survival;
+    if (S.dead) {
+      if (!this.flat) { this.flat = true; this.sound.sonarFlat(); }
+      return;
+    }
+    this.flat = false;
+    const threat = this.creatures.threat + this.wildlife.threat + this.guardian.threat > 0 ? 0.6 : 0;
+    const stress = Math.min(1, Math.max(threat, 1 - S.oxygenRatio / 0.3, (0.5 - S.hullRatio) * 1.4, 0));
+    this.bpm = (this.bpm ?? 56) + (56 + 64 * stress - (this.bpm ?? 56)) * Math.min(1, dt * 0.8);
+    this.beatPhase = (this.beatPhase ?? 0) + (dt * this.bpm) / 60;
+    if (this.beatPhase >= 1) {
+      this.beatPhase -= 1;
+      if (!this.autopilot) this.sound.sonarBeep(0.8 + stress * 0.6);
+      this.radar.beat?.();
+    }
+    // le tracé de la déchirure a son pic à la phase 0,3 : on le cale sur le bip
+    this.portal.externalBeat = true;
+    this.portal.setBeat((this.beatPhase + 0.3) % 1);
   }
 
   /** Sons et effets liés à la survie */
@@ -447,6 +484,7 @@ export class Dive {
     sub.getPropellerPosition(this._propPos);
     this.bubbles.update(dt, this._propPos, Math.abs(sub.throttle) * 22 + 0.5);
 
+    this.heart(dt);
     hud.update(sub.depth, this.input);
     // Le portail : bourdonnement qui monte à l'approche, et invite quand on est devant
     const portalDist = sub.position.distanceTo(this.portal.center);
@@ -475,7 +513,7 @@ export class Dive {
     }
 
     // --- Radar : objets, fragments, créatures, bancs, épaves dans le rayon du sonar
-    if (!survival.dead) this.radar.update(dt, sub, this.gatherContacts(), this.decor.colliders);
+    if (!survival.dead) this.radar.update(dt, sub, this.gatherContacts(), this.decor.colliders, this.movers());
     sound.setSonar(!survival.dead);
 
     // --- Un fragment de mémoire tout proche « appelle »

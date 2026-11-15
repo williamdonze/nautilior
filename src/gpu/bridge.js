@@ -161,7 +161,8 @@ export class Bridge {
     if (mat.blending === THREE.AdditiveBlending) flags |= 4;
     if (mat.vertexColors && geo.hasColor) flags |= 8;
     P.par[0] = kind; P.par[1] = flags; P.par[2] = z; P.par[3] = w;
-    P.list = flags & 4 ? 'add' : kind === 1 || kind === 2 ? 'rock' : mat.transparent && op < 0.999 ? 'alpha' : 'opaque';
+    P.col[3] *= this.fade;
+    P.list = flags & 4 ? 'add' : kind === 1 || kind === 2 ? 'rock' : (mat.transparent && op < 0.999) || this.fade < 0.999 ? 'alpha' : 'opaque';
     return true;
   }
 
@@ -182,7 +183,7 @@ export class Bridge {
   instanced(mesh, mat, geo) {
     let it = this.insts.get(mesh);
     const im = mesh.instanceMatrix, ic = mesh.instanceColor;
-    const version = im.version * 31 + (ic?.version ?? 0) * 17 + mesh.count;
+    const version = im.version * 31 + (ic?.version ?? 0) * 17 + mesh.count + Math.round(this.fade * 200) * 1009;
     const dynamic = it && it.version !== version;
     if (!it || it.cap < mesh.count) {
       it?.buf.destroy();
@@ -218,18 +219,24 @@ export class Bridge {
     camera.updateMatrixWorld();
     this.frustum.setFromProjectionMatrix(this._m.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
     const ce = camera.matrixWorld.elements;
+    this.fade = 1;
     this.walk(scene, ce);
     this.device.queue.writeBuffer(this.singleBuf, 0, this.single, 0, this.nSingle * INST);
   }
 
   walk(o, ce) {
     if (!o.visible || o.userData.gpuSkip) return;
+    // userData.fade (0..1) : fondu d'apparition, hérité par tout ce que l'objet contient
+    const prevFade = this.fade, f = o.userData.fade;
+    if (f !== undefined) this.fade = prevFade * f;
+    if (this.fade <= 0.004) { this.fade = prevFade; return; }
     if (o.isLight) this.light(o, ce);
     else if (o.isSprite) this.sprite(o, ce);
     else if (o.isMesh) this.mesh(o);
     else if (o.isPoints && o.userData.gpuPoints) this.points(o);
     const ch = o.children;
     for (let i = 0; i < ch.length; i++) this.walk(ch[i], ce);
+    this.fade = prevFade;
   }
 
   mesh(o) {

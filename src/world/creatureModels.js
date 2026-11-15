@@ -387,6 +387,14 @@ export const FISH_SPECIES = {
   maquereau: { length: 0.95, back: '#2f5a4a', belly: '#d8e0d8', fins: '#4a6a5a', stripes: true, scale: 1, mutations: ['hump', 'glowStripes', 'spines'] },
   bar: { length: 1.1, back: '#5a6464', belly: '#d0d4cc', fins: '#6b6e6c', scale: 1.5, mutations: ['doubleTail', 'ribs', 'fangs'] },
   vieille: { length: 1, back: '#8a4f28', belly: '#c08850', fins: '#a8955f', spots: true, scale: 1.3, mutations: ['bigHead', 'pustules', 'raggedFins'] },
+  lieu: { length: 1.25, tall: 0.8, back: '#4a5a3a', belly: '#c8ccb8', fins: '#5a6a4a', scale: 1.5, mutations: ['fangs'] },
+  dorade: { length: 0.9, tall: 1.75, thin: 0.42, back: '#7a8a96', belly: '#e0dcc8', fins: '#b8a060', scale: 1.4, mutations: ['hump'] },
+  rouget: { length: 0.6, tall: 1.05, back: '#b04a36', belly: '#e8b8a0', fins: '#d88a5a', spots: true, scale: 0.9, mutations: ['extraEyes'] },
+  saint_pierre: { length: 0.85, tall: 2.2, thin: 0.3, back: '#8a8458', belly: '#c8c090', fins: '#5a5636', spots: true, scale: 1.6, mutations: ['spines', 'raggedFins'] },
+  orphie: { length: 1.5, tall: 0.42, back: '#2f6a6a', belly: '#d0e0d8', fins: '#4a8a84', scale: 1.2, mutations: ['fangs', 'glowStripes'] },
+  tacaud: { length: 0.8, tall: 1.4, back: '#8a6a44', belly: '#d8c8a8', fins: '#6a5234', stripes: true, scale: 1.1, mutations: ['tumors'] },
+  mulet: { length: 1.05, tall: 1.0, back: '#5a6066', belly: '#c8ccce', fins: '#74797e', stripes: true, scale: 1.3, mutations: ['doubleTail'] },
+  blafard: { length: 1.1, tall: 1.3, back: '#9aa0a0', belly: '#d8dcd8', fins: '#b0b8b4', scale: 1.5, mutations: ['bigHead', 'extraEyes', 'pustules'] },
   squelette: { length: 1, back: '#b9cbc2', belly: '#e8ece2', fins: '#83a39a', scale: 1.4, mutations: ['skeleton', 'extraEyes'] },
 };
 
@@ -425,7 +433,9 @@ export function createFishGeometry(speciesId = 'sardine') {
       profile[4] = [0.2, L * 0.3];
       profile[3] = [0.2, L * 0.12];
     }
-    const body = shade(lathe(profile, 7, 0.55), sp.back, sp.belly, (c, x, y, z, t) => {
+    // silhouette propre à l'espèce : tall = hauteur du corps, thin = épaisseur
+    for (const pt of profile) pt[0] *= sp.tall ?? 1;
+    const body = shade(lathe(profile, 12, (sp.thin ?? 0.55) / Math.max(1, (sp.tall ?? 1) * 0.8)), sp.back, sp.belly, (c, x, y, z, t) => {
       if (sp.stripes && t > 0.5 && Math.sin(z * 26 + Math.sin(x * 40) * 2) > 0.3) c.multiplyScalar(0.45);
       if (sp.spots && Math.sin(z * 30) * Math.sin(y * 40) > 0.6) c.offsetHSL(0, 0, 0.12);
       if (mut.has('ribs') && Math.sin(z * 34) > 0.55 && Math.abs(x) > 0.05) c.multiplyScalar(0.35);

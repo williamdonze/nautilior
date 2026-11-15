@@ -4,8 +4,8 @@ import { getFloorHeight } from './seabed.js';
 import { applySkin } from './detail.js';
 
 /**
- * Le gardien : une bête colossale, longue comme un train, qui tourne sans fin autour de la
- * déchirure. Rien n'approche du portail sans passer sous ses anneaux.
+ * Le gardien : un ver colossal, sans yeux, épais comme une maison et long comme un train,
+ * cuirassé d'anneaux, qui tourne sans fin autour de la déchirure. Rien n'approche du portail sans passer sous ses anneaux.
  *  - elle patrouille en cercle tant que le sous-marin est loin ;
  *  - dès qu'il entre dans son domaine, elle se jette sur lui, gueule ouverte, encore et encore ;
  *  - son corps est solide : on s'y cogne, et il abîme la coque ;
@@ -16,21 +16,26 @@ const TAU = Math.PI * 2;
 const _v = new THREE.Vector3(), _d = new THREE.Vector3(), _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vector3();
 const Z = new THREE.Vector3(0, 0, 1);
 
-/** Tronçon du corps (rayon 1, long de 1, le long de Z) : anneau côtelé, crête dorsale, taches lumineuses */
+/**
+ * Tronçon du corps (rayon 1, long de 1, le long de Z) : trois anneaux de cuir épais qui se
+ * chevauchent comme des écailles de cuirasse, sillons profonds entre eux, pores qui luisent.
+ */
 function segmentGeometry() {
-  const NA = 28, NT = 6, pos = [], col = [], glow = [], idx = [];
-  const back = new THREE.Color('#141c1a'), belly = new THREE.Color('#4a5246'), spot = new THREE.Color('#8fe0a0'), c = new THREE.Color();
+  const NA = 40, NT = 18, pos = [], col = [], glow = [], idx = [];
+  const hide = new THREE.Color('#2a2622'), ridge = new THREE.Color('#57493a'), groove = new THREE.Color('#1c1814'), pore = new THREE.Color('#9be8a8'), c = new THREE.Color();
   for (let i = 0; i <= NT; i++) {
-    const t = i / NT, bulge = 1 + 0.07 * Math.sin(t * Math.PI);
+    const t = i / NT, ring = (t * 3) % 1; // trois anneaux par tronçon
+    // profil en dents de scie : chaque anneau monte doucement puis retombe à pic sous le suivant
+    const lift = Math.pow(ring, 0.6) * 0.16 - 0.06;
     for (let j = 0; j <= NA; j++) {
       const a = (j / NA) * TAU, ca = Math.cos(a), sa = Math.sin(a);
-      // crête dorsale en dents de scie, flancs aplatis
-      const crest = Math.pow(Math.max(0, sa), 12) * 0.5 * (0.5 + Math.abs(Math.sin(t * Math.PI)));
-      pos.push(ca * bulge * 0.92, sa * bulge * (1 + crest), t - 0.5);
-      const g = Math.pow(Math.max(0, Math.cos(a * 2) * Math.sin(t * Math.PI)), 10) * (Math.abs(sa) < 0.5 ? 1 : 0);
-      c.copy(belly).lerp(back, Math.min(1, sa * 1.4 + 0.75)).lerp(spot, g);
+      const wart = Math.sin(a * 9 + Math.floor(t * 3) * 2.1) * Math.sin(ring * Math.PI) * 0.035;
+      const r = 1 + lift + wart;
+      pos.push(ca * r, sa * r, t - 0.5);
+      const g = Math.pow(Math.max(0, Math.sin(a * 7 + Math.floor(t * 3) * 1.3)), 24) * (ring > 0.25 && ring < 0.6 ? 1 : 0);
+      c.copy(groove).lerp(hide, Math.min(1, ring * 3)).lerp(ridge, Math.pow(ring, 3) * 0.9).lerp(pore, g);
       col.push(c.r, c.g, c.b);
-      glow.push(g * 1.6);
+      glow.push(g * 1.5);
     }
   }
   for (let i = 0; i < NT; i++) for (let j = 0; j < NA; j++) {
@@ -46,47 +51,82 @@ function segmentGeometry() {
   return geo;
 }
 
-/** La tête (rayon ≈ 1, regarde vers +Z) : crâne, mâchoire articulée, crocs, grappes d'yeux */
+/**
+ * La tête (rayon ≈ 1, regarde vers +Z) : pas d'yeux, pas de mâchoire — une gueule ronde,
+ * fermée par quatre lèvres épaisses qui s'ouvrent comme une fleur, et derrière elles un puits
+ * tapissé de rangs de crocs en cristal, jusqu'à une lueur verte tout au fond.
+ */
 function createHead() {
   const head = new THREE.Group();
-  const skin = applySkin(new THREE.MeshLambertMaterial({ color: '#1a2320' }), { rim: 0.6, translucent: 0.2, iridescent: 0.3, rimColor: '#7fbf7a' });
-  const gum = new THREE.MeshLambertMaterial({ color: '#3a1418' });
-  const tooth = new THREE.MeshLambertMaterial({ color: '#c8d0b0', emissive: '#30402a' });
-  const eyeMat = new THREE.MeshBasicMaterial({ color: '#c8ffb0' });
+  const hide = applySkin(new THREE.MeshLambertMaterial({ color: '#2e2924', side: THREE.DoubleSide }), { rim: 0.5, translucent: 0.15, iridescent: 0.2, rimColor: '#7fbf7a' });
+  const gum = new THREE.MeshLambertMaterial({ color: '#3a1216', side: THREE.DoubleSide });
+  const tooth = new THREE.MeshLambertMaterial({ color: '#b0ac90', emissive: '#10160e' });
   const add = (parent, geo, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); parent.add(m); return m; };
-  // Crâne et mâchoire supérieure
-  add(head, new THREE.SphereGeometry(1, 36, 22).scale(1.05, 0.85, 1.25), skin, 0, 0.1, -0.2);
-  const upper = new THREE.Group();
-  head.add(upper);
-  add(upper, new THREE.SphereGeometry(1, 32, 16, 0, TAU, 0, Math.PI / 2).scale(0.95, 0.5, 1.9), skin, 0, 0.12, 0.6);
-  add(upper, new THREE.CircleGeometry(1, 32).rotateX(Math.PI / 2).scale(0.9, 1, 1.8), gum, 0, 0.11, 0.6);
-  // Mâchoire inférieure, articulée à l'arrière
-  const jaw = new THREE.Group();
-  jaw.position.set(0, -0.05, -0.1);
-  head.add(jaw);
-  add(jaw, new THREE.SphereGeometry(1, 32, 16, 0, TAU, Math.PI / 2, Math.PI / 2).scale(0.88, 0.42, 1.75), skin, 0, 0, 0.7);
-  add(jaw, new THREE.CircleGeometry(1, 32).rotateX(-Math.PI / 2).scale(0.84, 1, 1.66), gum, 0, 0.01, 0.7);
-  // Crocs : deux rangées par mâchoire, de tailles inégales
-  const fang = new THREE.ConeGeometry(0.055, 0.42, 8);
-  for (let i = 0; i < 30; i++) {
-    const a = (i / 29 - 0.5) * 2.5, big = i % 4 === 0 ? 1.7 : 1;
-    const x = Math.sin(a) * 0.84, z = 0.6 + Math.cos(a) * 1.72;
-    const up = add(upper, fang, tooth, x, 0.11 - 0.2 * big, z); up.rotation.x = Math.PI; up.scale.setScalar(big);
-    const lo = add(jaw, fang, tooth, x * 0.94, 0.2 * big, 0.7 + Math.cos(a) * 1.58); lo.scale.setScalar(big * 0.9);
+  // Col : le corps s'évase jusqu'au bord de la gueule
+  const outer = [[1.0, -1.4], [1.03, -0.6], [1.1, 0.2], [1.22, 0.8], [1.2, 1.0]].map(([r, z]) => new THREE.Vector2(r, z));
+  add(head, new THREE.LatheGeometry(outer, 48).rotateX(Math.PI / 2), hide);
+  // Puits : la gorge qui s'enfonce, rouge sombre
+  const inner = [[1.2, 1.0], [1.02, 0.85], [0.84, 0.45], [0.62, -0.1], [0.4, -0.8], [0.22, -1.4]].map(([r, z]) => new THREE.Vector2(r, z));
+  add(head, new THREE.LatheGeometry(inner, 48).rotateX(Math.PI / 2), gum);
+  // Rangs de crocs : de grands crocs courbes au bord, puis des aiguilles de plus en plus serrées
+  const fang = new THREE.ConeGeometry(0.05, 0.42, 7).translate(0, 0.21, 0);
+  for (let k = 0; k < 6; k++) {
+    const z = 0.82 - k * 0.3, r = 0.98 - k * 0.135, n = 34 - k * 3, len = 1.15 - k * 0.13;
+    for (let i = 0; i < n; i++) {
+      const a = ((i + (k % 2) * 0.5) / n) * TAU, t = add(head, fang, tooth, Math.cos(a) * r, Math.sin(a) * r, z);
+      // pointe vers l'axe, couchée vers le fond de la gorge
+      t.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(-Math.cos(a), -Math.sin(a), -0.75).normalize());
+      t.scale.set(1 + (i % 3 === 0 ? 0.5 : 0), len * (i % 3 === 0 ? 1.35 : 1), 1 + (i % 3 === 0 ? 0.5 : 0));
+    }
   }
-  // Yeux : des grappes le long du crâne, de plus en plus petits
-  for (const s of [-1, 1]) for (let i = 0; i < 6; i++) {
-    add(head, new THREE.SphereGeometry(0.11 - i * 0.012, 12, 8), eyeMat, s * (0.72 + i * 0.05), 0.5 - i * 0.03, 0.75 - i * 0.3);
-  }
-  // Barbillons
-  for (const s of [-1, 1]) for (let i = 0; i < 3; i++) {
-    const b = add(jaw, new THREE.CylinderGeometry(0.02, 0.004, 1.6, 6), skin, s * (0.3 + i * 0.22), -0.75, 0.9 - i * 0.4);
-    b.rotation.z = s * 0.25;
-  }
-  const light = new THREE.PointLight('#8fe0a0', 30, 45, 1.3);
-  light.position.set(0, 0.3, 2.2);
+  // Lueur au fond de la gorge
+  add(head, new THREE.CircleGeometry(0.34, 24), new THREE.MeshBasicMaterial({ color: '#7fe89a' }), 0, 0, -1.1);
+  const light = new THREE.PointLight('#8fe0a0', 30, 60, 1.3);
+  light.position.set(0, 0, 0.6);
   head.add(light);
-  return { head, jaw, upper, light };
+  // Quatre lèvres : des pans de coupole articulés sur le bord, qui se rejoignent en pointe
+  const lips = [];
+  for (let k = 0; k < 4; k++) {
+    const a0 = (k / 4) * TAU, am = a0 + TAU / 8;
+    const geo = new THREE.SphereGeometry(1.24, 14, 12, a0 + 0.02, TAU / 4 - 0.04, 0.02, Math.PI / 2 - 0.02).rotateX(Math.PI / 2);
+    // bord épaissi et crénelé
+    const p = geo.attributes.position;
+    for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i), rr = Math.hypot(x, y); p.setZ(i, z * 1.35 + Math.sin(Math.atan2(y, x) * 20) * 0.02 * rr); }
+    geo.computeVertexNormals();
+    const pivot = new THREE.Group();
+    pivot.position.set(Math.cos(am) * 1.2, Math.sin(am) * 1.2, 0.98);
+    geo.translate(-pivot.position.x, -pivot.position.y, 0);
+    add(pivot, geo, hide);
+    // deux crocs en crochet au bout de chaque lèvre
+    for (const s of [-0.25, 0.25]) {
+      const h = add(pivot, fang, tooth, -Math.cos(am + s) * 0.95, -Math.sin(am + s) * 0.95, 1.55);
+      h.rotation.x = Math.PI; h.scale.setScalar(1.6);
+    }
+    head.add(pivot);
+    lips.push({ pivot, axis: new THREE.Vector3(-Math.sin(am), Math.cos(am), 0) });
+  }
+  /** Ouverture de la gueule : 0 = lèvres jointes, 1 = grande ouverte */
+  const setOpen = (v) => { for (const l of lips) l.pivot.quaternion.setFromAxisAngle(l.axis, -v * 1.75); };
+  setOpen(0.1);
+  return { head, light, setOpen };
+}
+
+/** Maquette pour la planche de présentation : la tête et le début du corps, gueule entrouverte */
+export function createGuardianPreview(open = 0.75) {
+  const g = new THREE.Group();
+  const { head, setOpen } = createHead();
+  setOpen(open);
+  g.add(head);
+  const mat = applySkin(new THREE.MeshLambertMaterial({ vertexColors: true }), { rim: 0.35, translucent: 0.1, iridescent: 0.15, rimColor: '#7fbf7a' });
+  const geo = segmentGeometry();
+  for (let k = 0; k < 9; k++) {
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(Math.sin(k * 0.25) * 0.5 * k * 0.3, -k * k * 0.03, -1.9 - k * 1.2);
+    m.scale.set(1 - k * 0.02, 1 - k * 0.02, 1.25);
+    m.rotation.y = Math.cos(k * 0.25) * 0.12;
+    g.add(m);
+  }
+  return g;
 }
 
 export class Guardian {
@@ -100,11 +140,12 @@ export class Guardian {
     this.group = new THREE.Group();
     this.group.visible = false;
     scene.add(this.group);
-    const { head, jaw, upper, light } = createHead();
-    Object.assign(this, { head, jaw, upper, light });
-    head.scale.setScalar(G.RADIUS * 1.15);
+    const { head, light, setOpen } = createHead();
+    Object.assign(this, { head, light, setOpen });
+    this.open = 0.1;
+    head.scale.setScalar(G.RADIUS);
     this.group.add(head);
-    const mat = applySkin(new THREE.MeshLambertMaterial({ vertexColors: true }), { rim: 0.5, translucent: 0.2, iridescent: 0.35, rimColor: '#7fbf7a' });
+    const mat = applySkin(new THREE.MeshLambertMaterial({ vertexColors: true }), { rim: 0.35, translucent: 0.1, iridescent: 0.15, rimColor: '#7fbf7a' });
     this.body = new THREE.InstancedMesh(segmentGeometry(), mat, G.SEGMENTS);
     this.body.frustumCulled = false;
     this.group.add(this.body);
@@ -210,8 +251,8 @@ export class Guardian {
       // position glissante entre deux points du chemin, plus une ondulation latérale
       const a = this.trail[k], b = this.trail[k + 1], seg = this.segs[k];
       seg.lerpVectors(a, b, 1 - f);
-      const t = k / (G.SEGMENTS - 1), r = G.RADIUS * (1 - 0.82 * Math.pow(t, 1.6)) * (0.92 + 0.08 * Math.sin(k * 1.7));
-      seg.y += Math.sin(time * 1.4 - k * 0.55) * 1.6 * t;
+      const t = k / (G.SEGMENTS - 1), r = G.RADIUS * (1 - 0.7 * Math.pow(t, 2.2)) * (0.96 + 0.05 * Math.sin(k * 1.7 - time * 2));
+      seg.y += Math.sin(time * 1.1 - k * 0.4) * 2.2 * t;
       _d.subVectors(prev, seg);
       const len = _d.length() || 1;
       _q.setFromUnitVectors(Z, _d.divideScalar(len));
@@ -223,15 +264,16 @@ export class Guardian {
     // Tête : dans le sens de la nage ; la gueule s'ouvre en grand pendant l'attaque
     this.head.position.copy(this.pos);
     if (this.vel.lengthSq() > 0.01) this.head.quaternion.slerp(_q.setFromUnitVectors(Z, _d.copy(this.vel).normalize()), Math.min(1, dt * 5));
-    const open = this.state === 'lunge' ? 0.75 : 0.12 + Math.sin(time * 0.7) * 0.06;
-    this.jaw.rotation.x += (open - this.jaw.rotation.x) * Math.min(1, dt * 5);
-    this.upper.rotation.x += (-open * 0.35 - this.upper.rotation.x) * Math.min(1, dt * 5);
+    // La gueule : entrouverte, elle respire ; elle s'ouvre en fleur à mesure que la proie approche
+    const want = this.state === 'lunge' ? Math.min(1, 0.45 + 40 / Math.max(dist, 10)) : 0.1 + Math.max(0, Math.sin(time * 0.5)) * 0.14;
+    this.open += (want - this.open) * Math.min(1, dt * 4);
+    this.setOpen(this.open);
     this.light.intensity = (this.state === 'lunge' ? 70 : 28) * (0.85 + 0.15 * Math.sin(time * 9));
 
     if (this.calm || quiet) return 0;
     // Morsure
     let damage = 0;
-    if (this.state === 'lunge' && dist < G.RADIUS * 1.5 + 2) {
+    if (this.state === 'lunge' && dist < G.RADIUS * 1.25 + 2) {
       damage = G.BITE;
       this.state = 'patrol';
       this.timer = G.REST;
@@ -239,7 +281,7 @@ export class Guardian {
     }
     // Corps solide : le sous-marin est repoussé hors des anneaux, et y laisse de la tôle
     for (let k = 0; k < G.SEGMENTS; k++) {
-      const seg = this.segs[k], r = G.RADIUS * (1 - 0.82 * Math.pow(k / (G.SEGMENTS - 1), 1.6)) + 1.4;
+      const seg = this.segs[k], r = G.RADIUS * (1 - 0.7 * Math.pow(k / (G.SEGMENTS - 1), 2.2)) + 1.4;
       const dx = sub.position.x - seg.x, dy = sub.position.y - seg.y, dz = sub.position.z - seg.z, d2 = dx * dx + dy * dy + dz * dz;
       if (d2 < r * r && d2 > 1e-4) {
         const d = Math.sqrt(d2), nx = dx / d, ny = dy / d, nz = dz / d;

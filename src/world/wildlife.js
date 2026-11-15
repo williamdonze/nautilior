@@ -58,6 +58,9 @@ class Animal {
     const S = this.spec, hostile = S.damage > 0 && !calm;
     this.wander += dt;
     this.timer -= dt;
+    // apparition en fondu
+    this.fadeIn = Math.min(1, (this.fadeIn ?? 0) + dt / 3);
+    this.object.userData.fade = this.fadeIn;
     const dx = sub.position.x - this.pos.x, dy = sub.position.y - this.pos.y, dz = sub.position.z - this.pos.z;
     const dist = Math.hypot(dx, dy, dz), to = Math.atan2(dx, dz);
     const turnTo = (a) => { const d = a - this.yaw; return Math.atan2(Math.sin(d), Math.cos(d)); };

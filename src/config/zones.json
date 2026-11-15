@@ -1,5 +1,5 @@
 {
-  "_comment": "Zones de profondeur. zMin/zMax = étendue le long de l'axe Z (le monde descend vers -Z). pickups = nombre d'objets posés. fishSchools = bancs de poissons normaux autour du joueur. mutants = nombre max de créatures mutées actives autour du joueur, par type. fishSpecies = espèces des bancs (sardine, maquereau, bar, vieille, squelette).",
+  "_comment": "Zones de profondeur. zMin/zMax = étendue le long de l'axe Z (le monde descend vers -Z). pickups = nombre d'objets posés. fishSchools = bancs de poissons normaux autour du joueur. mutants = nombre max de créatures mutées actives autour du joueur, par type. fishSpecies = espèces des bancs (voir FISH_SPECIES dans world/creatureModels.js).",
   "zones": [
     {
       "id": "recif",
@@ -15,7 +15,14 @@
         "sardine",
         "maquereau",
         "vieille",
-        "bar"
+        "bar",
+        "dorade",
+        "rouget",
+        "mulet",
+        "orphie",
+        "lieu",
+        "saint_pierre",
+        "tacaud"
       ]
     },
     {
@@ -33,7 +40,11 @@
       "fishSpecies": [
         "bar",
         "maquereau",
-        "vieille"
+        "vieille",
+        "lieu",
+        "tacaud",
+        "saint_pierre",
+        "blafard"
       ]
     },
     {
@@ -51,6 +62,7 @@
       },
       "fishSpecies": [
         "squelette",
+        "blafard",
         "bar"
       ]
     },
@@ -69,7 +81,8 @@
         "jelly": 4
       },
       "fishSpecies": [
-        "squelette"
+        "squelette",
+        "blafard"
       ]
     }
   ]
