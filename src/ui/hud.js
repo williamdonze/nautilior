@@ -81,7 +81,7 @@ export class Hud {
       if (o2 < 0.25) w.push(['OXYGÈNE FAIBLE', '']);
       if (S.overDepth > 0) w.push(['PRESSION CRITIQUE', '']);
       else if (depth > S.stats.crushDepth - 10) w.push(['LIMITE DE LA COQUE', '']);
-      if (S.radiation > 0.05) w.push(['RADIATIONS', 'rad']);
+      if (S.radiation > 0.05) w.push(['LA LUMIÈRE BRÛLE', 'rad']);
     }
     const key = w.map((x) => x[0]).join('|');
     if (key !== this.lastWarnings) {
@@ -193,6 +193,18 @@ export class Hud {
     this.noticeEl.classList.add('on');
     clearTimeout(this.noticeTimer);
     this.noticeTimer = setTimeout(() => this.noticeEl.classList.remove('on'), 2600);
+  }
+
+  /** Le pouls (battements par minute) : toujours visible, même en vue cockpit */
+  setPulse2(bpm) {
+    this.pulseGauge ??= document.getElementById('g-pulse');
+    const v = Math.round(bpm);
+    if (v === this.lastBpm) return;
+    this.lastBpm = v;
+    const k = Math.min(1, Math.max(0, (bpm - 50) / 70));
+    this.pulseGauge.querySelector('.fill').style.width = `${Math.round(k * 100)}%`;
+    this.pulseGauge.querySelector('.pct').textContent = v;
+    this.pulseGauge.className = `gauge${bpm > 84 ? ' critical' : bpm > 78 ? ' low' : ''}`;
   }
 
   /** Recharge de l'impulsion de défense (0..1) */

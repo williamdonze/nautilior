@@ -161,7 +161,8 @@ class Animal {
       want = turnTo(to + Math.atan2(20, Math.max(dist, 1)) * this.orbitSide) * 2;
       speed = S.speed * (dist > 40 ? 2.6 : 1.8); agility = 1.6;
       targetY = sub.position.y + Math.sin(this.wander * 0.6) * 5;
-      if (this.timer <= 0 && dist < 48) { this.state = 'charge'; this.timer = 5; events.charge?.(this); }
+      // elle ne charge qu'un cœur qui s'emballe ; sinon elle continue de tourner, de plus en plus près
+      if (this.timer <= 0 && dist < 48 && this.bold) { this.state = 'charge'; this.timer = 5; events.charge?.(this); }
     } else this.state = 'roam';
 
     this.turn += (THREE.MathUtils.clamp(want, -1, 1) * agility - this.turn) * Math.min(1, dt * 3);
@@ -248,6 +249,7 @@ export class Wildlife {
     }
     let damage = 0;
     for (const a of this.animals) {
+      a.bold = this.bold !== false;
       const d = a.update(dt, time, sub, this.calm, this.events);
       if (d > 0) {
         damage += d;

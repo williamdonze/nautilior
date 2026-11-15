@@ -149,3 +149,8 @@ body.mode-port #voice { display: none; }
 .truth { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); font-style: italic; color: #bfe8d0; }
 .truth::before { content: 'EN RÉALITÉ'; display: block; font-style: normal; font-size: 11px; letter-spacing: 0.3em; color: var(--hud-dim); margin-bottom: 3px; }
 .menu-after { margin-top: 6px; font-size: 15px; letter-spacing: 0.2em; font-style: italic; color: var(--hud-dim); }
+
+/* Le pouls : seule jauge qui reste à l'écran en vue cockpit */
+body.view-first #gauges { display: flex; bottom: 20px; left: 150px; }
+body.view-first #gauges .gauge:not(#g-pulse) { display: none; }
+#g-pulse { --gauge-col: #7fe89a; }

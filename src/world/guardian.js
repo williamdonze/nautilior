@@ -7,7 +7,8 @@ import { applySkin } from './detail.js';
  * Le gardien : un ver colossal, sans yeux, épais comme une maison et long comme un train,
  * cuirassé d'anneaux, qui tourne sans fin autour de la déchirure. Rien n'approche du portail sans passer sous ses anneaux.
  *  - elle patrouille en cercle tant que le sous-marin est loin ;
- *  - dès qu'il entre dans son domaine, elle se jette sur lui, gueule ouverte, encore et encore ;
+ *  - dans son domaine, elle ne se jette que sur un cœur qui s'emballe (voir PULSE) : pour passer,
+ *    il faut avancer lentement, calme, pendant qu'elle tourne tout près ;
  *  - son corps est solide : on s'y cogne, et il abîme la coque ;
  *  - l'impulsion de défense la fait lâcher prise quelques secondes, pas plus.
  * Réglages : GUARDIAN dans config/settings.js.
@@ -206,6 +207,7 @@ export class Guardian {
     this.timer = G.REST;
     this.angle = Math.random() * TAU;
     this.calm = false;
+    this.provoked = false; // posé par la plongée : le pouls dépasse le seuil
     this.awake = false;
     this.hitCooldown = 0;
     this.pos.set(this.center.x + Math.cos(this.angle) * G.ORBIT, this.center.y, this.center.z + Math.sin(this.angle) * G.ORBIT);
@@ -293,7 +295,8 @@ export class Guardian {
       const lead = Math.min(1.5, dist / G.LUNGE_SPEED);
       desired.copy(sub.velocity).multiplyScalar(lead).add(sub.position).sub(this.pos).normalize();
       speed = G.LUNGE_SPEED; agility = 2.6;
-      if (this.timer <= 0 || dPortal > G.DOMAIN * 1.3) { this.state = 'patrol'; this.timer = G.REST; }
+      // il lâche si le cœur se calme
+      if (this.timer <= 0 || dPortal > G.DOMAIN * 1.3 || (!this.provoked && this.timer < G.LUNGE_TIME - 1.5)) { this.state = 'patrol'; this.timer = G.REST; }
     } else if (this.state === 'recoil') {
       desired.copy(toSub).normalize().negate();
       desired.y += 0.4;
@@ -306,7 +309,13 @@ export class Guardian {
       desired.set(this.center.x + Math.cos(this.angle) * G.ORBIT, y, this.center.z + Math.sin(this.angle) * G.ORBIT).sub(this.pos).normalize();
       if (!this.calm && !quiet && dPortal < G.DOMAIN) {
         if (!this.awake) { this.awake = true; this.timer = 2.5; this.events.roar?.(); }
-        else if (this.timer <= 0) { this.state = 'lunge'; this.timer = G.LUNGE_TIME; this.events.roar?.(); }
+        else if (this.timer <= 0 && this.provoked) { this.state = 'lunge'; this.timer = G.LUNGE_TIME; this.events.roar?.(); }
+        else if (!this.provoked) {
+          // Cœur calme : il ne voit pas de proie. Il vient tourner tout près, lentement, et laisse passer.
+          this.angle = Math.atan2(this.pos.z - sub.position.z, this.pos.x - sub.position.x) + 0.3;
+          desired.set(sub.position.x + Math.cos(this.angle) * 34, sub.position.y + 6 + Math.sin(time * 0.3) * 8, sub.position.z + Math.sin(this.angle) * 34).sub(this.pos).normalize();
+          speed = G.SPEED * 0.8;
+        }
       }
     }
     this.vel.lerp(desired.multiplyScalar(speed), Math.min(1, dt * agility));
