@@ -1,5 +1,5 @@
 {
-  "_comment": "Ambiance en fonction de la profondeur (interpolée entre les paliers). fog = couleur de l'eau, density = densité du brouillard, ambient/sun = intensité des lumières, beam = visibilité du faisceau du phare. Densités élevées : on voit peu, le phare et le radar deviennent indispensables.",
+  "_comment": "Ambiance en fonction de la profondeur (interpolée entre les paliers). fog = couleur de l'eau, density = densité du brouillard, ambient/sun = intensité des lumières, beam = visibilité du faisceau du phare. Densités élevées : on voit peu, le phare et le radar deviennent indispensables. exposure = exposition de l'image (l'œil s'adapte au noir).",
   "keyframes": [
     {
       "depth": 0,
@@ -7,7 +7,8 @@
       "density": 0.03,
       "ambient": 0.9,
       "sun": 1.3,
-      "beam": 0.1
+      "beam": 0.1,
+      "exposure": 1.1
     },
     {
       "depth": 25,
@@ -15,7 +16,8 @@
       "density": 0.038,
       "ambient": 0.55,
       "sun": 0.8,
-      "beam": 0.35
+      "beam": 0.35,
+      "exposure": 1.2
     },
     {
       "depth": 70,
@@ -23,7 +25,8 @@
       "density": 0.045,
       "ambient": 0.28,
       "sun": 0.3,
-      "beam": 0.7
+      "beam": 0.7,
+      "exposure": 1.4
     },
     {
       "depth": 150,
@@ -31,7 +34,8 @@
       "density": 0.052,
       "ambient": 0.1,
       "sun": 0.06,
-      "beam": 0.9
+      "beam": 0.9,
+      "exposure": 1.8
     },
     {
       "depth": 300,
@@ -39,7 +43,8 @@
       "density": 0.058,
       "ambient": 0.05,
       "sun": 0.0,
-      "beam": 1.0
+      "beam": 1.0,
+      "exposure": 2.2
     },
     {
       "depth": 500,
@@ -47,7 +52,8 @@
       "density": 0.062,
       "ambient": 0.03,
       "sun": 0.0,
-      "beam": 1.0
+      "beam": 1.0,
+      "exposure": 2.4
     },
     {
       "depth": 1000,
@@ -55,7 +61,8 @@
       "density": 0.066,
       "ambient": 0.02,
       "sun": 0.0,
-      "beam": 1.0
+      "beam": 1.0,
+      "exposure": 2.5
     }
   ]
 }

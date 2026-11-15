@@ -54,6 +54,10 @@ export class Submarine {
     // Lueur de cabine : éclaire le poste de pilotage (et laisse deviner la coque dans le noir)
     this.cabinLight = new THREE.PointLight('#e8d8b0', 5, 4, 1.2);
     this.body.add(this.cabinLight);
+    // Lumière d'appoint froide au-dessus de la coque : en vue extérieure, on devine le sous-marin dans le noir
+    this.fillLight = new THREE.PointLight('#8fb8c8', 9, 16, 1.4);
+    this.fillLight.position.set(1.5, 4.5, -2);
+    this.body.add(this.fillLight);
     this.cockpitGroup = new THREE.Group(); // poste de pilotage 3D (vue à la 1re personne)
     this.body.add(this.cockpitGroup);
 
@@ -97,6 +101,7 @@ export class Submarine {
       if (o.isMesh) o.visible = v;
     });
     this.cockpitGroup.visible = !v;
+    this.fillLight.visible = v;
     this.beam.mesh.visible = v && this.beam.mesh.visible;
   }
 
@@ -271,13 +276,14 @@ export class Submarine {
 
   /** Réglages du phare selon les améliorations */
   applyLight(stats) {
-    this.spot.intensity = stats.lightIntensity;
+    // Le rendu HDR permet un phare franchement puissant : il éclaire loin sans tout brûler
+    this.spot.intensity = stats.lightIntensity * 2.2;
     this.spot.distance = stats.lightRange;
     this.spot.angle = stats.lightAngle;
   }
 
   /** Ajuste l'intensité visuelle du faisceau selon la profondeur */
   setBeamVisibility(v) {
-    this.beam.setOpacity(this.hullVisible ? v * 0.08 : 0);
+    this.beam.setOpacity(this.hullVisible ? v * 0.03 : 0);
   }
 }

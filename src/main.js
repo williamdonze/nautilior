@@ -3,6 +3,10 @@
  * Crée le renderer pixelisé, les entrées, le son et le HUD, puis lance le jeu.
  */
 import './ui/style.css';
+import { installWaterFog } from './core/waterFog.js';
+
+// Eau physique : doit être installée avant la compilation du premier matériau
+installWaterFog();
 import { GameRenderer } from './core/renderer.js';
 import { Input } from './core/input.js';
 import { Pointer } from './core/pointer.js';
