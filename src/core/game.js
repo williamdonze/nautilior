@@ -443,7 +443,7 @@ export class Game {
     // Ambiance et musique tournent toujours (même en pause, plus doucement)
     const depth = this.mode === 'dive' ? this.dive.sub.depth : 0;
     this.soundscape.update(dt, { mode: this.inMenu ? 'menu' : this.mode, depth, paused: this.pausedAll });
-    this.music.setMood(this.mode === 'dive' && !this.inMenu ? (depth > 900 ? 'deep' : 'dive') : 'port');
+    this.music.setMood(this.mode === 'dive' && !this.inMenu ? (this.dive.guardian.awake && this.dive.guardian.group.visible && !this.dive.guardian.calm ? 'boss' : depth > 900 ? 'deep' : 'dive') : 'port');
     // Une bête qui charge : la musique se resserre
     this.music.threat = this.mode === 'dive' && !this.inMenu && !this.pausedAll ? this.dive.creatures.threat + this.dive.wildlife.threat + (this.dive.guardian?.threat ?? 0) : 0;
     this.music.update(dt);

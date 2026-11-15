@@ -327,6 +327,32 @@ export class Dive {
     this.hud.flash('#7fd0c0');
   }
 
+  /**
+   * Le bip du sonar. Régulier comme un pouls : calme en temps normal (≈ 56 par minute), il s'emballe
+   * quand l'air manque, que la coque cède ou qu'une bête charge. La déchirure du portail bat au même
+   * rythme. Et quand tout s'arrête, il ne retombe plus.
+   */
+  heart(dt) {
+    const S = this.survival;
+    if (S.dead) {
+      if (!this.flat) { this.flat = true; this.sound.sonarFlat(); }
+      return;
+    }
+    this.flat = false;
+    const threat = this.creatures.threat + this.wildlife.threat + this.guardian.threat > 0 ? 0.6 : 0;
+    const stress = Math.min(1, Math.max(threat, 1 - S.oxygenRatio / 0.3, (0.5 - S.hullRatio) * 1.4, 0));
+    this.bpm = (this.bpm ?? 56) + (56 + 64 * stress - (this.bpm ?? 56)) * Math.min(1, dt * 0.8);
+    this.beatPhase = (this.beatPhase ?? 0) + (dt * this.bpm) / 60;
+    if (this.beatPhase >= 1) {
+      this.beatPhase -= 1;
+      if (!this.autopilot) this.sound.sonarBeep(0.8 + stress * 0.6);
+      this.radar.beat?.();
+    }
+    // le tracé de la déchirure a son pic à la phase 0,3 : on le cale sur le bip
+    this.portal.externalBeat = true;
+    this.portal.setBeat((this.beatPhase + 0.3) % 1);
+  }
+
   /** Sons et effets liés à la survie */
   survivalEffects(dt) {
     const S = this.survival;
@@ -447,6 +473,7 @@ export class Dive {
     sub.getPropellerPosition(this._propPos);
     this.bubbles.update(dt, this._propPos, Math.abs(sub.throttle) * 22 + 0.5);
 
+    this.heart(dt);
     hud.update(sub.depth, this.input);
     // Le portail : bourdonnement qui monte à l'approche, et invite quand on est devant
     const portalDist = sub.position.distanceTo(this.portal.center);

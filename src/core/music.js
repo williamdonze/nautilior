@@ -30,6 +30,14 @@ const MOODS = {
     notes: [0, 1],
     cutoff: 450,
   },
+  // En présence du gardien : grappes graves et serrées, tambours lourds (voir rhythm)
+  boss: {
+    bar: 6,
+    chords: [[33, 39, 46], [32, 38, 45], [34, 40, 46], [31, 37, 44]],
+    scale: [57, 58, 63, 64],
+    notes: [1, 3],
+    cutoff: 560,
+  },
 };
 
 export class Music {
@@ -55,7 +63,8 @@ export class Music {
     this.tension += ((this.threat > 0 ? 1 : 0) - this.tension) * Math.min(1, dt * (this.threat > 0 ? 4 : 0.5));
     if (this.mood === 'port' && this.tension < 0.05) return;
     const hunted = this.tension > 0.35;
-    const bpm = hunted ? 138 : this.mood === 'deep' ? 54 : 66;
+    const boss = this.mood === 'boss';
+    const bpm = hunted ? (boss ? 150 : 138) : boss ? 88 : this.mood === 'deep' ? 54 : 66;
     this.beatTimer -= dt;
     if (this.beatTimer > 0) return;
     this.beatTimer += 60 / bpm / 2; // croches
@@ -66,6 +75,11 @@ export class Music {
       if (step === 2 || step === 6) s.noiseBurst(t, 0.16, 0.12, 'bandpass', 1800, 1.2);
       else s.noiseBurst(t, 0.035, 0.03, 'highpass', 6000, 1);
       if (step === 0 || step === 5) this.stab(t, step ? [39, 45, 50] : [38, 44, 51]);
+    } else if (boss) {
+      // marche lourde : tambours graves, souffle rauque sur les temps faibles, accord qui tombe en début de mesure
+      if (step === 0 || step === 3 || step === 4 || step === 6) this.kick(t, step === 0 ? 0.4 : 0.26);
+      if (step === 2 || step === 7) s.noiseBurst(t, 0.09, 0.3, 'lowpass', 240, 0.8);
+      if (step === 0 && this.beat % 16 === 1) this.stab(t, [33, 39, 46]);
     } else {
       // cœur lent : deux coups rapprochés, puis le silence
       if (step === 0) this.kick(t, this.mood === 'deep' ? 0.2 : 0.13);

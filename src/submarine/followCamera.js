@@ -61,20 +61,34 @@ export class FollowCamera {
     this.base.lerp(this._desired, damp(CAMERA.POS_SMOOTH, dt));
     this.lookAt.lerp(this._desiredLook, damp(CAMERA.LOOK_SMOOTH, dt));
 
-    // Jamais sous le fond ni au-dessus de la surface
-    const p = this.base;
-    // On regarde le fond autour de la caméra (pas seulement dessous) : sur les pentes raides,
-    // le relief voisin viendrait sinon se coller à l'objectif
-    let around = getFloorHeight(p.x, p.z);
-    for (const [ox, oz] of [[3, 0], [-3, 0], [0, 3], [0, -3]]) around = Math.max(around, getFloorHeight(p.x + ox, p.z + oz));
-    p.y = Math.max(p.y, around + 2);
+    // Jamais sous le fond ni au-dessus de la surface… ni perchée en haut d'une falaise :
+    // la caméra ne monte pas plus haut que `cap` au-dessus du sous-marin. Si le relief l'en empêche
+    // (dos à une paroi), elle se rapproche du sous-marin au lieu de grimper.
+    const p = this.base, s = sub.position;
+    const floorAround = (x, z) => {
+      // (on regarde le fond autour de la caméra, pas seulement dessous : sur les pentes raides,
+      // le relief voisin viendrait sinon se coller à l'objectif)
+      let f = getFloorHeight(x, z);
+      for (const [ox, oz] of [[3, 0], [-3, 0], [0, 3], [0, -3]]) f = Math.max(f, getFloorHeight(x + ox, z + oz));
+      return f;
+    };
+    const cap = s.y + CAMERA.HEIGHT * this.zoomSmooth + 4;
+    let around = floorAround(p.x, p.z);
+    if (around + 2 > cap) {
+      let found = false;
+      for (const t of [0.8, 0.62, 0.46, 0.32, 0.2]) {
+        const x = s.x + (p.x - s.x) * t, z = s.z + (p.z - s.z) * t, f = floorAround(x, z);
+        if (f + 2 <= cap) { p.x = x; p.z = z; around = f; found = true; break; }
+      }
+      if (!found) { p.x = s.x + (p.x - s.x) * 0.12; p.z = s.z + (p.z - s.z) * 0.12; around = Math.min(around, cap - 2); }
+    }
+    p.y = Math.min(Math.max(p.y, around + 2), Math.max(cap, s.y + 1.5));
     // Le relief ne doit pas couper la vue vers le sous-marin (pentes du canyon) :
-    // on vérifie quelques points sur la ligne sous-marin → caméra et on remonte si besoin
-    const s = sub.position;
+    // on vérifie quelques points sur la ligne sous-marin → caméra et on remonte si besoin (sans dépasser cap)
     for (const t of [0.35, 0.7]) {
       const x = s.x + (p.x - s.x) * t;
       const z = s.z + (p.z - s.z) * t;
-      const needed = s.y + (getFloorHeight(x, z) + 1.5 - s.y) / t;
+      const needed = Math.min(cap, s.y + (getFloorHeight(x, z) + 1.5 - s.y) / t);
       if (p.y < needed) p.y += (needed - p.y) * damp(8, dt);
     }
     p.y = Math.min(p.y, WORLD.SURFACE_Y - 0.4);

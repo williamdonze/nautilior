@@ -65,10 +65,7 @@ export class Soundscape {
         this.bubbles();
         this.timers.bubbles = 2 + Math.random() * 5;
       }
-      if (this.timers.sonar <= 0) {
-        this.sonar();
-        this.timers.sonar = 14 + Math.random() * 10;
-      }
+      // (le sonar a maintenant son propre rythme régulier : voir Dive.heart)
       if (this.timers.creak <= 0) {
         s.creak(0.25 + deep * 0.3);
         this.timers.creak = 12 + Math.random() * 18;
