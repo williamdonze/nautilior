@@ -11,7 +11,8 @@
       "minDepth": 0,
       "shape": "pebble",
       "color": "#8a6f68",
-      "spawnWeight": 3
+      "spawnWeight": 3,
+      "truth": "Le poids de tes mains sur le drap."
     },
     {
       "id": "bouteille_cidre",
@@ -23,7 +24,8 @@
       "minDepth": 0,
       "shape": "bottle",
       "color": "#2f4a33",
-      "spawnWeight": 2
+      "spawnWeight": 2,
+      "truth": "Les dimanches chez tes parents."
     },
     {
       "id": "flotteur_filet",
@@ -35,7 +37,8 @@
       "minDepth": 0,
       "shape": "float",
       "color": "#b07a47",
-      "spawnWeight": 2
+      "spawnWeight": 2,
+      "truth": "Ce qui t'a ramené à la surface, ce jour-là."
     },
     {
       "id": "filet_dechire",
@@ -47,7 +50,8 @@
       "minDepth": 0,
       "shape": "net",
       "color": "#83a39a",
-      "spawnWeight": 2
+      "spawnWeight": 2,
+      "truth": "Les filets que Yann a coupés."
     },
     {
       "id": "casier_homard",
@@ -59,7 +63,8 @@
       "minDepth": 10,
       "shape": "trap",
       "color": "#63321b",
-      "spawnWeight": 1
+      "spawnWeight": 1,
+      "truth": "Le métier de ton père, avant l'atelier."
     },
     {
       "id": "assiette_faience",
@@ -71,7 +76,8 @@
       "minDepth": 15,
       "shape": "plate",
       "color": "#ccd8cc",
-      "spawnWeight": 2
+      "spawnWeight": 2,
+      "truth": "La table de ta mère. Elle met encore quatre couverts."
     },
     {
       "id": "lanterne_chalutier",
@@ -83,7 +89,8 @@
       "minDepth": 25,
       "shape": "lantern",
       "color": "#8a4f28",
-      "spawnWeight": 1
+      "spawnWeight": 1,
+      "truth": "La veilleuse de ta chambre."
     },
     {
       "id": "ancre_doris",
@@ -95,7 +102,8 @@
       "minDepth": 25,
       "shape": "anchor",
       "color": "#3f4446",
-      "spawnWeight": 1
+      "spawnWeight": 1,
+      "truth": "Ce qui te retenait au fond."
     },
     {
       "id": "tole_gravee",
@@ -107,7 +115,8 @@
       "minDepth": 160,
       "shape": "hullplate",
       "color": "#56645a",
-      "spawnWeight": 1
+      "spawnWeight": 1,
+      "truth": "Marcel, Loïc, Yann : vous l'avez construit à trois."
     },
     {
       "id": "bol_prenom",
@@ -120,7 +129,8 @@
       "shape": "bowl",
       "color": "#a8bdb2",
       "spawnWeight": 2,
-      "maxDepth": 1000
+      "maxDepth": 1000,
+      "truth": "Le bol de ton frère. Ta mère ne l'a pas rangé."
     },
     {
       "id": "medaille_sauvetage",
@@ -132,7 +142,8 @@
       "minDepth": 50,
       "shape": "medal",
       "color": "#b07a47",
-      "spawnWeight": 2
+      "spawnWeight": 2,
+      "truth": "Celle qu'on aurait dû lui donner."
     },
     {
       "id": "montre_gousset",
@@ -144,7 +155,8 @@
       "minDepth": 60,
       "shape": "watch",
       "color": "#cdb57c",
-      "spawnWeight": 2
+      "spawnWeight": 2,
+      "truth": "4 h 12, l'heure de ton arrêt cardiaque."
     },
     {
       "id": "hublot_cargo",
@@ -156,7 +168,8 @@
       "minDepth": 180,
       "shape": "porthole",
       "color": "#8a4f28",
-      "spawnWeight": 2
+      "spawnWeight": 2,
+      "truth": "Tes paupières fermées."
     },
     {
       "id": "voilier_bois",
@@ -168,7 +181,8 @@
       "minDepth": 200,
       "shape": "toyboat",
       "color": "#8a4f28",
-      "spawnWeight": 1
+      "spawnWeight": 1,
+      "truth": "Vous l'aviez taillé ensemble, enfants."
     },
     {
       "id": "cloche_marie_morgane",
@@ -186,7 +200,8 @@
       "spawn": {
         "x": -40,
         "z": -236
-      }
+      },
+      "truth": "L'épave où Yann est resté."
     },
     {
       "id": "ciboire_noirci",
@@ -198,7 +213,8 @@
       "minDepth": 100,
       "shape": "chalice",
       "color": "#878a85",
-      "spawnWeight": 1
+      "spawnWeight": 1,
+      "truth": "La chapelle de l'hôpital, où ta mère descend chaque soir."
     },
     {
       "id": "sextant_capitaine",
@@ -210,7 +226,8 @@
       "minDepth": 110,
       "shape": "sextant",
       "color": "#b07a47",
-      "spawnWeight": 1
+      "spawnWeight": 1,
+      "truth": "Tu cherchais ta route vers le bas, pas vers le haut."
     },
     {
       "id": "roue_gouvernail",
@@ -222,7 +239,8 @@
       "minDepth": 260,
       "shape": "wheel",
       "color": "#3e2114",
-      "spawnWeight": 1
+      "spawnWeight": 1,
+      "truth": "Tu avais décidé de descendre, quoi qu'on te dise."
     },
     {
       "id": "figure_proue",
@@ -234,7 +252,8 @@
       "minDepth": 520,
       "shape": "figurehead",
       "color": "#7d6f48",
-      "spawnWeight": 1
+      "spawnWeight": 1,
+      "truth": "Toi, qui ne voulais plus rien entendre."
     },
     {
       "id": "clochette_chapelle",
@@ -246,7 +265,8 @@
       "minDepth": 140,
       "shape": "bell",
       "color": "#cdb57c",
-      "spawnWeight": 1
+      "spawnWeight": 1,
+      "truth": "La sonnette d'appel, au-dessus de ton lit."
     },
     {
       "id": "couronne_mariee",
@@ -258,7 +278,8 @@
       "minDepth": 175,
       "shape": "crown",
       "color": "#e0b050",
-      "spawnWeight": 1
+      "spawnWeight": 1,
+      "truth": "Anna, le jour de vos noces."
     }
   ]
 }

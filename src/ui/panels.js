@@ -2,6 +2,7 @@ import { getRarity, ITEMS, RARITIES } from '../loot/loot.js';
 import { sellPrice } from '../port/market.js';
 import { UPGRADES, stats } from '../submarine/stats.js';
 import fragmentsData from '../story/fragments.json';
+import { getEndings } from '../save/save.js';
 import { storyState } from '../story/state.js';
 
 /**
@@ -182,6 +183,7 @@ export class Panels {
         </div>`;
       })
       .join('');
+    const reread = getEndings().length > 0; // relecture : une fin a été vue
     const it = ITEMS.find((i) => i.id === this.selected);
     let details = '<p class="inv-empty">Choisis un objet.</p>';
     if (it) {
@@ -190,6 +192,7 @@ export class Panels {
         ? `<div class="inv-name" style="color:${r.color}">${it.name}</div>
            <div class="inv-rarity" style="color:${r.color}">${r.name.toUpperCase()}</div>
            <p class="inv-desc">${it.description}</p>
+           ${reread && it.truth ? `<p class="truth">${it.truth}</p>` : ''}
            <div class="inv-stats"><span>${it.weight} kg</span><span>≈ ${fmt(it.price)} F</span></div>`
         : `<div class="inv-name">???</div>
            <div class="inv-rarity" style="color:${r.color}">${r.name.toUpperCase()}</div>
@@ -205,8 +208,8 @@ export class Panels {
       .map((f, i) => {
         const known = storyState.fragments.includes(f.id);
         return known
-          ? `<button class="memory-btn" data-act="memory" data-arg="${f.id}">${i + 1}. ${f.name}</button>`
-          : `<span class="memory-btn locked">${i + 1}. ???</span>`;
+          ? `<button class="memory-btn" data-act="memory" data-arg="${f.id}"><span class="when">${f.when}</span>${f.name}${reread && f.truth ? `<span class="when" style="font-style:italic;letter-spacing:.05em;color:#bfe8d0">${f.truth}</span>` : ''}</button>`
+          : `<span class="memory-btn locked"><span class="when">${f.when}</span>…</span>`;
       })
       .join('');
     return `${this.header('L\'ANCIENNE CRIÉE', `${found.size}/${ITEMS.length} · ${byRarity}`)}
@@ -217,7 +220,7 @@ export class Panels {
           <div id="inv-details">${details}</div>
         </div>
         <div class="memories">
-          <div class="memories-title">SOUVENIRS · ${storyState.fragments.length}/${fragmentsData.fragments.length}</div>
+          <div class="memories-title">CARNET · LE 14 OCTOBRE · ${storyState.fragments.length}/${fragmentsData.fragments.length}</div>
           <div class="memories-list">${memories}</div>
         </div>
       </div>`;

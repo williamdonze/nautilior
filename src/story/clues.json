@@ -10,7 +10,8 @@
         "La seule route qui sort du village. Un éboulement la ferme.",
         "Les pierres sont couvertes de mousse. Elles sont là depuis longtemps.",
         "De l'autre côté, on n'entend rien. Pas même le vent."
-      ]
+      ],
+      "truth": "Il n'y avait pas de sortie facile. Il fallait descendre."
     },
     {
       "id": "cabine",
@@ -21,7 +22,8 @@
         "Pas de tonalité.",
         "Seulement un souffle, lent, régulier. Quelqu'un qui dort, très loin.",
         "Tu raccroches. Tu ne sais pas pourquoi tu as retenu ta respiration."
-      ]
+      ],
+      "truth": "Ta propre respiration, dans le respirateur."
     },
     {
       "id": "boite",
@@ -32,7 +34,8 @@
         "Elle déborde. Personne ne relève le courrier.",
         "Des dizaines d'enveloppes, de la même écriture. Ton prénom sur chacune.",
         "Aucune n'est ouverte. Tu n'oses pas."
-      ]
+      ],
+      "truth": "Les lettres qu'Anna te lisait, chaque jour."
     },
     {
       "id": "plate",
@@ -43,7 +46,8 @@
         "Une plate. Trop petite pour un homme, assez grande pour deux enfants.",
         "La peinture de la coque est fraîche. Le bois, dessous, est vieux.",
         "Quelqu'un la repeint. Souvent."
-      ]
+      ],
+      "truth": "La plate de votre enfance, à Yann et toi."
     },
     {
       "id": "horloge",
@@ -54,7 +58,8 @@
         "L'horloge marque 4 h 12.",
         "Elle marquait 4 h 12 à ton réveil. Elle marquait 4 h 12 hier.",
         "Pourtant, tu jurerais entendre son mécanisme. Un battement, puis un autre."
-      ]
+      ],
+      "truth": "L'heure de ton arrêt cardiaque. Le mécanisme, c'était ton cœur."
     },
     {
       "id": "avis",
@@ -65,7 +70,8 @@
         "Des avis de la criée, délavés.",
         "Le dernier annonce un coup de vent. « Sortie déconseillée. 14 octobre. »",
         "Dessous, à la craie, une main a ajouté : « On l'attend. »"
-      ]
+      ],
+      "truth": "Le 14 octobre, on vous avait dit de ne pas sortir."
     },
     {
       "id": "registre",
@@ -76,7 +82,8 @@
         "Un registre des entrées, posé sur le rebord de la fenêtre.",
         "Une seule ligne par page. La même, recopiée. Même date, même heure.",
         "Les premières pages ont jauni. La dernière est d'aujourd'hui."
-      ]
+      ],
+      "truth": "Ta feuille de soins : la même ligne, jour après jour."
     },
     {
       "id": "fontaine",
@@ -87,7 +94,8 @@
         "L'eau coule sans bruit.",
         "Elle n'est ni froide ni tiède. Tu ne sens rien du tout.",
         "Ta main en ressort sèche."
-      ]
+      ],
+      "truth": "Ton corps, que tu ne sentais plus."
     }
   ]
 }

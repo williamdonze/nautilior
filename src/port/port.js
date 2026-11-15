@@ -50,7 +50,7 @@ export class Port {
     this.interactables = [
       ...this.npcs.map((n) => n.interact),
       ...layout.interactables,
-      ...cluesData.clues.map((c) => ({ id: `clue_${c.id}`, kind: 'clue', x: c.x, z: c.z, label: c.label, lines: c.lines })),
+      ...cluesData.clues.map((c) => ({ id: `clue_${c.id}`, kind: 'clue', x: c.x, z: c.z, label: c.label, lines: c.lines, truth: c.truth })),
       ...this.world.interactables,
     ];
     this.circles = this.npcs.map((n) => ({ x: n.x, z: n.z, r: 0.45 }));

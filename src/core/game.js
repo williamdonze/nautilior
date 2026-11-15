@@ -9,7 +9,7 @@ import { WakeUp } from '../story/wakeup.js';
 import { pickConversation } from '../story/dialogue.js';
 import { storyState, resetStoryState } from '../story/state.js';
 import { gameState, resetGameState } from '../save/gameState.js';
-import { save, load, clearSave } from '../save/save.js';
+import { save, load, clearSave, getEndings } from '../save/save.js';
 import { playEnding, showEndScreen } from '../story/endings.js';
 import { applyUpgrades, stats } from '../submarine/stats.js';
 import { PICKUPS, SURVIVAL } from '../config/settings.js';
@@ -375,6 +375,8 @@ export class Game {
   async examine(clue) {
     if (this.busy || this.dialogue.isOpen) return;
     for (const line of clue.lines) await this.dialogue.narrate(line, false);
+    // Relecture : après une fin, on sait ce que c'était
+    if (getEndings().length && clue.truth) await this.dialogue.narrate(`(${clue.truth})`, false);
   }
 
   /** Lance la conversation adaptée avec un personnage, puis l'action éventuelle */

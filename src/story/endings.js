@@ -164,7 +164,7 @@ export async function playEnding(game, kind) {
     await fadeIn(1.8);
     await wait(1200);
     // Dans le noir, les phrases du village reviennent — cette fois dans leur vrai sens
-    const lightning = cinema.synapses(15, sound);
+    const lightning = cinema.synapses(16, sound, true); // avec les correspondances (faille → moniteur…)
     await wait(2500);
     await say(dialogue, texts.cross.echo);
     await lightning;

@@ -1,5 +1,5 @@
 {
-  "_comment": "Les huit souvenirs de Loïc (voir docs/LORE.md, section 7), dans l'ordre de la journée de l'accident. Positions fixes (x, z ; inCanyon = x relatif au lit du canyon) ; ils ne réapparaissent pas une fois trouvés. 'art' = image dessinée dans ui/memoryArt.js et forme de l'objet (loot/models.js, keepsake_<art>). 'lines' = le souvenir, affiché ligne par ligne.",
+  "_comment": "Les huit souvenirs de Loïc (voir docs/LORE.md, section 7), dans l'ordre de la journée de l'accident. Positions fixes (x, z ; inCanyon = x relatif au lit du canyon) ; ils ne réapparaissent pas une fois trouvés. 'art' = image dessinée dans ui/memoryArt.js et forme de l'objet (loot/models.js, keepsake_<art>). 'lines' = le souvenir, affiché ligne par ligne. 'when' = moment de la journée (carnet) ; 'truth' = ce que c'était vraiment, montré seulement après une fin (relecture).",
   "fragments": [
     {
       "id": "photo",
@@ -13,7 +13,9 @@
         "Le quai de Port-Kermor, un dimanche. Il y a du monde partout.",
         "Quelqu'un rit à côté de toi. Tu connais ce rire. Tu n'arrives pas à tourner la tête.",
         "C'est le même quai. Les mêmes maisons. Mais les volets sont ouverts."
-      ]
+      ],
+      "when": "AVANT",
+      "truth": "Ton port, tel qu'il est vraiment : plein de monde."
     },
     {
       "id": "alliance",
@@ -27,7 +29,9 @@
         "Une main serre la tienne, sur le pas d'une porte.",
         "« Reviens avant la nuit. »",
         "Tu as dit oui. Tu ne sais plus quelle nuit c'était."
-      ]
+      ],
+      "when": "LE MATIN",
+      "truth": "Anna. Elle te tient la main depuis cent douze jours."
     },
     {
       "id": "montre",
@@ -41,7 +45,9 @@
         "Elle s'est arrêtée à 4 h 12. Comme l'horloge du clocher. Comme toutes les autres.",
         "Tu la retournes. Le bracelet est sec. Il a toujours été sec.",
         "Tu n'étais pas dans l'eau, à cette heure-là. Où étais-tu ?"
-      ]
+      ],
+      "when": "4 H 12",
+      "truth": "L'heure où ton cœur s'est arrêté, à l'hôpital."
     },
     {
       "id": "carnet",
@@ -55,7 +61,9 @@
         "Ton écriture. « 14 octobre 1984. Épave de la Marie-Morgane. Descente à 15 h 50. »",
         "« Fond annoncé : quarante mètres. On verra bien. »",
         "En bas de la page : « Équipage : 2. »"
-      ]
+      ],
+      "when": "15 H 50",
+      "truth": "Vous étiez deux à bord. Tu l'avais écrit."
     },
     {
       "id": "plaque",
@@ -70,7 +78,9 @@
         "La première ligne : ton nom.",
         "La seconde a été rayée, au couteau, à petits coups serrés.",
         "Tu reconnais ce geste. C'est le tien."
-      ]
+      ],
+      "when": "À BORD",
+      "truth": "Tu as rayé le nom de ton frère pour ne plus le lire."
     },
     {
       "id": "couteau",
@@ -85,7 +95,9 @@
         "Le Nautiliar ne bouge plus. Des filets, partout, sur le hublot, dans l'hélice.",
         "Quelqu'un ouvre le sas. « Je m'en occupe. Bouge pas. »",
         "Par le hublot, une lampe. Une main qui coupe, maille après maille. Puis le sous-marin se libère, d'un coup."
-      ]
+      ],
+      "when": "AU FOND",
+      "truth": "Yann est sorti couper les filets. Il t'a libéré."
     },
     {
       "id": "enfance",
@@ -100,7 +112,9 @@
         "Un été. La plate tangue, vous êtes deux dedans. Tu rames. Le petit écope avec une boîte de conserve.",
         "Au dos, une écriture de femme : « Loïc et Yann, été 1961. »",
         "Yann."
-      ]
+      ],
+      "when": "AUTREFOIS",
+      "truth": "Ton petit frère."
     },
     {
       "id": "soins",
@@ -114,7 +128,9 @@
         "« Hôpital de Port-Kermor. Arrêt cardiaque à 4 h 12, réanimé. Coma. »",
         "« Jour 1… Jour 47… Jour 112. Famille reçue ce jour au sujet de la poursuite des soins. »",
         "Dans la marge, une écriture que tu connais : « Je suis là. »"
-      ]
+      ],
+      "when": "JOUR 112",
+      "truth": "Ta vraie feuille de soins, au pied de ton lit."
     }
   ]
 }

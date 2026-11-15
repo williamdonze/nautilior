@@ -21,6 +21,8 @@ import { Wildlife } from './wildlife.js';
 import { gpuMode } from '../gpu/mode.js';
 import { Guardian } from './guardian.js';
 import { PortalFx } from './portalFx.js';
+import { PaleDiver } from './paleDiver.js';
+import voicesData from '../story/voices.json';
 import { zoneAtDepth } from './zones.js';
 import { createPortal } from './portal.js';
 import { pointScale } from '../core/renderer.js';
@@ -151,6 +153,9 @@ export class Dive {
         hud.damageFlash(0.7);
       },
     });
+    // Le plongeur pâle, qui montre où chercher
+    this.paleDiver = new PaleDiver(scene);
+    this.voiceTimer = 12;
     this.zoneId = null;
     this.whisperTimer = 0;
 
@@ -223,6 +228,8 @@ export class Dive {
     this.creatures.clear();
     this.wildlife.clear();
     this.guardian.reset();
+    this.paleDiver.reset();
+    this.foundCount = foundFragments.length;
     this.zoneId = null;
     this.claw.reset();
     this.sub.applyLight(stats);
@@ -545,6 +552,24 @@ export class Dive {
     // --- Radar : objets, fragments, créatures, bancs, épaves dans le rayon du sonar
     if (!survival.dead) this.radar.update(dt, sub, this.gatherContacts(), this.decor.colliders, this.movers());
     sound.setSonar(!survival.dead);
+
+    // --- Le plongeur pâle, et les voix de la chambre près de la faille
+    if (!survival.dead && !this.autopilot) {
+      const frags = this.pickups.fragments;
+      this.paleDiver.update(dt, time, sub, frags.map((f) => f.object.position), 8 - frags.length);
+      this.voiceTimer -= dt;
+      if (this.voiceTimer <= 0 && this.riftNear > 0.25 && this.portal.open > 0.5) {
+        const pool = voicesData.voices.filter((v) => v.near <= this.riftNear && v.text !== this.lastVoice);
+        if (pool.length) {
+          // les plus proches de la surface de l'eau… et du réveil, en dernier
+          const v = pool[Math.floor(Math.pow(Math.random(), 0.6) * pool.length)];
+          this.lastVoice = v.text;
+          hud.voice(v.text);
+          sound.whisper(0.3 + this.riftNear * 0.5);
+        }
+        this.voiceTimer = 22 - this.riftNear * 12 + Math.random() * 6;
+      }
+    }
 
     // --- Un fragment de mémoire tout proche « appelle »
     this.whisperTimer -= dt;

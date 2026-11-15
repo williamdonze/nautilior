@@ -169,6 +169,19 @@ export class Hud {
     this.shroudEl.classList.toggle('on', !!on);
   }
 
+  /** Une voix venue d'ailleurs, étouffée : elle flotte un instant au milieu de l'écran */
+  voice(text) {
+    if (!this.voiceEl) {
+      this.voiceEl = document.createElement('div');
+      this.voiceEl.id = 'voice';
+      document.body.appendChild(this.voiceEl);
+    }
+    this.voiceEl.textContent = text;
+    this.voiceEl.classList.remove('on');
+    void this.voiceEl.offsetWidth;
+    this.voiceEl.classList.add('on');
+  }
+
   /** Petit message passager, en bas de l'écran */
   notice(text) {
     if (!this.noticeEl) {
