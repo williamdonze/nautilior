@@ -51,7 +51,7 @@ Jamais expliquées au joueur, mais tout le jeu doit les respecter.
 5. **Pour remonter, il faut descendre.** La seule sortie passe par ce qu'il refuse de savoir. Il n'y a pas d'autre chemin : la route du village est éboulée.
 6. **Les villageois ne savent pas qu'ils sont un rêve.** Ils ont les visages de ses proches et répètent, déformé, ce qui se dit dans la chambre. Ils n'expliquent donc jamais rien.
 7. **Le temps est arrêté à 4 h 12**, l'heure où son cœur s'est arrêté.
-8. **Mourir en plongée, c'est une alerte médicale.** On le rattrape : il « se réveille » dans le lit de l'hôpital du village, et le docteur soupire : « Encore toi… »
+8. **Mourir en plongée, c'est une alerte médicale.** On le rattrape : il « se réveille » dans le lit de l'hôpital du village, et le docteur soupire : « Encore vous… »
 9. **Approcher du réveil fait mal.** Près de la faille, tout brûle et se déforme : c'est la douleur de revenir à soi.
 10. **Les monstres sont faits des sensations de la chambre**, déformées par la peur (voir section 4).
 11. **Fermer la faille, c'est lâcher prise** : il meurt. **La traverser, c'est se réveiller.** Rien n'est exigé pour la traverser.
@@ -65,7 +65,7 @@ Jamais expliquées au joueur, mais tout le jeu doit les respecter.
 |---|---|
 | Le bip du sonar | Son moniteur cardiaque |
 | La jauge d'oxygène | Le respirateur |
-| « Encore toi… » après une mort en plongée | Une alerte ; la voix du médecin |
+| « Encore vous… » après une mort en plongée | Une alerte ; la voix du médecin |
 | La faille verte et son tracé | La ligne du moniteur, à travers ses paupières |
 | La brûlure (« radiation ») près de la faille | La douleur du réveil |
 | Toutes les horloges à 4 h 12 | L'heure de l'arrêt cardiaque |
@@ -89,9 +89,9 @@ Jamais expliquées au joueur, mais tout le jeu doit les respecter.
 **Loïc (le joueur).** Tout le monde l'appelle par son prénom. Il croit s'être réveillé.
 
 **Le docteur Guéguen.** Dans le rêve, le médecin du village. Sa voix est celle que Loïc entend le plus : calme, précise, qui prépare la famille au pire. Dans le rêve, il devient celui qui veut qu'on ferme.
-> Début : « Repose-toi. Tu nous as fait peur. »
-> Milieu : « Tu descends trop. Ton cœur n'aime pas ça. »
-> Fin : « Ce qui remontera, ce ne sera plus toi. » *(Dans la chambre : il parle des séquelles.)*
+> Début : « Reposez-vous. Vous nous avez fait peur. »
+> Milieu : « Vous descendez trop. Rien ne presse. »
+> Fin : « Ce qui remontera, ce ne sera plus vous. » *(Dans la chambre : il parle des séquelles.)*
 
 **Job, le père (le mécano).** Il a construit le Nautiliar avec ses fils. Il a perdu Yann, et regarde l'autre s'éteindre depuis 112 jours. Bourru, tendre, épuisé.
 > Début : « Je l'ai remis en état. Il t'attendait. »
@@ -201,6 +201,8 @@ Dans le rêve, personne n'explique rien. Au réveil, tout est dit simplement.
 ## 12. Ton et règles d'écriture
 
 - Mélancolique, intrigant, de plus en plus inquiétant avec la profondeur. Aucun humour.
+- **Le début paraît presque normal** : à l'acte I, une seule bizarrerie discrète par personnage. La transparence grandit avec les actes.
+- **Le docteur vouvoie toujours Loïc**, dans le village comme au réveil. Job et Soazig le tutoient.
 - Répliques d'une ou deux phrases. Les personnages répondent à côté et laissent des silences.
 - **Dans le rêve, personne ne raconte l'histoire.** Tout passe par les objets, les souvenirs, le décor et les sous-entendus. **Au réveil, on est dans le vrai monde : les personnages parlent clairement.**
 - Chaque réplique doit pouvoir être relue autrement une fois la fin connue : c'est une phrase dite dans une chambre d'hôpital.

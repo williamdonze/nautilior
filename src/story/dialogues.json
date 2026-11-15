@@ -1,5 +1,5 @@
 {
-  "_comment": "Dialogues par personnage (voir docs/LORE.md). La conversation jouée est celle de plus haute priorité dont la condition 'when' est vraie. Conditions : drapeau = valeur, ou <variable>Min / <variable>Max (deaths, fragments). 'once' : une seule fois ; 'oncePer': 'deaths' / 'fragments' : une fois par réveil / par nouveau souvenir. Un texte peut être une liste de variantes. Règle : dans le rêve, personne ne raconte l'histoire ; chaque réplique doit pouvoir se relire comme une phrase dite au chevet de Loïc. ÉTAT : l'acte I (intro, défaut, paliers '_a', 0 à 2 souvenirs) est écrit d'après la nouvelle histoire ; les paliers suivants (_b, _c, _d, uneasy, abyssal, plead, portal) datent encore de l'ancienne et restent à réécrire.",
+  "_comment": "Dialogues par personnage (voir docs/LORE.md). La conversation jouée est celle de plus haute priorité dont la condition 'when' est vraie. Conditions : drapeau = valeur, ou <variable>Min / <variable>Max (deaths, fragments). 'once' : une seule fois ; 'oncePer': 'deaths' / 'fragments' : une fois par réveil / par nouveau souvenir. Un texte peut être une liste de variantes. Règle : dans le rêve, personne ne raconte l'histoire ; chaque réplique doit pouvoir se relire comme une phrase dite au chevet de Loïc. ÉTAT : l'acte I (intro, défaut, paliers '_a', 0 à 2 souvenirs) est écrit d'après la nouvelle histoire ; les paliers suivants (_b, _c, _d, uneasy, abyssal, plead, portal) datent encore de l'ancienne et restent à réécrire. TON : le début doit paraître presque normal (une seule bizarrerie discrète par personnage) ; la transparence grandit avec les actes. Le docteur vouvoie toujours Loïc.",
   "npcs": {
     "doctor": {
       "name": "Le docteur",
@@ -83,15 +83,15 @@
           "start": "a",
           "nodes": {
             "a": {
-              "text": "Doucement, Loïc. Ne te lève pas trop vite.",
+              "text": "Doucement, Loïc. Ne vous levez pas trop vite.",
               "next": "b"
             },
             "b": {
-              "text": "Tu es à l'hôpital de Port-Kermor. Tu as dormi longtemps.",
+              "text": "Vous êtes à l'hôpital de Port-Kermor. Vous avez dormi longtemps.",
               "next": "c"
             },
             "c": {
-              "text": "(Il regarde tes yeux l'un après l'autre, avec une petite lampe.)",
+              "text": "(Il regarde vos yeux l'un après l'autre, avec une petite lampe.)",
               "choices": [
                 {
                   "text": "Combien de temps ?",
@@ -104,15 +104,15 @@
               ]
             },
             "d": {
-              "text": "Longtemps. Je ne compte plus les jours devant toi, ça n'aide personne.",
+              "text": "Assez longtemps. Ne comptez pas les jours, ça n'aide pas.",
               "next": "f"
             },
             "e": {
-              "text": "C'est normal. Ça reviendra quand tu seras prêt. Pas avant.",
+              "text": "Ça reviendra. Ne forcez rien.",
               "next": "f"
             },
             "f": {
-              "text": "Va voir Job, sur le quai. Il n'a pas bougé de là depuis que tu es couché.",
+              "text": "Allez voir Job, sur le quai. Il a quelque chose pour vous.",
               "set": {
                 "introDone": true
               },
@@ -131,14 +131,14 @@
           "start": "a",
           "nodes": {
             "a": {
-              "text": "(Il te pose une couverture sur les épaules.)",
+              "text": "(Il vous pose une couverture sur les épaules.)",
               "next": "b"
             },
             "b": {
               "text": [
-                "Tu nous as fait peur, cette nuit.",
-                "Ton cœur s'est emballé. On t'a rattrapé de justesse.",
-                "Tu descends trop vite. Laisse-toi du temps."
+                "Vous nous avez fait peur.",
+                "Job vous a sorti de l'eau près de la jetée. Vous avez eu de la chance.",
+                "La prochaine fois, remontez plus tôt."
               ],
               "end": true
             }
@@ -202,7 +202,7 @@
           "start": "a",
           "nodes": {
             "a": {
-              "text": "(Il regarde ce que tu tiens.) Où as-tu trouvé ça ?",
+              "text": "(Il regarde ce que vous tenez, une seconde de trop.) Où avez-vous trouvé ça ?",
               "choices": [
                 {
                   "text": "Au fond.",
@@ -215,11 +215,11 @@
               ]
             },
             "deep": {
-              "text": "Laisse le fond tranquille. Rien ne presse.",
+              "text": "Ne descendez pas trop. Rien ne presse.",
               "end": true
             },
             "mine": {
-              "text": "Sans doute. Garde-le près de toi, alors. Ça ne peut pas faire de mal.",
+              "text": "C'est possible. La mer mélange tout.",
               "end": true
             }
           },
@@ -378,9 +378,9 @@
           "nodes": {
             "a": {
               "text": [
-                "Ton cœur est régulier, aujourd'hui. C'est bien.",
-                "Tu as meilleure mine qu'hier.",
-                "Je repasserai te voir ce soir.",
+                "Vous avez meilleure mine qu'hier.",
+                "Mangez quelque chose avant de replonger.",
+                "La brume ne se lève jamais vraiment, ici. On s'y fait.",
                 "(Il note quelque chose dans un registre. La même ligne qu'hier.)"
               ],
               "choices": [
@@ -404,22 +404,22 @@
             },
             "what": {
               "text": [
-                "Rien. Il ne se passe rien, ici. C'est ce qu'il te faut.",
-                "Tu as eu un accident. Le reste peut attendre."
+                "Un mauvais hiver. Puis un autre.",
+                "Rien. Il ne se passe plus rien, ici."
               ],
               "end": true
             },
             "others": {
               "text": [
-                "Ils passent, quelquefois. Tu ne les entends pas tous.",
-                "Il ne reste que nous. Ceux qui viennent tous les jours."
+                "Partis. Il ne reste que nous.",
+                "À la ville, pour la plupart."
               ],
               "end": true
             },
             "look": {
               "text": [
-                "Je te surveille. C'est mon métier.",
-                "J'attends que tu me répondes. Vraiment."
+                "Déformation professionnelle.",
+                "Je m'assure que vous allez bien. C'est tout."
               ],
               "end": true
             }
@@ -559,7 +559,7 @@
               "next": "d"
             },
             "d": {
-              "text": "Je répare quand tu remontes. Je n'ai que ça à faire. Attendre que tu remontes.",
+              "text": "Je répare quand tu remontes. Je n'ai que ça à faire.",
               "set": {
                 "subGiven": true
               },
@@ -580,7 +580,7 @@
           "nodes": {
             "a": {
               "text": [
-                "Je t'ai cru parti. (Il tousse.) Ta bête est à quai.",
+                "On t'a repêché. Ta bête est à quai.",
                 "Tu l'as poussée trop loin. Tu fais toujours ça."
               ],
               "next": "b"
@@ -787,7 +787,7 @@
                 "Hm.",
                 "Pas plus de quarante mètres. Je le dis, je le redis.",
                 "(Il resserre un boulon sous le second siège. Tu n'avais pas remarqué qu'il y en avait deux.)",
-                "Je t'ai entendu remonter. Je t'entends toujours."
+                "Le sel mange tout. Faut graisser, graisser, graisser."
               ],
               "choices": [
                 {
@@ -812,7 +812,7 @@
             "what": {
               "text": [
                 "On répare ta pince ou on cause ?",
-                "Demande au docteur. Moi, je ne sais plus dire ces choses-là."
+                "La pêche s'est arrêtée. Le reste a suivi."
               ],
               "end": true
             },
@@ -909,7 +909,7 @@
               "next": "b"
             },
             "b": {
-              "text": "Je prends tout ce que tu remontes. Viens me voir souvent. Et parle-moi, même pour ne rien dire.",
+              "text": "Je prends tout ce que tu remontes. Je ne pose pas de questions.",
               "choices": [
                 {
                   "text": "Vendre ma soute",
@@ -949,7 +949,7 @@
               ]
             },
             "why": {
-              "text": "Parce que c'est à toi. Garde-le. Garde tout ce qui est à toi.",
+              "text": "Il y a des choses qui ne se vendent pas. Garde-le.",
               "end": true
             }
           },
@@ -1095,15 +1095,15 @@
             },
             "what": {
               "text": [
-                "Tu es là. C'est tout ce qui compte pour l'instant.",
-                "Pas aujourd'hui, Loïc."
+                "Pas aujourd'hui, Loïc.",
+                "Les gens partent. C'est comme ça."
               ],
               "end": true
             },
             "who": {
               "text": [
-                "À personne. Je garde tout. Ne le dis pas à Job.",
-                "Ça t'occupe. Et ça me fait te voir."
+                "À des brocanteurs de Quimper. Ils passent quand ils peuvent.",
+                "Ça ne te regarde pas, mon grand."
               ],
               "end": true
             }

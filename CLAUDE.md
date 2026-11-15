@@ -76,7 +76,7 @@ Travaille **phase par phase**. À la fin de chaque phase : vérifie que `npm run
 - Une jauge d'oxygène qui se recharge en surface.
 - Une profondeur maximale liée à la coque (au-delà, la coque s'abîme).
 - Les zones proches du portail exposent à une « radiation » qui use la coque plus vite.
-- Si l'oxygène tombe à zéro : retour à l'hôpital du village et perte d'une partie de la soute (écran noir, réveil : « Encore toi… »).
+- Si l'oxygène tombe à zéro : retour à l'hôpital du village et perte d'une partie de la soute (écran noir, réveil : « Encore vous… »).
 
 ### Phase 5 : le port et les PNJ
 - La scène du port à la surface : quai, hôpital, atelier du mécano, boutique de la marchande, maisons fermées. Le joueur s'y déplace à pied (vue à la troisième personne) ou par un menu simple.

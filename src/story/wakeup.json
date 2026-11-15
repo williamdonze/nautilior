@@ -12,14 +12,14 @@
       "Un craquement. Le froid partout."
     ]
   },
-  "doctor": "Encore toi…",
+  "doctor": "Encore vous…",
   "followUps": [
     {
       "fragmentsMax": 1,
       "lines": [
-        "Tu nous as fait peur. Repose-toi.",
-        "Ton cœur s'est emballé. Ça va, maintenant.",
-        "On t'a rattrapé. Ne redescends pas si vite."
+        "Vous avez eu de la chance. Reposez-vous.",
+        "Vous nous avez fait peur.",
+        "Ne remontez pas si tard, la prochaine fois."
       ]
     },
     {
