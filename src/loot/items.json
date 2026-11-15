@@ -88,7 +88,7 @@
     {
       "id": "ancre_doris",
       "name": "Ancre de doris",
-      "description": "Trop lourde pour une si petite barque. La chaîne a été tranchée net.",
+      "description": "Trop lourde pour une si petite barque. Le bout a été tranché net.",
       "rarity": "peu_commun",
       "weight": 60,
       "price": 95,
@@ -100,7 +100,7 @@
     {
       "id": "tole_gravee",
       "name": "Tôle rivetée gravée",
-      "description": "« NAUTILIAR — n° 1. » Le numéro a été repeint par-dessus une dizaine d'autres.",
+      "description": "« NAUTILIAR. » Dessous, au pointeau, trois initiales : M., L., Y.",
       "rarity": "peu_commun",
       "weight": 12,
       "price": 80,
@@ -112,7 +112,7 @@
     {
       "id": "bol_prenom",
       "name": "Bol breton à prénom",
-      "description": "Le prénom peint a été gratté. Par-dessus, quelqu'un a repeint YANN. Dessous, on devine une autre lettre, peut-être un L.",
+      "description": "YANN, en lettres bleues. Il est intact. Personne n'y a touché depuis longtemps.",
       "rarity": "peu_commun",
       "weight": 1,
       "price": 55,
@@ -125,7 +125,7 @@
     {
       "id": "medaille_sauvetage",
       "name": "Médaille de sauvetage",
-      "description": "Décernée en 1957. Le nom gravé est illisible, comme effacé.",
+      "description": "« Pour acte de courage. » Le nom gravé s'efface dès que tu le lis.",
       "rarity": "rare",
       "weight": 0.2,
       "price": 260,
@@ -137,7 +137,7 @@
     {
       "id": "montre_gousset",
       "name": "Montre à gousset",
-      "description": "Arrêtée à 4 h 12. Toutes celles qu'on remonte sont arrêtées à 4 h 12.",
+      "description": "Arrêtée à 4 h 12. Comme toutes les autres.",
       "rarity": "rare",
       "weight": 0.3,
       "price": 320,
@@ -161,7 +161,7 @@
     {
       "id": "voilier_bois",
       "name": "Petit voilier en bois",
-      "description": "Un jouet d'enfant. Sur la coque, au couteau : YANN.",
+      "description": "Un jouet. Sous la coque, deux prénoms au couteau, de deux écritures.",
       "rarity": "rare",
       "weight": 0.5,
       "price": 300,
@@ -173,7 +173,7 @@
     {
       "id": "cloche_marie_morgane",
       "name": "Cloche de la Marie-Morgane",
-      "description": "Le nom du canot de sauvetage gravé dans le bronze. Elle tinte parfois, seule.",
+      "description": "Le nom du chalutier gravé dans le bronze. Elle tinte parfois, seule.",
       "rarity": "epique",
       "weight": 18,
       "price": 0,
@@ -259,24 +259,6 @@
       "shape": "crown",
       "color": "#e0b050",
       "spawnWeight": 1
-    },
-    {
-      "id": "eclat_vert",
-      "name": "Éclat vert",
-      "description": "Un morceau de lumière solide, plus froid que l'eau. Il bat, très doucement.",
-      "rarity": "legendaire",
-      "weight": 0.5,
-      "price": 0,
-      "minDepth": 0,
-      "shape": "shard",
-      "color": "#7fbf7a",
-      "unique": true,
-      "noSale": true,
-      "spawn": {
-        "x": 22,
-        "z": -1030
-      },
-      "selfGlow": 0.9
     }
   ]
 }

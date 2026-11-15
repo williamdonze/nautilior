@@ -9,7 +9,7 @@ Boucle de jeu : Port (vendre / améliorer / parler aux PNJ) → Plongée (explor
 ## Lore
 **La seule référence narrative est `docs/LORE.md`** : lis-le en entier avant d'écrire le moindre texte, en particulier « 3. Les règles du rêve », « 4. Ce que chaque chose est en réalité » et « 12. Ton et règles d'écriture ».
 
-En bref : Bretagne, 1984, le village de **Port-Kermor**. Le joueur, **Loïc**, croit se réveiller d'un coma dans son village déserté. En réalité il est toujours dans le coma, et tout le jeu se passe dans sa tête, fabriqué avec ce qu'il entend de sa chambre et avec sa mémoire. Les trois villageois ont les visages de ceux qui le veillent : le **docteur Guéguen**, son père **Job** (le mécano) et sa mère **Soazig** (la marchande). Le bip du sonar est son moniteur cardiaque ; le temps est figé à **4 h 12**, l'heure de son arrêt cardiaque ; chaque mort en plongée est une alerte médicale. La profondeur est ce qu'il a enfoui : tout au fond, la mort de son frère **Yann**, qui s'est noyé en le sauvant. Au fond des Abysses, **la faille** est une déchirure de lumière verte, le tracé de son cœur : la fermer, c'est mourir ; la traverser, c'est se réveiller.
+En bref : Bretagne, 1984, le village de **Port-Kermor**. Le joueur, **Loïc**, croit se réveiller d'un coma dans son village déserté. En réalité il est toujours dans le coma, et tout le jeu se passe dans sa tête, fabriqué avec ce qu'il entend de sa chambre et avec sa mémoire. Les trois villageois ont les visages de ceux qui le veillent : le **docteur Guéguen**, son père **Marcel** (le mécano) et sa mère **Hélène** (la marchande). Le bip du sonar est son moniteur cardiaque ; le temps est figé à **4 h 12**, l'heure de son arrêt cardiaque ; chaque mort en plongée est une alerte médicale. La profondeur est ce qu'il a enfoui : tout au fond, la mort de son frère **Yann**, qui s'est noyé en le sauvant. Au fond des Abysses, **la faille** est une déchirure de lumière verte, le tracé de son cœur : la fermer, c'est mourir ; la traverser, c'est se réveiller.
 
 Règles d'écriture : textes courts, mélancoliques ; **dans le rêve, personne ne raconte l'histoire** (objets, souvenirs, décor) ; **au réveil, les vrais personnages parlent clairement**. Rien de surnaturel, aucune légende. Le joueur doit comprendre trois choses : il était dans le coma, les villageois étaient sa famille, son frère est mort en le sauvant.
 
@@ -92,7 +92,7 @@ Travaille **phase par phase**. À la fin de chaque phase : vérifie que `npm run
 - 6 à 8 **fragments de mémoire** répartis par profondeur. Chacun affiche un court souvenir (texte + image pixel ou plan fixe) et fait évoluer les dialogues des villageois.
 
 ### Phase 7 : la fin
-- Une fois la coque abyssale achetée, les dialogues changent : les trois villageois supplient le joueur de fermer la faille (écho de ce qui se dit à son chevet ; Soazig, en secret, l'avertit).
+- Une fois la coque abyssale achetée, les dialogues changent : les trois villageois supplient le joueur de fermer la faille (écho de ce qui se dit à son chevet ; Hélène, en secret, l'avertit).
 - Le portail dans les Abysses : une déchirure verticale de lumière verte, sans cadre, aux bords ondulants, qui dessine de près un tracé d'électrocardiogramme.
 - **Trois fins** (voir `docs/LORE.md`, section 9) :
   - **Le Repos** (fermer) : choix **définitif**, la sauvegarde est écrasée, aucun retour possible ;

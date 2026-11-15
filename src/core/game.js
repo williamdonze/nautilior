@@ -9,7 +9,7 @@ import { WakeUp } from '../story/wakeup.js';
 import { pickConversation } from '../story/dialogue.js';
 import { storyState, resetStoryState } from '../story/state.js';
 import { gameState, resetGameState } from '../save/gameState.js';
-import { save, load, clearSave, savePrechoice } from '../save/save.js';
+import { save, load, clearSave } from '../save/save.js';
 import { playEnding, showEndScreen } from '../story/endings.js';
 import { applyUpgrades, stats } from '../submarine/stats.js';
 import { PICKUPS, SURVIVAL } from '../config/settings.js';
@@ -40,6 +40,8 @@ export class Game {
     this.music = new Music(sound);
 
     this.loaded = load();
+    // Souvenirs d'une ancienne version de l'histoire : on ne garde que ceux qui existent encore
+    storyState.fragments = storyState.fragments.filter((id) => fragmentsData.fragments.some((f) => f.id === id));
     applyUpgrades(gameState.upgrades);
 
     this.hold = new Hold();
@@ -393,7 +395,6 @@ export class Game {
     if (this.busy) return;
     this.busy = true;
     this.paused = true;
-    savePrechoice();
     const action = await this.dialogue.play('portal', pickConversation('portal'));
     this.paused = false;
     if (action === 'ending_close') return playEnding(this, 'close');

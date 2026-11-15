@@ -1,72 +1,117 @@
 {
-  "_comment": "Textes des deux fins. 'who' = doctor / mechanic / merchant (réplique d'un personnage), absent = narration. pulse = dernières lignes, sur écran noir, pendant que le bip du sonar continue : c'est là qu'on comprend ce qu'il était.",
+  "_comment": "Textes des trois fins (voir docs/LORE.md, section 9). 'who' = doctor / mechanic / merchant / anna / loic (réplique d'un personnage), absent = narration. close : fermer. cross : traverser sans les huit souvenirs. depart : traverser avec les huit. echo = phrases réentendues dans le noir, cette fois dans leur vrai sens ; awake = le réveil, où les vrais personnages parlent clairement.",
   "close": {
     "abyss": [
-      "(Tu refermes la pince du Nautiliar sur le bord de la déchirure, et tu tires.)",
-      "(Elle se referme dans un long soupir. Le vert s'éteint, d'un coup.)",
-      "(Autour de toi, les bêtes s'arrêtent. Puis elles s'en vont, lentement, apaisées.)"
+      "(Le bras du Nautiliar saisit le bas de la lumière, et tire.)",
+      "(Elle se referme derrière la pince, comme on recoud. Le vert faiblit.)",
+      "(Tu n'as plus mal. Tu n'as plus froid. Tu n'as plus rien.)"
     ],
-    "port": [
+    "pulse": [
       {
-        "text": "(Ils t'attendent tous les trois sur le quai. Ils ne t'ont jamais attendu ensemble.)"
+        "text": "Bip."
       },
       {
-        "who": "mechanic",
-        "text": "C'est fini. Elle ne fera plus de mal à personne."
+        "text": "Bip…"
       },
       {
-        "who": "merchant",
-        "text": "Tu as bien fait. Tu restes, maintenant. Pour de bon."
-      },
-      {
-        "text": "(Ils sourient. Tous les trois. Trop.)"
-      },
-      {
-        "text": "(Tu regardes la route qui sort du village. Elle se perd dans la brume, et ne mène nulle part. Elle n'a jamais mené nulle part.)"
-      },
-      {
-        "text": "(Tu comprends que tu ne partiras jamais d'ici.)"
+        "text": "Le bip ne retombe pas."
       },
       {
         "who": "doctor",
-        "text": "Bienvenue chez toi."
+        "text": "Heure du décès : quatre heures douze."
+      },
+      {
+        "who": "merchant",
+        "text": "Loïc."
       }
     ],
-    "title": "Bienvenue chez toi",
-    "subtitle": "Tu as fermé le portail. L'Envers ne s'éteindra pas. Toi non plus.",
-    "pulse": [
-      "Bip.",
-      "Bip…",
-      "Le bip ne retombe pas.",
-      "Quelque part, très loin, une voix de femme appelle un prénom. Ce n'est pas Yann.",
-      "Une autre voix, plus basse : « Heure du décès… »"
-    ]
+    "title": "Le Repos",
+    "subtitle": "Tu as fermé la lumière. Dans une chambre de Port-Kermor, un moniteur s'est tu."
   },
   "cross": {
     "abyss": [
-      "(Tu pousses le moteur. Le Nautiliar entre dans la lumière.)",
-      "(Derrière toi, l'Envers s'effondre sans un bruit.)"
+      "(Tu pousses le moteur. La lumière s'ouvre devant toi.)",
+      "(Elle fait mal. Elle fait mal comme un corps qu'on retrouve.)"
     ],
-    "dissolve": [
-      "(Sur le quai, trois silhouettes te regardent partir. Elles ne disent rien.)",
-      "(Puis la brume les reprend, et le village avec elles.)"
+    "echo": [
+      {
+        "who": "doctor",
+        "text": "S'il se réveille, ce ne sera plus tout à fait lui. Il faut que vous le sachiez."
+      },
+      {
+        "who": "mechanic",
+        "text": "Il souffre. On ne peut pas le laisser comme ça. Il faut arrêter."
+      },
+      {
+        "who": "merchant",
+        "text": "Non. Il nous entend. Je le sais, qu'il nous entend."
+      }
     ],
-    "alive": [
-      "(Tu crèves la surface. L'air froid. Le soleil. Des cris.)",
-      "(Le quai est noir de monde. Les volets sont ouverts. Quelqu'un hurle ton nom.)",
-      "(« Il était porté disparu depuis des mois… » « C'est lui ! C'est bien lui ! »)",
-      "(Une main serre la tienne. Celle qui t'avait dit de rentrer avant la nuit.)",
-      "(Tu es rentré chez toi.)"
+    "awake": [
+      {
+        "who": "doctor",
+        "text": "Doucement. Vous êtes à l'hôpital. Vous avez dormi cent douze jours."
+      },
+      {
+        "who": "merchant",
+        "text": "Je le savais. Je leur ai dit que tu nous entendais."
+      },
+      {
+        "who": "mechanic",
+        "text": "Mon grand."
+      },
+      {
+        "who": "anna",
+        "text": "Loïc ?"
+      },
+      {
+        "who": "loic",
+        "text": "Papa. Maman. … Où est Yann ?"
+      },
+      {
+        "text": "Personne ne répond. Ton père regarde la chaise vide, près de la fenêtre."
+      }
     ],
-    "title": "Rentré chez toi",
-    "subtitle": "Tu as traversé. L'Envers s'est éteint, et ceux qui le peuplaient avec lui.",
-    "pulse": [
-      "Bip.",
-      "Bip.",
-      "Ce n'est pas le sonar.",
-      "Une lumière blanche. Un plafond. L'odeur de l'éther.",
-      "Une main serre la tienne. Elle tremble.",
-      "« Loïc ? »"
-    ]
+    "title": "Le Réveil",
+    "subtitle": "Tu es revenu. Mais il manque quelqu'un dans la chambre, et tu ne sais plus pourquoi."
+  },
+  "depart": {
+    "awake": [
+      {
+        "who": "doctor",
+        "text": "Doucement. Vous êtes à l'hôpital. Vous avez dormi cent douze jours."
+      },
+      {
+        "who": "merchant",
+        "text": "Je le savais. Je leur ai dit que tu nous entendais."
+      },
+      {
+        "who": "mechanic",
+        "text": "Mon grand."
+      },
+      {
+        "who": "anna",
+        "text": "Loïc ?"
+      },
+      {
+        "who": "loic",
+        "text": "Papa. Yann a coupé les filets. Il m'a sorti de là."
+      },
+      {
+        "who": "loic",
+        "text": "Je sais où il est."
+      },
+      {
+        "text": "Ton père te prend la main. Il ne dit rien. Il serre."
+      },
+      {
+        "text": "Trois semaines plus tard, on a retrouvé l'épave de la Marie-Morgane. Yann repose à terre, à Port-Kermor."
+      },
+      {
+        "text": "Sur la table de chevet, la montre s'est remise à tourner."
+      }
+    ],
+    "title": "Le Départ",
+    "subtitle": "Tu es revenu, et tu as ramené ton frère."
   }
 }

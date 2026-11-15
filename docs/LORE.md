@@ -26,7 +26,7 @@ Le dernier retourne le premier : le jeu commence par un réveil qui n'en est pas
 
 ## 2. L'histoire vraie
 
-**14 octobre 1984, Port-Kermor (Bretagne).** Loïc Kerhervé, 35 ans, pilote le *Nautiliar*, un petit sous-marin de récupération construit avec son père, Job. Il plonge avec son frère cadet, **Yann**, sur l'épave d'un chalutier, la *Marie-Morgane*. On dit que sa cloche est encore à bord. Job avait prévenu : « Pas plus de quarante mètres. » Loïc descend plus bas. Sa femme, Anna, lui avait dit : « Reviens avant la nuit. »
+**14 octobre 1984, Port-Kermor (Bretagne).** Loïc Kerhervé, 35 ans, pilote le *Nautiliar*, un petit sous-marin de récupération construit avec son père, Marcel. Il plonge avec son frère cadet, **Yann**, sur l'épave d'un chalutier, la *Marie-Morgane*. On dit que sa cloche est encore à bord. Marcel avait prévenu : « Pas plus de quarante mètres. » Loïc descend plus bas. Sa femme, Anna, lui avait dit : « Reviens avant la nuit. »
 
 Le sous-marin se prend dans de vieux filets. Yann sort pour les couper, de l'intérieur, et libère l'engin. Il ne remonte pas.
 
@@ -34,7 +34,7 @@ On retrouve Loïc à la dérive, seul, en hypothermie. Dans la nuit, à **4 h 12
 
 **Le coma.** Les recherches pour retrouver Yann sont abandonnées au bout de quelques jours : personne ne sait où est l'épave. Loïc seul le sait.
 
-Autour du lit, jour après jour : le **docteur Guéguen**, son père **Job**, sa mère **Soazig**, et **Anna**, qui lui tient la main et lui lit des lettres. Son état est instable : plusieurs fois, son cœur s'emballe ou faiblit, et on le rattrape.
+Autour du lit, jour après jour : le **docteur Guéguen**, son père **Marcel**, sa mère **Hélène**, et **Anna**, qui lui tient la main et lui lit des lettres. Son état est instable : plusieurs fois, son cœur s'emballe ou faiblit, et on le rattrape.
 
 **Le jeu commence au 112e jour.** Ce jour-là, le médecin reçoit la famille pour parler de la suite : continuer, ou arrêter les soins.
 
@@ -93,12 +93,12 @@ Jamais expliquées au joueur, mais tout le jeu doit les respecter.
 > Milieu : « Vous descendez trop. Rien ne presse. »
 > Fin : « Ce qui remontera, ce ne sera plus vous. » *(Dans la chambre : il parle des séquelles.)*
 
-**Job, le père (le mécano).** Il a construit le Nautiliar avec ses fils. Il a perdu Yann, et regarde l'autre s'éteindre depuis 112 jours. Bourru, tendre, épuisé.
+**Marcel, le père (le mécano).** Il a construit le Nautiliar avec ses fils. Il a perdu Yann, et regarde l'autre s'éteindre depuis 112 jours. Bourru, tendre, épuisé.
 > Début : « Je l'ai remis en état. Il t'attendait. »
 > Refrain : « Pas plus de quarante mètres. » *(Il le répète à chaque amélioration, alors même qu'il te vend de quoi descendre plus bas.)*
 > Fin : « Ça souffre. Ferme-la, c'est tout. » *(Dans la chambre : un père qui n'en peut plus.)*
 
-**Soazig, la mère (la marchande).** Elle est celle qui dit, dans la chambre : « Il nous entend. » Dans le rêve, elle achète tout… sauf ce qui compte.
+**Hélène, la mère (la marchande).** Elle est celle qui dit, dans la chambre : « Il nous entend. » Dans le rêve, elle achète tout… sauf ce qui compte.
 > Devant un souvenir : « Ça, je ne l'achète pas. Garde-le. »
 > Milieu : « Tu dors bien ? Tu rêves de quoi ? »
 > Fin : elle est la seule à ne pas demander qu'on ferme. « Moi, je crois que tu m'entends. »
@@ -115,10 +115,10 @@ Jamais expliquées au joueur, mais tout le jeu doit les respecter.
 |---|---|---|---|---|
 | **I. Le réveil** | Récif | 1 et 2 | Un village figé à 4 h 12, sans issue. Souvenirs 1 et 2. | Chaleureux, évasifs |
 | **II. Ce jour-là** | Épaves | 3 et 4 | La journée de l'accident se reconstitue. Le plongeur pâle, au loin. Souvenirs 3 et 4. | Gênés dès qu'on parle de la plongée |
-| **III. L'autre** | Canyon | 5 et 6 | Un deuxième nom, rayé. Les filets. Deux garçons sur une barque. Souvenirs 5, 6 et 7. | Le docteur se durcit, Job fuit le regard, Soazig est la seule à poser des questions |
-| **IV. La faille** | Abysses | 7 | Le ver. Les voix de la chambre, étouffées par l'eau. Le souvenir 8. | Le docteur et Job demandent de fermer ; Soazig, non |
+| **III. L'autre** | Canyon | 5 et 6 | Un deuxième nom, rayé. Les filets. Deux garçons sur une barque. Souvenirs 5, 6 et 7. | Le docteur se durcit, Marcel fuit le regard, Hélène est la seule à poser des questions |
+| **IV. La faille** | Abysses | 7 | Le ver. Les voix de la chambre, étouffées par l'eau. Le souvenir 8. | Le docteur et Marcel demandent de fermer ; Hélène, non |
 
-**Micro-indices** (un par personnage et par acte, jamais plus) : une bizarrerie, pas une information. Exemples : le docteur ne demande jamais à Loïc ce dont il se souvient ; Job a réglé le siège du sous-marin pour deux ; Soazig met toujours trois bols sur la table et en retire un.
+**Micro-indices** (un par personnage et par acte, jamais plus) : une bizarrerie, pas une information. Exemples : le docteur ne demande jamais à Loïc ce dont il se souvient ; Marcel a réglé le siège du sous-marin pour deux ; Hélène met toujours trois bols sur la table et en retire un.
 
 ---
 
@@ -147,7 +147,7 @@ Les objets ordinaires sont des morceaux de sa vie qu'il échange pour descendre.
 - **Montre à gousset** : « Arrêtée à 4 h 12. Comme toutes les autres. »
 - **Cloche de la *Marie-Morgane*** : « Elle tinte parfois, seule. » *(Un objet rare comme un autre : elle n'est exigée pour aucune fin.)*
 
-Les souvenirs ne se vendent pas : Soazig les refuse.
+Les souvenirs ne se vendent pas : Hélène les refuse.
 
 ---
 
@@ -167,8 +167,8 @@ Le même réveil. Mais cette fois, c'est Loïc qui parle : « Yann a coupé les 
 ### Le réveil (commun aux fins 2 et 3)
 Une fois les yeux ouverts, on est dans le vrai monde : **les personnages parlent clairement.**
 - Le docteur : « Doucement. Vous êtes à l'hôpital. Vous avez dormi cent douze jours. »
-- Soazig : « Je le savais. Je leur ai dit que tu nous entendais. »
-- Job, la casquette dans les mains : « Mon grand. »
+- Hélène : « Je le savais. Je leur ai dit que tu nous entendais. »
+- Marcel, la casquette dans les mains : « Mon grand. »
 - Anna, qui n'a pas lâché sa main : « Loïc ? »
 
 ---
@@ -181,7 +181,7 @@ Dans le rêve, personne n'explique rien. Au réveil, tout est dit simplement.
 
 **Au réveil, trois moments, un par chose à comprendre.**
 1. *« J'étais dans le coma depuis le début. »* Le bip du sonar ne s'est pas arrêté : c'est le moniteur. Pendant les éclairs, une image du rêve devient ce qu'elle était (la faille → la ligne verte, le Linceul → le drap, le ver → un tuyau). Puis le médecin le dit : « Vous avez dormi cent douze jours. »
-2. *« Les villageois étaient ma famille. »* Les trois mêmes visages autour du lit : la casquette de Job, le fichu de Soazig, les lunettes du docteur. Paupières encore closes, on a réentendu leurs phrases du village, mot pour mot, dans leur vrai sens. Sur la table : une maquette du Nautiliar, des lettres, une montre arrêtée à 4 h 12.
+2. *« Les villageois étaient ma famille. »* Les trois mêmes visages autour du lit : la casquette de Marcel, le fichu de Hélène, les lunettes du docteur. Paupières encore closes, on a réentendu leurs phrases du village, mot pour mot, dans leur vrai sens. Sur la table : une maquette du Nautiliar, des lettres, une montre arrêtée à 4 h 12.
 3. *« Mon frère est mort en me sauvant. »* Une chaise vide, avec la photo de deux garçons sur une barque. Dans la fin 3, Loïc le dit lui-même. Dans la fin 2, il pose la question et personne ne répond.
 
 **Après une fin : la relecture.** La collection gagne une seconde ligne par objet et par indice : ce que c'était vraiment. Facultatif, mais personne ne reste sans réponse.
@@ -193,7 +193,7 @@ Dans le rêve, personne n'explique rien. Au réveil, tout est dit simplement.
 - **Le sonar est un cœur** : même son que le moniteur des fins. Il s'emballe sous la menace, ralentit à la mort, se tait quand on ferme.
 - **Le plongeur pâle** indique la direction du souvenir manquant le plus proche.
 - **Le carnet** : huit emplacements, visibles dès le début, dans l'ordre de la journée.
-- **La fin dépend des souvenirs** : avec les huit, Loïc se réveille en sachant. Soazig prévient si l'on part vers la faille sans tout avoir : « Il te reste des choses à toi, là-dessous. »
+- **La fin dépend des souvenirs** : avec les huit, Loïc se réveille en sachant. Hélène prévient si l'on part vers la faille sans tout avoir : « Il te reste des choses à toi, là-dessous. »
 - **L'écran-titre change** selon la fin vue. Après la Fin 1, la partie ne peut plus être chargée.
 
 ---
@@ -202,7 +202,7 @@ Dans le rêve, personne n'explique rien. Au réveil, tout est dit simplement.
 
 - Mélancolique, intrigant, de plus en plus inquiétant avec la profondeur. Aucun humour.
 - **Le début paraît presque normal** : à l'acte I, une seule bizarrerie discrète par personnage. La transparence grandit avec les actes.
-- **Le docteur vouvoie toujours Loïc**, dans le village comme au réveil. Job et Soazig le tutoient.
+- **Le docteur vouvoie toujours Loïc**, dans le village comme au réveil. Marcel et Hélène le tutoient.
 - Répliques d'une ou deux phrases. Les personnages répondent à côté et laissent des silences.
 - **Dans le rêve, personne ne raconte l'histoire.** Tout passe par les objets, les souvenirs, le décor et les sous-entendus. **Au réveil, on est dans le vrai monde : les personnages parlent clairement.**
 - Chaque réplique doit pouvoir être relue autrement une fois la fin connue : c'est une phrase dite dans une chambre d'hôpital.
