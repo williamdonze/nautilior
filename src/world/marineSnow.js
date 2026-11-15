@@ -52,6 +52,7 @@ export function createMarineSnow() {
       uniform float uPointScale;
       attribute float aSeed;
       varying float vLit;
+      varying float vTw;
       #include <fog_pars_vertex>
       void main() {
         vec3 p = position;
@@ -67,7 +68,9 @@ export function createMarineSnow() {
         gl_Position = projectionMatrix * mvPosition;
         float dist = max(-mvPosition.z, 0.1);
         // Taille en pixels proportionnelle à la résolution (lisible même en plein écran)
-        gl_PointSize = clamp(6.0 / dist, 1.0, 2.4) * uPointScale * 0.7;
+        // Tailles variées (quelques gros flocons), jamais plus petits qu'un pixel
+        gl_PointSize = clamp((4.0 + 10.0 * aSeed * aSeed * aSeed) / dist, 1.0, 3.2) * uPointScale * 0.7;
+        vTw = 0.65 + 0.35 * sin(uTime * (1.0 + aSeed * 2.0) + aSeed * 100.0);
 
         // Éclairage par le phare (cône simplifié)
         vec3 toP = p - uLightPos;
@@ -84,6 +87,7 @@ export function createMarineSnow() {
       uniform vec3 uTint;
       uniform float uTintAmount;
       varying float vLit;
+      varying float vTw;
       #include <fog_pars_fragment>
       void main() {
         // Sous radiation, les particules luisent faiblement en vert
@@ -91,7 +95,7 @@ export function createMarineSnow() {
         // Flocon rond aux bords doux
         float r = length(gl_PointCoord - 0.5) * 2.0;
         if (r > 1.0) discard;
-        gl_FragColor = vec4(c, (1.0 - r * r) * (0.55 + vLit * 0.45));
+        gl_FragColor = vec4(c, (1.0 - r * r) * (0.55 + vLit * 0.45) * vTw);
         #include <fog_fragment>
       }
     `,
