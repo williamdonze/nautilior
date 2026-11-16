@@ -19,6 +19,7 @@ const MAX_SCHOOLS = 8;
 const SPAWN_MIN = 55, SPAWN_MAX = 80, DESPAWN = 135;
 
 const _v = new THREE.Vector3();
+const _d = new THREE.Vector3(), _back = new THREE.Vector3(), _Z = new THREE.Vector3(0, 0, 1), _q = new THREE.Quaternion();
 const _m = new THREE.Matrix4();
 const UP = new THREE.Vector3(0, 1, 0);
 
@@ -199,6 +200,12 @@ class Mutant {
     this.state = 'wander';
     this.cooldown = 2;
     this.fadeIn = 0;
+    if (this.model.chain) {
+      // le corps se range d'un coup derrière la tête (sinon il s'étirerait depuis son ancienne place)
+      this.dir = new THREE.Vector3(0, 0, 1);
+      this.model.head.position.copy(p);
+      this.model.chain.forEach((c, i) => c.set(p.x, p.y, p.z - (i + 1) * this.model.spacing));
+    }
     if (this.model.segments) for (const s of this.model.segments) s.position.copy(p);
   }
 
@@ -282,24 +289,37 @@ class Mutant {
     const t = time + this.phase;
     const charging = this.state === 'charge';
     const k = Math.min(1, dt * 6);
-    m.tick?.(t, charging); // lueurs, pupille : propres à chaque modèle
+    m.tick?.(t, charging); // pupille : propre à chaque modèle
     if (this.type === 'eel') {
-      // La tête mène, les segments suivent en chaîne
-      m.head.position.copy(this.pos);
-      if (this.vel.lengthSq() > 0.01) m.head.lookAt(_v.copy(this.pos).add(this.vel));
-      const side = new THREE.Vector3(this.vel.z, 0, -this.vel.x).normalize().multiplyScalar(Math.sin(t * 6) * 0.25);
-      m.head.position.add(side);
+      // La tête mène ; sa direction est lissée (elle ne pivote jamais d'un coup)
+      const dir = (this.dir ??= new THREE.Vector3(0, 0, 1));
+      if (this.vel.lengthSq() > 0.01) dir.lerp(_v.copy(this.vel).normalize(), Math.min(1, dt * (charging ? 7 : 3.5))).normalize();
+      _v.set(dir.z, 0, -dir.x).normalize().multiplyScalar(Math.sin(t * 5) * 0.3);
+      m.head.position.copy(this.pos).add(_v);
+      m.head.quaternion.slerp(_q.setFromUnitVectors(_Z, dir), Math.min(1, dt * 8));
       // La gueule s'ouvre grand quand elle charge
       const jawTarget = charging ? 0.55 : 0.08 + Math.sin(t * 1.7) * 0.05;
       m.jaw.rotation.x += (jawTarget - m.jaw.rotation.x) * k;
+      // Le corps suit en chaîne : chaque maillon reste à distance fixe du précédent,
+      // et l'angle entre deux maillons est limité (jamais de pli, jamais de nœud)
       let prev = m.head.position;
-      for (const seg of m.segments) {
-        _v.subVectors(seg.position, prev);
-        const len = _v.length() || 1;
-        seg.position.copy(prev).addScaledVector(_v, m.spacing / len);
-        seg.lookAt(prev);
-        prev = seg.position;
-      }
+      _back.copy(dir).negate();
+      const COS = 0.9; // ≈ 26° au plus entre deux maillons
+      m.chain.forEach((c, i) => {
+        _d.subVectors(c, prev);
+        if (_d.lengthSq() < 1e-8) _d.copy(_back);
+        _d.normalize();
+        // ondulation de nage, de plus en plus ample vers la queue
+        _d.x += Math.sin(t * 3.2 - i * 0.55) * 0.04 * (i / m.chain.length);
+        _d.y += Math.cos(t * 2.6 - i * 0.5) * 0.03 * (i / m.chain.length);
+        _d.normalize();
+        const dot = _d.dot(_back);
+        if (dot < COS) _d.lerp(_back, Math.min(1, (COS - dot) / (1 - dot + 1e-6))).normalize();
+        c.copy(prev).addScaledVector(_d, m.spacing);
+        _back.copy(_d);
+        prev = c;
+      });
+      m.updateBody(t, charging);
     } else if (this.type === 'lantern') {
       o.position.copy(this.pos);
       if (this.vel.lengthSq() > 0.01) o.lookAt(_v.copy(this.pos).add(this.vel));

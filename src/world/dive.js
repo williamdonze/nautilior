@@ -307,6 +307,7 @@ export class Dive {
     for (const a of this.wildlife.animals) {
       if (near(a.pos.x, a.pos.z)) C.push({ id: a.object.id, kind: a.spec.damage > 0 ? 'creature' : 'fish', x: a.pos.x, y: a.pos.y, z: a.pos.z, size: a.size });
     }
+    if (near(this.whale.pos.x, this.whale.pos.z)) C.push({ id: 'whale', kind: 'fish', x: this.whale.pos.x, y: this.whale.pos.y, z: this.whale.pos.z, size: 5 });
     this.guardian.contacts(C);
     for (const b of this.airBells.spots) if (near(b.x, b.z)) C.push({ id: `bell${b.x}`, kind: 'wreck', x: b.x, y: b.y, z: b.z });
     for (const l of this.landmarkContacts) if (near(l.x, l.z)) C.push(l);
@@ -319,6 +320,9 @@ export class Dive {
     M.length = 0;
     for (const a of this.wildlife.animals) M.push({ object: a.object, hostile: a.spec.damage > 0 });
     for (const m of this.creatures.mutants) M.push({ object: m.object, hostile: true });
+    // la baleine (amie, très grosse : beaucoup de points) et les bancs de poissons (un point par poisson)
+    if (this.whale.object.visible && this.whale.pos.distanceTo(this.sub.position) < 220) M.push({ object: this.whale.object, hostile: false, dense: 5 });
+    for (const s of this.creatures.fish.schools) if (s.active) M.push({ school: s, hostile: false });
     if (this.guardian.group.visible) M.push({ object: this.guardian.head, hostile: true, chain: this.guardian.segs, radius: this.guardian.spacing * 0.8 });
     return M;
   }
