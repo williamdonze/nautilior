@@ -15,8 +15,9 @@ const { createLandmarks, WRECK_SPOTS, MARIE } = await import('../world/landmarks
 const { createFormations } = await import('../world/formations.js');
 const { NetForest } = await import('../world/nets.js');
 const { createSunkenRoom } = await import('../world/sunkenRoom.js');
-const { AirBells } = await import('../world/airBells.js');
-const { RADIATION, SUBMARINE, AIR_BELLS, ROOFS, WHALE, SEABED, LAYOUT } = await import('../config/settings.js');
+const { AirPockets } = await import('../world/airPockets.js');
+const { getPockets } = await import('../world/roof.js');
+const { RADIATION, SUBMARINE, ROOFS, WHALE, SEABED, LAYOUT } = await import('../config/settings.js');
 const { tunnelSection } = await import('../world/seabed.js');
 const fragments = (await import('../story/fragments.json')).default.fragments;
 const zones = (await import('../config/zones.json')).default.zones;
@@ -83,7 +84,7 @@ const colorAt = (depth, out) => { let k = 0; while (k < ZONE_COL.length - 2 && Z
   g.add(createFormations([]));
   new NetForest(g);
   createSunkenRoom(g, []);
-  new AirBells(g, []);
+  new AirPockets(g);
   // la faille
   const S = RADIATION.SOURCE, fy = getFloorHeight(S.x, S.z);
   const rift = new THREE.Mesh(new THREE.PlaneGeometry(5, 46), new THREE.MeshBasicMaterial({ color: '#7dffb0', side: THREE.DoubleSide }));
@@ -122,7 +123,7 @@ function mark(x, y, z, text, color = '#e2c98c', zone = false) {
 const F = getFloorHeight;
 mark(SUBMARINE.SPAWN.x, SUBMARINE.SPAWN.y, SUBMARINE.SPAWN.z, 'Départ (sous le port)', '#ffffff');
 fragments.forEach((f, i) => { const x = f.inCanyon ? canyonCenter(f.z) + f.x : f.x; mark(x, F(x, f.z), f.z, `Souvenir ${i + 1} · ${f.name}`, '#bfe8d0'); });
-AIR_BELLS.SPOTS.forEach(([x, z]) => mark(x, F(x, z) + 6, z, 'Cloche à air', '#f2e6b8'));
+getPockets().forEach((p) => mark(p.x, p.y - 18, p.z, p.camp ? 'PUITS (treuil)' : 'Poche d\'air', p.camp ? '#ffd98a' : '#cfeee6'));
 WRECK_SPOTS.forEach(([x, z]) => mark(x, F(x, z), z, 'Épave', '#c08850'));
 mark(canyonCenter(MARIE.z) + MARIE.dx, F(canyonCenter(MARIE.z) + MARIE.dx, MARIE.z) + 14, MARIE.z, 'La Marie-Morgane', '#ff9a6a');
 ROOFS.MASSIFS.forEach((m) => mark(m.x, F(m.x, m.z) + m.H, m.z, m.h ? 'La Salle (caverne)' : 'Massif percé', '#c79a5a'));
@@ -148,6 +149,7 @@ ROOFS.VAULTS.forEach((v, i) => { const z = (v.z0 + v.z1) / 2, x = canyonCenter(z
   const mid = pts[Math.floor(pts.length / 2)];
   mark(mid.x, mid.y - 19, mid.z, 'Trajet de la baleine', '#f2d9a0', true);
 }
+mark(LAYOUT.VERGER.x, F(LAYOUT.VERGER.x, LAYOUT.VERGER.z) + 8, LAYOUT.VERGER.z, 'Le verger', '#ffe9ee');
 // zones : un nom au bord, à la bonne profondeur
 for (const zn of zones) { const z = ((zn.zMin ?? 0) + (zn.zMax ?? 0)) / 2; mark(X0 - 26, F(0, z) + 10, z, `${zn.name.toUpperCase()} · ${zn.maxDepth > 5000 ? `plus de ${zn.minDepth}` : `${zn.minDepth}–${zn.maxDepth}`} m`, '#ffffff', true); }
 

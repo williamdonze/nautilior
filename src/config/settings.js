@@ -41,6 +41,23 @@ export const LAYOUT = {
     { id: 'trachee', name: 'La Trachée', z0: -1760, z1: -2210, x0: -20, x1: 0, sway: 45, waves: 1.5, r: 19, rooms: [], ribs: 24 },
     { id: 'jardin', name: 'Le Jardin de verre', z0: -3010, z1: -3460, x0: 0, x1: 20, sway: 70, waves: 2, r: 22, rooms: [[0.3, 38], [0.68, 44]] },
   ],
+  /**
+   * Passé le Récif, on est sous la roche jusqu'à la faille : chaque bassin profond est une caverne géante.
+   * h = hauteur de la voûte au-dessus du fond (m) ; pillars = écart moyen entre deux piliers (m).
+   */
+  CAVERNS: [null, { h: 86, pillars: 74 }, { h: 112, pillars: 82 }, { h: 96, pillars: 88 }],
+  /**
+   * Poches d'air : la voûte se creuse en coupole, avec une surface d'eau et un peu d'air au-dessus. On y respire.
+   * [x, z, rayon]. Dans chaque caverne, la première est le PUITS (camp : true) : un treuil y pend, on remonte
+   * au village avec la soute, et l'on peut y redescendre le Nautiliar. Une petite poche à mi-parcours de chaque tunnel.
+   */
+  POCKETS: [
+    { x: 40, z: -1090, r: 24, camp: 1 }, { x: -85, z: -1270, r: 14 }, { x: 90, z: -1470, r: 14 }, { x: -70, z: -1660, r: 14 },
+    { x: -75, z: -2350, r: 24, camp: 2 }, { x: 95, z: -2520, r: 14 }, { x: -100, z: -2720, r: 14 }, { x: 85, z: -2900, r: 14 },
+    { x: 100, z: -3665, r: 24, camp: 3 }, { x: 105, z: -3800, r: 14 }, { x: -105, z: -3990, r: 14 },
+  ],
+  /** Le verger : des pommiers en fleurs, dans les Abysses */
+  VERGER: { x: 96, z: -3850, r: 34, trees: 15 },
   /** La Salle : une caverne immense sous un dôme, dans les Abysses (x, z du centre ; a, b = demi-axes ; h = hauteur sous voûte) */
   SALLE: { x: -78, z: -3720, a: 84, b: 68, rot: 0.5, H: 74, h: 46, wt: 16, ht: 20 },
 };
@@ -171,7 +188,7 @@ export const DEFENSE = {
   BEAM_RANGE: 0.75, // le faisceau du phare fait reculer les bêtes jusqu'à cette part de sa portée
   BEAM_ANGLE: 0.8, // … dans cette part de son ouverture
   BEAM_FEAR: 2.2, // durée du recul (s)
-  BELL_REFUGE: 22, // aucune bête hostile à moins de cette distance d'une cloche à air (m)
+  BELL_REFUGE: 14, // aucune bête hostile à moins de cette distance (plus son rayon) d'une poche d'air (m)
   WHALE_REFUGE: 50, // … ni de la baleine (m)
 };
 
@@ -191,12 +208,6 @@ export const PULSE = {
   WORM: 84, // au-dessus, le ver se jette sur le sous-marin
 };
 
-/** Cloches à air : des étapes dans les grandes descentes. x, z = position ; on y refait le plein d'air. */
-export const AIR_BELLS = {
-  RADIUS: 7, // distance à laquelle l'air se renouvelle (m)
-  REFILL: 14, // air rendu par seconde
-  SPOTS: [[-30, -1014], [60, -1338], [-70, -1663], [20, -2451], [-25, -2832], [40, -3622], [-55, -3807]],
-};
 
 /**
  * Plafonds de roche (voir world/roof.js).

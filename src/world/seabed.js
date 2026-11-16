@@ -25,7 +25,7 @@ function canyonMask(x, z) {
 }
 
 /** Profondeur du plateau en z : pente douce dans chaque bassin ; entre deux bassins, on raccorde (la barre couvre) */
-function plateauDepth(z) {
+export function plateauDepth(z) {
   if (z >= BASINS[0].z0) return BASINS[0].d0;
   for (let i = 0; i < BASINS.length; i++) {
     const b = BASINS[i];
