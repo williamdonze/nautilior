@@ -445,6 +445,7 @@ export class Game {
       this.paused = true;
       this.sound.stopEngine();
     }
+    this.memoryView.context = { port: this.port };
     await this.memoryView.show(fragmentsData.fragments[index], index + 1);
     this.paused = false;
     this.busy = false;

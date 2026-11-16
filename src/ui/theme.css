@@ -162,3 +162,17 @@ body.mode-port #voice { display: none; }
 }
 .money .label { font-size: 11px; letter-spacing: 0.32em; color: var(--hud-dim); }
 #money-value { font-size: 30px; font-weight: 300; letter-spacing: 0.04em; line-height: 1; color: var(--hud-warm); }
+
+/* Souvenir : un tirage papier, posé un peu de travers */
+#memory canvas {
+  height: min(330px, 46vh);
+  aspect-ratio: 720 / 450;
+  image-rendering: auto;
+  border: 10px solid #e7e1d2;
+  border-bottom-width: 26px;
+  border-radius: 2px;
+  box-shadow: 0 14px 50px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(0, 0, 0, 0.4);
+  transform: rotate(-1.4deg);
+  background: #16120e;
+}
+.mem-title { margin-top: 26px; }
