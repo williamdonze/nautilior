@@ -124,7 +124,7 @@ fragments.forEach((f, i) => { const x = f.inCanyon ? canyonCenter(f.z) + f.x : f
 AIR_BELLS.SPOTS.forEach(([x, z]) => mark(x, F(x, z) + 6, z, 'Cloche à air', '#f2e6b8'));
 WRECK_SPOTS.forEach(([x, z]) => mark(x, F(x, z), z, 'Épave', '#c08850'));
 mark(canyonCenter(MARIE.z) + MARIE.dx, F(canyonCenter(MARIE.z) + MARIE.dx, MARIE.z) + 14, MARIE.z, 'La Marie-Morgane', '#ff9a6a');
-ROOFS.MASSIFS.forEach((m) => mark(m.x, F(m.x, m.z) + m.H, m.z, 'Massif percé (tunnel)', '#c79a5a'));
+ROOFS.MASSIFS.forEach((m) => mark(m.x, F(m.x, m.z) + m.H, m.z, m.name ? `${m.name} (tunnel)` : 'Massif percé', '#c79a5a'));
 ROOFS.VAULTS.forEach((v, i) => { const z = (v.z0 + v.z1) / 2, x = canyonCenter(z); mark(x, F(x, z) + v.h + v.thick, z, ['Voûte : le Porche', 'Voûte : la Nef', 'Voûte'][i] ?? 'Voûte', '#c79a5a'); });
 {
   const S = RADIATION.SOURCE;

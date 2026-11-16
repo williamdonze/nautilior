@@ -200,6 +200,11 @@ export const ROOFS = {
   MASSIFS: [
     { x: -48, z: -62, a: 19, b: 14, rot: 0.6, H: 15, wt: 6, ht: 8.5 }, // Récif : une petite arche, pour apprendre
     { x: -2, z: sz(-328), a: 30, b: 22, rot: -0.4, H: 26, wt: 9, ht: 11.5 }, // Épaves
+    // Les grandes dorsales : de longs reliefs posés sur le fond, à l'écart du chemin principal (on peut les contourner),
+    // percés de part en part d'un tunnel naturel de vingt-huit mètres de large qui serpente. ridge = le dessus suit le fond.
+    { x: 80, z: -480, a: 140, b: 44, rot: Math.PI / 2, H: 55, wt: 14, ht: 22, ridge: true, name: 'La Galerie' }, // fin du Récif
+    { x: 100, z: -1000, a: 160, b: 44, rot: Math.PI / 2, H: 60, wt: 14, ht: 22, ridge: true, name: 'Le Boyau' }, // Épaves
+    { x: 100, z: -2620, a: 140, b: 42, rot: Math.PI / 2, H: 60, wt: 13, ht: 22, ridge: true, name: 'La Nuit' }, // Abysses
     { x: -24, z: sz(-910), a: 34, b: 24, rot: 1.1, H: 30, wt: 10, ht: 13 }, // Abysses
   ],
 };

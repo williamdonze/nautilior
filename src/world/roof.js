@@ -38,18 +38,20 @@ function vault(v, x, z) {
 /** Massif : un dôme de roche posé sur le fond, percé d'un tunnel dans sa longueur */
 function massif(m, x, z) {
   const dx = x - m.x, dz = z - m.z;
-  if (Math.abs(dx) > m.a + 2 && Math.abs(dz) > m.a + 2) return false;
+  if (Math.abs(dx) > m.a + 2 || Math.abs(dz) > m.a + 2) return false;
   const u = dx * m.cos + dz * m.sin, v = -dx * m.sin + dz * m.cos;
-  const e = (u / m.a) ** 2 + (v / m.b) ** 2;
+  // dorsale : contour irrégulier, tunnel qui serpente
+  const bend = m.ridge ? Math.sin((u / m.a) * Math.PI * 1.5 + m.x) * m.b * 0.22 : 0;
+  const e = (u / m.a) ** 2 + (v / m.b) ** 2 + (m.ridge ? noise(x * 0.02 + m.x, z * 0.02) * 0.16 : 0);
   if (e >= 1) return false;
   const floor = getFloorHeight(x, z);
-  const top = floor * 0.5 + m.floor * 0.5 + m.H * Math.pow(1 - e, 0.55) * (0.8 + 0.35 * (noise(x * 0.06, z * 0.06) * 0.5 + 0.5)) + noise(x * 0.2, z * 0.2) * 0.8;
+  const top = (m.ridge ? floor : floor * 0.5 + m.floor * 0.5) + m.H * Math.pow(1 - e, 0.55) * (0.8 + 0.35 * (noise(x * 0.06, z * 0.06) * 0.5 + 0.5)) + noise(x * 0.2, z * 0.2) * 0.8;
   if (top < floor + 0.8) return false;
   // le tunnel s'évase aux deux bouts
-  const wt = m.wt * (1 + 0.6 * (u / m.a) ** 2), q = v / wt;
+  const wt = m.wt * (1 + 0.6 * (u / m.a) ** 2), q = (v - bend) / wt;
   let c = floor;
   if (Math.abs(q) < 1) c = floor + m.ht * Math.sqrt(1 - q * q) * (0.85 + 0.3 * (noise(x * 0.11 + 3, z * 0.11) * 0.5 + 0.5));
-  if (c > top - 1.2) return false; // la voûte serait trop mince : c'est une ouverture
+  if (c > top - (m.ridge ? 7 : 1.2)) return false; // la voûte serait trop mince : c'est une ouverture (pas de lamelle de roche)
   out.c = c; out.t = top;
   return true;
 }
@@ -131,6 +133,6 @@ export function createRoofs() {
     for (let z = v.z1 - 6; z <= v.z0 + 6; z += 4) { xa = Math.min(xa, canyonCenter(z) - W); xb = Math.max(xb, canyonCenter(z) + W); }
     add(build(xa, xb, v.z1 - 8, v.z0 + 8, ROOFS.STEP));
   }
-  for (const m of ROOFS.MASSIFS) add(build(m.x - m.a - 2, m.x + m.a + 2, m.z - m.a - 2, m.z + m.a + 2, ROOFS.STEP * 0.75));
+  for (const m of ROOFS.MASSIFS) add(build(m.x - (m.ridge ? m.b * 1.25 : m.a) - 2, m.x + (m.ridge ? m.b * 1.25 : m.a) + 2, m.z - m.a - 2, m.z + m.a + 2, ROOFS.STEP * (m.ridge ? 1 : 0.75)));
   return group;
 }
