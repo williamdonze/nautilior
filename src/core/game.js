@@ -1,3 +1,4 @@
+import { getFloorHeight } from '../world/seabed.js';
 import { Dive } from '../world/dive.js';
 import { Port } from '../port/port.js';
 import { Hold } from '../loot/hold.js';
@@ -31,6 +32,9 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
  * Le jeu : enchaîne le port et la plongée, gère les dialogues, les panneaux,
  * le réveil à l'hôpital et la sauvegarde automatique.
  */
+/** Plan de l'écran titre : où flotte le Nautiliar (Récif, dans une forêt de kelp) et comment la caméra tourne autour */
+const TITLE_SHOT = { x: 0, z: 58, height: 8, yaw: 2.4, distance: 10.5, rise: 1.4, orbit: 0.9 };
+
 export class Game {
   constructor({ pixel, input, pointer, sound, hud, gpuDive = null }) {
     this.gpuDive = gpuDive;
@@ -151,6 +155,7 @@ export class Game {
    * (le son, déjà débloqué par le clic, continue de fonctionner).
    */
   newGame() {
+    this.endTitleShot();
     clearSave();
     resetGameState();
     resetStoryState();
@@ -169,13 +174,29 @@ export class Game {
   /* ------------------------------------------------------------ Écran titre et pause */
 
   /** Écran titre : le quai dans la brume, la caméra glisse lentement */
+  /**
+   * Écran titre : le Nautiliar sous l'eau, dans le Récif, phare allumé. C'est la vraie scène de plongée,
+   * avec un pilote automatique qui le tient immobile (air, coque et bêtes n'ont aucun effet)
+   * et une caméra de présentation qui tourne lentement autour de lui (voir update).
+   */
   showTitle() {
     this.applyHullModel();
     this.inMenu = true;
-    this.setMode('port');
-    this.port.enter('quay');
-    this.port.player.object.visible = false;
-    this.port.holdCamera = true;
+    this.setMode('dive');
+    const d = this.dive;
+    d.enter(gameState.tide, storyState.fragments, gameState.taken);
+    this.titleView = d.view;
+    d.setView('third');
+    const T = TITLE_SHOT, y = getFloorHeight(T.x, T.z) + T.height;
+    d.sub.teleport(T.x, y, T.z, T.yaw);
+    this.titleHold = { x: T.x, y, z: T.z };
+    d.autopilot = (dt) => {
+      // il flotte sur place, l'hélice tourne au ralenti
+      const s = d.sub, h = this.titleHold;
+      s.velocity.set((h.x - s.position.x) * 0.8, (h.y + Math.sin((this.time ?? 0) * 0.5) * 0.35 - s.position.y) * 0.8, (h.z - s.position.z) * 0.8);
+      s.yawVelocity = (T.yaw + Math.sin((this.time ?? 0) * 0.07) * 0.18 - s.yaw) * 0.6;
+    };
+    d.claw.model.group.visible = false; // bras rentré (claw.reset le refait apparaître en quittant le titre)
     document.body.classList.add('in-menu');
     this.hud.intro('');
     this.menu.show('main');
@@ -183,10 +204,20 @@ export class Game {
 
   leaveTitle() {
     this.inMenu = false;
+    this.endTitleShot();
     this.port.player.object.visible = true;
     this.port.holdCamera = false;
     document.body.classList.remove('in-menu');
     this.transition(() => this.start());
+  }
+
+  /** Fin du plan de titre sous-marin : on rend la main au jeu */
+  endTitleShot() {
+    if (!this.titleHold) return;
+    this.titleHold = null;
+    this.dive.autopilot = null;
+    this.dive.leave();
+    this.dive.setView(this.titleView ?? 'first');
   }
 
   pause() {
@@ -477,10 +508,19 @@ export class Game {
 
     this.managePointer();
     if (this.inMenu) {
+      if (this.titleHold) {
+        // Sous l'eau : la plongée tourne (lumière, kelp, poissons), sans son de sonar ni moteur
+        this.dive.update(dt, time);
+        this.sound.setSonar(false);
+        for (const k of this.dive.pickups.list) if (k.ring) k.ring.visible = false; // pas de contours d'objets sur le titre
+        const T = TITLE_SHOT, s = this.dive.sub.position, a = T.orbit + time * 0.035;
+        const cam = this.dive.follow.camera;
+        cam.position.set(s.x + Math.sin(a) * T.distance, s.y + T.rise + Math.sin(time * 0.11) * 0.8, s.z + Math.cos(a) * T.distance);
+        cam.position.y = Math.max(cam.position.y, getFloorHeight(cam.position.x, cam.position.z) + 2);
+        cam.lookAt(s.x - Math.cos(a) * 2.5, s.y + 0.6, s.z + Math.sin(a) * 2.5); // le sous-marin un peu à droite du cadre
+        return;
+      }
       this.port.update(dt, time, this.input, false);
-      const x = -6 + Math.sin(time * 0.045) * 16;
-      this.port.camera.position.set(x, 5.5 + Math.sin(time * 0.07), 15);
-      this.port.camera.lookAt(x * 0.5 + 4, 2.2, -8);
       return;
     }
     if (this.pausedAll) return;
