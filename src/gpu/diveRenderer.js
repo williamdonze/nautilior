@@ -70,7 +70,7 @@ export class GpuDiveRenderer {
     const mod = (code) => device.createShaderModule({ code });
     const tex = (w, h, format, usage, o = {}) => device.createTexture({ size: [w, h], format, usage, mipLevelCount: o.mips || 1, sampleCount: o.samples || 1 });
     this.tex = tex;
-    const W = buildShaders({ ...Q, DK: 0.42, ECHO_SPEED: ECHO.SPEED });
+    const W = buildShaders({ ...Q, DK: 0.42, ECHO_SPEED: ECHO.SPEED, WATER_CLEAR });
 
     /* ---- Ressources fixes */
     const sRep = (this.sRep = device.createSampler({ addressModeU: 'repeat', addressModeV: 'repeat', magFilter: 'linear', minFilter: 'linear', mipmapFilter: 'linear', maxAnisotropy: Q.LV > 1 ? 1 : 8 }));
@@ -335,9 +335,7 @@ export class GpuDiveRenderer {
     m[36] = c.rx; m[37] = c.ry; m[38] = c.rz; m[39] = c.tanh * c.asp;
     m[40] = c.ux; m[41] = c.uy; m[42] = c.uz; m[43] = c.tanh;
     m[44] = c.fx; m[45] = c.fy; m[46] = c.fz; m[47] = near;
-    m[48] = SUN[0]; m[49] = SUN[1]; m[50] = SUN[2];
-    // clarté de l'eau : absorption normale jusqu'à 60 m, presque moitié moindre au-delà de 300 m (on voit loin dans le faisceau)
-    m[51] = 1 - WATER_CLEAR * Math.min(1, Math.max(0, (-c.y - 60) / 240));
+    m[48] = SUN[0]; m[49] = SUN[1]; m[50] = SUN[2]; m[51] = 0;
     // Exposition : l'œil s'habitue au noir des grands fonds
     const depth = -c.y;
     const ek = Math.min(1, Math.max(0, (depth - 8) / 26)), dark = Math.min(1, Math.max(0, (depth - 60) / 380));

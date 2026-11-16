@@ -12,7 +12,7 @@ import { MAP } from './garden.js';
  * buildShaders(Q) : Q = { WATER, SHADOW, AA, RAYN, SPOTN, LV, DK }
  */
 export function buildShaders(Q) {
-const { WATER, SHADOW, AA, RAYN, SPOTN, LV, DK, ECHO_SPEED = 70 } = Q;
+const { WATER, SHADOW, AA, RAYN, SPOTN, LV, DK, ECHO_SPEED = 70, WATER_CLEAR = 0.45 } = Q;
 const W_NOISE = /*wgsl*/`
 fn ss(a: f32, b: f32, x: f32) -> f32 { let t = clamp((x - a) / (b - a), 0., 1.); return t * t * (3. - 2. * t); }
 fn h31(p: vec3f) -> f32 { var q = fract(p * vec3f(.1031, .1030, .0973)); q += dot(q, q.yzx + 33.33); return fract((q.x + q.y) * q.z); }
@@ -141,9 +141,9 @@ struct G { vp: mat4x4f, sm: mat4x4f, cam: vec4f, right: vec4f, up: vec4f, fwd: v
   sub: vec4f, subv: vec4f, fx: vec4f, lp: array<vec4f, 6>, lc: array<vec4f, 6>, ld: array<vec4f, 6> };
 const DK = ${DK};
 const SIG0 = vec3f(.058, .0235, .0195);
-// Absorption de l'eau. g.sun.w = clarté : 1 près de la surface, plus bas en profondeur (l'eau des grands fonds est
-// limpide : on y voit loin ce que le phare éclaire). Voir diveRenderer.js.
-fn sig() -> vec3f { return SIG0 * g.sun.w; }
+// Absorption de l'eau : normale jusqu'à 60 m, jusqu'à 45 % moindre sous 300 m (l'eau des grands fonds est limpide :
+// on y voit loin ce que le phare éclaire). Calculée d'après la profondeur de la caméra.
+fn sig() -> vec3f { return SIG0 * (1. - ${WATER_CLEAR} * ss(-60., -300., g.cam.y)); }
 const KD = vec3f(.056, .0245, .0170);
 const WCOL = vec3f(.16, .58, .90);
 const KDZ = vec3f(.034, .023, .018);
@@ -157,7 +157,7 @@ fn ss(a: f32, b: f32, x: f32) -> f32 { let t = clamp((x - a) / (b - a), 0., 1.);
 fn ign(p: vec2f) -> f32 { return fract(52.9829189 * fract(dot(p, vec2f(.06711056, .00583715)))); }
 fn hs(x: f32) -> f32 { return fract(sin(x * 127.1) * 43758.5453); }
 fn kd(z: f32) -> vec3f { return mix(KD, KDZ, z); }
-fn sg(z: f32) -> vec3f { return mix(sig(), vec3f(.034, .026, .022) * g.sun.w, z); }
+fn sg(z: f32) -> vec3f { return mix(sig(), vec3f(.034, .026, .022), z); }
 fn fin(c: vec3f) -> vec4f { return vec4f(min(max(c, vec3f(0.)), vec3f(40.)), 1.); }
 const KDF = vec3f(.043, .045, .042);
 fn fogIn(ro: vec3f, rd: vec3f, d: f32, z: f32, sun: vec3f) -> vec3f {
