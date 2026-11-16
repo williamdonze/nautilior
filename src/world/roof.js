@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { WORLD, ROOFS } from '../config/settings.js';
+import { WORLD, ROOFS, SEABED } from '../config/settings.js';
 import { createNoise2D } from './noise.js';
 import { getFloorHeight, canyonCenter } from './seabed.js';
 import { applyDetail } from './detail.js';
@@ -67,7 +67,7 @@ function prepare() {
  */
 export function getRoof(x, z) {
   if (!ready) prepare();
-  if (z < -560 && z > -900) { for (const v of ROOFS.VAULTS) if (z < v.z0 + 6 && z > v.z1 - 6 && vault(v, x, z)) return out; }
+  if (z < SEABED.CANYON.zStart && z > SEABED.CANYON.zEnd) { for (const v of ROOFS.VAULTS) if (z < v.z0 + 6 && z > v.z1 - 6 && vault(v, x, z)) return out; }
   for (const m of ROOFS.MASSIFS) if (massif(m, x, z)) return out;
   return null;
 }

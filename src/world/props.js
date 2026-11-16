@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { WORLD, SEABED } from '../config/settings.js';
+import { WORLD, SEABED, stretchZ } from '../config/settings.js';
 import { createRandom, paintFaces } from '../core/utils.js';
 import { getFloorHeight, canyonCenter } from './seabed.js';
 import { WRECK_SPOTS } from './landmarks.js';
@@ -189,12 +189,12 @@ export function createProps(colliders) {
   scatterInstanced(group, GEOS.mussels(), floorPoints(1200, 0, 140).map((p) => ({ ...p, y: p.y + 0.02, s: rand.range(1, 2.6) })), vmat, 45);
 
   // --- Deux 2CV englouties
-  group.add(deuxChevaux(-24, -150, 0.7), deuxChevaux(84, -330, 2.2));
+  group.add(deuxChevaux(-24, stretchZ(-150), 0.7), deuxChevaux(84, stretchZ(-330), 2.2));
 
   // --- Éboulis : blocs de roche détachés des parois du canyon et dans la plaine des abysses
   const rubbleSites = [
-    [canyonCenter(-620) + 6, -620], [canyonCenter(-705) - 10, -705], [canyonCenter(-790) + 8, -790],
-    [-60, -940], [70, -1000], [-30, -1090],
+    ...[-620, -705, -790, -660, -760].map((z, i) => [canyonCenter(stretchZ(z)) + [6, -10, 8, -6, 4][i], stretchZ(z)]),
+    ...[[-60, -940], [70, -1000], [-30, -1090], [90, -900]].map(([x, z]) => [x, stretchZ(z)]),
   ];
   const blocks = [];
   for (const [sx, sz] of rubbleSites) {

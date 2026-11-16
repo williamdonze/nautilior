@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { WORLD, SEABED } from '../config/settings.js';
+import { WORLD, SEABED, stretchZ } from '../config/settings.js';
 import { createRandom } from '../core/utils.js';
 import { getFloorHeight } from './seabed.js';
 import { tileKey, registerSmall } from './tiles.js';
@@ -63,7 +63,7 @@ function scatter(group, geo, material, count0, colors, maxDepth, sizeRange, rand
   while (placed < count && tries < count * 30) {
     tries++;
     const x = rand.range(-SEABED.WIDTH / 2 + 15, SEABED.WIDTH / 2 - 15);
-    const z = rand.range(-560, SEABED.Z_START - 15);
+    const z = rand.range(stretchZ(-560), SEABED.Z_START - 15);
     const y = getFloorHeight(x, z);
     if (-y > maxDepth) continue;
     p.set(x, y + 0.02, z);

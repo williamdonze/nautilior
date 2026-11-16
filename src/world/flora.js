@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import floraData from '../config/flora.json';
-import { WORLD, SEABED } from '../config/settings.js';
+import { WORLD, SEABED, STRETCH_K } from '../config/settings.js';
 import { createRandom } from '../core/utils.js';
 import { createNoise2D } from './noise.js';
 import { getFloorHeight } from './seabed.js';
@@ -334,7 +334,8 @@ function floraMaterial(sway, push, sparkle) {
 function placeSpecies(sp0, rand, noise) {
   // Densité selon le niveau de détail (les grandes laminaires sont moins réduites : elles font le décor)
   const k = quality().flora;
-  const sp = { ...sp0, count: Math.round(sp0.count * (sp0.shape === 'kelp' ? Math.sqrt(k) : k)) };
+  // (le monde a été allongé : même densité qu'avant, donc plus de plants)
+  const sp = { ...sp0, count: Math.round(sp0.count * STRETCH_K * (sp0.shape === 'kelp' ? Math.sqrt(k) : k)) };
   const out = [];
   const zTop = SEABED.Z_START - 10, zBottom = SEABED.Z_END + 10;
   const halfW = SEABED.WIDTH / 2 - 15;

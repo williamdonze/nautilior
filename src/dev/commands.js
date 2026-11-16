@@ -3,7 +3,7 @@ import { storyState } from '../story/state.js';
 import { UPGRADES } from '../submarine/stats.js';
 import { getFloorHeight, canyonCenter } from '../world/seabed.js';
 import fragmentsData from '../story/fragments.json';
-import { RADIATION, SUBMARINE, AIR_BELLS, ROOFS } from '../config/settings.js';
+import { RADIATION, SUBMARINE, AIR_BELLS, ROOFS, stretchZ } from '../config/settings.js';
 import { MARIE } from '../world/landmarks.js';
 
 /**
@@ -12,20 +12,21 @@ import { MARIE } from '../world/landmarks.js';
  */
 const S = RADIATION.SOURCE;
 const cc = canyonCenter;
+const sz = stretchZ;
 /** Lieux : [x, hauteur au-dessus du fond (ou y absolu si négatif), z, cap, description] */
 const PLACES = {
   depart: [SUBMARINE.SPAWN.x, SUBMARINE.SPAWN.y, SUBMARINE.SPAWN.z, Math.PI, 'Le point de départ, sous le port'],
-  arche: [-72, 5, -79, 0.97, "Récif : l'arche de roche et son tunnel"],
+  arche: [-72, 5, sz(-79), 0.97, "Récif : l'arche de roche et son tunnel"],
   cloche: [AIR_BELLS.SPOTS[0][0] + 9, 7, AIR_BELLS.SPOTS[0][1] + 9, -2.36, 'Une cloche à air'],
-  epaves: [-40, 9, -212, Math.PI, 'Les Épaves : un chalutier'],
-  massif: [-37, 6, -313, 1.97, 'Épaves : le massif percé'],
-  porche: [cc(-580), 14, -580, Math.PI, 'Canyon : le Porche (première voûte)'],
-  filets: [cc(-652) + 2, 8, -652, Math.PI, 'Canyon : la forêt de filets'],
+  epaves: [-40, 9, sz(-212), Math.PI, 'Les Épaves : un chalutier'],
+  massif: [-37, 6, sz(-313), 1.97, 'Épaves : le massif percé'],
+  porche: [cc(sz(-580)), 14, sz(-580), Math.PI, 'Canyon : le Porche (première voûte)'],
+  filets: [cc(sz(-652)) + 2, 8, sz(-652), Math.PI, 'Canyon : la forêt de filets'],
   marie: [cc(MARIE.z) + 16, 16, MARIE.z + 6, -1.75, 'Canyon : la Marie-Morgane'],
   sousmarin: [cc(MARIE.z - 10) + 12, 5, MARIE.z - 4, -2.3, 'Canyon : le petit sous-marin pris dans les mailles (et le couteau)'],
-  nef: [cc(-738), 12, -738, Math.PI, 'Canyon : la Nef (grande voûte, squelette de baleine)'],
-  tunnel: [-43, 7, -947, 0.47, 'Abysses : le massif percé'],
-  chambre: [-18, 20, -962, -2.4, 'Abysses : la Chambre engloutie (le lit, la potence, la porte 112)'],
+  nef: [cc(sz(-738)), 12, sz(-738), Math.PI, 'Canyon : la Nef (grande voûte, squelette de baleine)'],
+  tunnel: [-43, 7, sz(-947), 0.47, 'Abysses : le massif percé'],
+  chambre: [-18, 20, S.z + 98, -2.4, 'Abysses : la Chambre engloutie (le lit, la potence, la porte 112)'],
   porte: [2, 14, S.z + 110, Math.PI, 'Abysses : la porte 112, sur le chemin de la faille'],
   faille: [0, 12, S.z + 27, Math.PI, 'La faille'],
 };

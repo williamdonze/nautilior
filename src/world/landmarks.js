@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { createNoise2D } from './noise.js';
-import { WORLD } from '../config/settings.js';
+import { WORLD, stretchZ } from '../config/settings.js';
 import { createRandom, paintFaces } from '../core/utils.js';
 import { getFloorHeight, canyonCenter } from './seabed.js';
 import { applyDetail } from './detail.js';
@@ -16,13 +16,12 @@ const rand = createRandom(WORLD.SEED + 404);
 
 /** Épaves : [x, z, taille] */
 const WRECKS = [
-  [55, -120, 0.5], [-40, -230, 1], [70, -300, 1.3], [-90, -360, 0.9],
-  [10, -420, 1.5], [-50, -470, 1.1], [110, -500, 1], [-120, -280, 0.8],
+  [55, -325, 0.5], [-40, -576, 1], [70, -737, 1.3], [-90, -875, 0.9], [10, -1013, 1.5], [-50, -1128, 1.1], [110, -1197, 1], [-120, -691, 0.8], [-95, -640, 1.1], [95, -1120, 1.2], [-110, -980, 0.9], [60, -760, 1.0],
 ];
 /** Positions des épaves (pour y semer plus d'objets) */
 export const WRECK_SPOTS = WRECKS.map(([x, z]) => [x, z]);
 /** La Marie-Morgane : le chalutier dont les filets ont pris le Nautiliar. Elle repose dans le Canyon ; on y entre. */
-export const MARIE = { z: -700, dx: -10, size: 2.6 };
+export const MARIE = { z: -1862, dx: -10, size: 2.6 };
 // Épaves : métal rouillé ; aiguilles du canyon : roche (détail triplanaire)
 const vmat = applyDetail(new THREE.MeshLambertMaterial({ vertexColors: true }), 'metal', 1.4);
 const rockMat = applyDetail(new THREE.MeshLambertMaterial({ vertexColors: true }), 'rock', 1);
@@ -305,7 +304,7 @@ function glowStalks(count, uniforms) {
   const palette = ['#7fbf7a', '#83a39a', '#ccd8cc', '#5b8fc0'];
   for (let i = 0; i < count; i++) {
     const x = rand.range(-150, 150);
-    const z = rand.range(-1110, -880);
+    const z = rand.range(stretchZ(-1110), stretchZ(-880));
     p.set(x, getFloorHeight(x, z) - 0.2, z);
     const h = rand.range(2, 7);
     s.set(1, h, 1);
@@ -320,7 +319,7 @@ function glowStalks(count, uniforms) {
   return g;
 }
 
-const MARIE_OPTS = { hollow: true, lift: 1.7, rot: [0.22, 1.86, -1.0], order: 'YZX', breach: [0.5, 0.7, 1, 6], name: 'MARIE-MORGANE' };
+const MARIE_OPTS = { hollow: true, lift: 1.3, rot: [0.02, 1.86, -0.2], order: 'YZX', breach: [0.5, 0.7, 1, 6], name: 'MARIE-MORGANE' };
 /** Aperçu (page de développement) */
 export function createMariePreview() {
   const g = wreck(0, MARIE.z, MARIE.size, [], { ...MARIE_OPTS, rot: [0, 0, 0] });
@@ -335,19 +334,19 @@ export function createLandmarks(colliders, uniforms) {
   for (const [x, z, size] of WRECKS) group.add(wreck(x, z, size, colliders));
 
   // Canyon : aiguilles le long des parois et quelques-unes dans le lit
-  for (let i = 0; i < 34; i++) {
-    const z = rand.range(-850, -560);
+  for (let i = 0; i < 90; i++) {
+    const z = rand.range(stretchZ(-850), stretchZ(-560));
     const side = rand() < 0.5 ? -1 : 1;
     const x = canyonCenter(z) + side * rand.range(20, 70);
     group.add(spire(x, z, rand.range(15, 45)));
   }
-  group.add(whale(canyonCenter(-760) + 8, -760, colliders));
+  group.add(whale(canyonCenter(stretchZ(-760)) + 8, stretchZ(-760), colliders));
   const mm = wreck(canyonCenter(MARIE.z) + MARIE.dx, MARIE.z, MARIE.size, colliders, MARIE_OPTS);
   group.add(mm);
   group.userData.marie = mm;
 
   // Abysses
-  group.add(glowStalks(160, uniforms));
+  group.add(glowStalks(380, uniforms));
   return group;
 }
 
