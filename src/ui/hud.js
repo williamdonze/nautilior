@@ -195,18 +195,6 @@ export class Hud {
     this.noticeTimer = setTimeout(() => this.noticeEl.classList.remove('on'), 2600);
   }
 
-  /** Le pouls (battements par minute) : toujours visible, même en vue cockpit */
-  setPulse2(bpm) {
-    this.pulseGauge ??= document.getElementById('g-pulse');
-    const v = Math.round(bpm);
-    if (v === this.lastBpm) return;
-    this.lastBpm = v;
-    const k = Math.min(1, Math.max(0, (bpm - 50) / 70));
-    this.pulseGauge.querySelector('.fill').style.width = `${Math.round(k * 100)}%`;
-    this.pulseGauge.querySelector('.pct').textContent = v;
-    this.pulseGauge.className = `gauge${bpm > 84 ? ' critical' : bpm > 78 ? ' low' : ''}`;
-  }
-
   /** Recharge de l'impulsion de défense (0..1) */
   setPulse(v) {
     this.pulseEl ??= document.getElementById('pulse');

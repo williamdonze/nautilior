@@ -35,6 +35,15 @@ export class Port {
     this.world.water.material = this.sea.waterMaterial;
 
     this.player = new Player(this.scene);
+    // Une lanterne allumée sur le Nautiliar : on le repère du quai, même dans la brume
+    this.subBeacon = new THREE.Group();
+    this.subBeacon.position.set(layout.sub.x, 1.5, layout.sub.z - 2.6);
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 1.5, 6), new THREE.MeshLambertMaterial({ color: '#26292b' }));
+    post.position.y = -0.75;
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 8), new THREE.MeshBasicMaterial({ color: '#ffe9b0' }));
+    const glowL = new THREE.PointLight('#ffd98a', 9, 14, 1.4);
+    this.subBeacon.add(post, bulb, glowL);
+    this.scene.add(this.subBeacon);
 
     // Personnages
     this.npcs = layout.npcs.map((n) => {
@@ -172,6 +181,58 @@ export class Port {
     this.snapCamera();
   }
 
+  /**
+   * Une maison entre la caméra et le joueur devient translucide : on ne perd jamais Loïc de vue
+   * en passant derrière. (Ses matériaux sont dédoublés la première fois, pour ne pas toucher aux autres.)
+   */
+  fadeOccluders(dt) {
+    const p = this.player.position, cam = this.camera.position;
+    for (const h of this.world.tagged.houses ?? []) {
+      const b = h.box, x0 = b.x - b.w / 2 - 0.5, x1 = b.x + b.w / 2 + 0.5, z0 = b.z - b.d / 2 - 0.7, z1 = b.z + b.d / 2 + 0.7, top = (b.h ?? 6) + 3.6;
+      let hide = false;
+      if (!this.cine && !this.holdCamera) for (let t = 0.05; t < 0.98 && !hide; t += 0.05) {
+        const x = p.x + (cam.x - p.x) * t, z = p.z + (cam.z - p.z) * t, y = 1.3 + (cam.y - 1.3) * t;
+        hide = x > x0 && x < x1 && z > z0 && z < z1 && y < top;
+      }
+      const target = hide ? 0.14 : 1;
+      if (Math.abs(h.fade - target) < 0.005) continue;
+      h.fade += (target - h.fade) * damp(7, dt);
+      if (Math.abs(h.fade - target) < 0.005) h.fade = target;
+      if (!h.own) {
+        h.own = [];
+        for (const o of h.objects) o.traverse((m) => { if (m.isMesh && m.material) h.own.push(m); });
+      }
+      const solid = h.fade >= 1;
+      for (const m of h.own) {
+        if (m.material.userData.baseOpacity === undefined) {
+          // (aussi après un changement de matériau : fenêtre qui s'allume)
+          const src = m.material, c = src.clone();
+          c.onBeforeCompile = src.onBeforeCompile; // la texture de pierre suit
+          c.customProgramCacheKey = src.customProgramCacheKey;
+          c.userData = { ...src.userData, baseOpacity: src.opacity };
+          m.material = c;
+        }
+        const mt = m.material;
+        mt.transparent = !solid || mt.userData.baseOpacity < 1;
+        mt.opacity = mt.userData.baseOpacity * h.fade;
+        mt.depthWrite = solid;
+      }
+    }
+  }
+
+  /** Le Nautiliar, montré du doigt : la caméra glisse vers le quai et y reste le temps de la réplique */
+  showSub() {
+    const s = layout.sub, cam = this.camera.position.clone(), look = this.lookAt.clone();
+    this.holdCamera = true;
+    this.cameraMove(cam, [s.x - 7, 4.2, s.z - 9.5], look, [s.x, 0.2, s.z], 2.2);
+    this.subBeacon.visible = true;
+  }
+
+  /** Fin de la réplique : la caméra revient au joueur */
+  releaseCamera() {
+    this.holdCamera = false;
+  }
+
   snapCamera() {
     this.camera.position.copy(this.player.position).add(CAMERA_OFFSET);
     this.lookAt.copy(this.player.position).add({ x: 0, y: 1.2, z: -2 });
@@ -242,10 +303,14 @@ export class Port {
         else if (R.work === 'sweep') { const sw = Math.sin(t * 2.6); L.rotation.x += (-0.9 + sw * 0.35 - L.rotation.x) * k; Rr.rotation.x += (-0.6 - sw * 0.35 - Rr.rotation.x) * k; ch.body.rotation.y = sw * 0.25 * k; ch.body.rotation.x = 0.15 * k; }
         else { L.rotation.x += (0.35 - L.rotation.x) * k; Rr.rotation.x += (0.35 - Rr.rotation.x) * k; ch.head.rotation.x = (0.25 + Math.sin(t * 0.5) * 0.12) * k; ch.head.rotation.y = Math.sin(t * 0.31) * 0.5 * k; }
       } else { ch.body.rotation.x *= 0.9; ch.body.rotation.y *= 0.9; ch.head.rotation.x *= 0.9; ch.head.rotation.y *= 0.9; }
+      // le buste se penche à partir de la taille (sinon le dos se décale par rapport aux jambes)
+      ch.body.position.z = -Math.sin(ch.body.rotation.x) * 0.95;
       // Le point de dialogue et l'obstacle suivent le personnage
       n.interact.x = n.x; n.interact.z = n.z;
       if (this.circles[i]) { this.circles[i].x = n.x; this.circles[i].z = n.z; }
     });
+
+    this.fadeOccluders(dt);
 
     // Point d'interaction le plus proche
     let best = null, bestD = INTERACT_RADIUS;

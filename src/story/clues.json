@@ -1,5 +1,5 @@
 {
-  "_comment": "Indices du village : petites choses qu'on peut examiner au port. Jamais d'explication : chaque texte intrigue au premier passage et se relit comme une sensation de la chambre d'hôpital (voir docs/LORE.md, section 4). x, z = où se tenir pour l'examiner.",
+  "_comment": "Indices du village : petites choses qu'on peut examiner au port. Jamais d'explication : chaque texte intrigue au premier passage et se relit comme une sensation de la chambre d'hôpital (voir docs/LORE.md, section 4). x, z = où se tenir pour l'examiner. Les 'truth' ne sont plus jamais affichés dans le village (trop explicites) : ils ne servent que de note d'intention.",
   "clues": [
     {
       "id": "tunnel",
@@ -57,7 +57,7 @@
       "lines": [
         "L'horloge marque 4 h 12.",
         "Elle marquait 4 h 12 à ton réveil. Elle marquait 4 h 12 hier.",
-        "Pourtant, tu jurerais entendre son mécanisme. Un battement, puis un autre."
+        "Tu restes un moment à la regarder. Elle ne bouge pas."
       ],
       "truth": "L'heure de ton arrêt cardiaque. Le mécanisme, c'était ton cœur."
     },

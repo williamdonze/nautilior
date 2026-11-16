@@ -21,7 +21,25 @@ function textured(material, kind, scale) {
 const rand = createRandom(1984);
 const patina = createNoise2D(4211);
 const vmat = textured(new THREE.MeshLambertMaterial({ vertexColors: true }), 'stone', 1.1);
-const lambert = (color, extra = {}) => textured(new THREE.MeshLambertMaterial({ color, ...extra }), 'stone', 1.6);
+// Bois peint, tôle, plastique : matière unie (la texture de pierre est réservée aux murs, toits et pavés : vmat)
+const lambert = (color, extra = {}) => new THREE.MeshLambertMaterial({ color, flatShading: true, ...extra });
+
+/** Mailles de filet (texture à trous) : casiers, filets qui sèchent */
+let netTex = null;
+function netMat(color) {
+  if (!netTex) {
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = 32;
+    const k = cv.getContext('2d');
+    k.strokeStyle = '#fff'; k.lineWidth = 3;
+    k.beginPath(); k.moveTo(0, 0); k.lineTo(32, 32); k.moveTo(32, 0); k.lineTo(0, 32); k.stroke();
+    netTex = new THREE.CanvasTexture(cv);
+    netTex.wrapS = netTex.wrapT = THREE.RepeatWrapping;
+  }
+  const t = netTex.clone();
+  t.needsUpdate = true;
+  return new THREE.MeshLambertMaterial({ color, alphaMap: t, transparent: true, alphaTest: 0.35, side: THREE.DoubleSide });
+}
 const GLASS = lambert('#17191a');
 const GLOW = new THREE.MeshBasicMaterial({ color: '#cdb57c' });
 const GRANITE = '#878a85';
@@ -320,15 +338,38 @@ function chapel(group, x, z, colliders) {
   colliders.push({ minX: x - 3.5, maxX: x + 3.5, minZ: z - 6, maxZ: z + 6 });
 }
 
+/** Fontaine : bassin de granit creux, eau sombre qui se ride, filet d'eau qui tombe du goulot */
 function fountain(group, x, z, colliders) {
   const g = new THREE.Group();
   g.position.set(x, 0, z);
   group.add(g);
-  mesh(paint(new THREE.CylinderGeometry(1.4, 1.5, 0.7, 10), '#7a7a72', 0.12), vmat, 0, 0.35, 0, g);
-  mesh(new THREE.CylinderGeometry(1.2, 1.2, 0.05, 10), lambert('#1f4049'), 0, 0.62, 0, g);
-  mesh(paint(new THREE.BoxGeometry(0.5, 2, 0.5), '#878a85', 0.1), vmat, 0, 1.3, -0.6, g);
-  mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.35, 5).rotateX(Math.PI / 2), lambert('#5f6564'), 0, 1.8, -0.25, g);
-  colliders.push({ minX: x - 1.5, maxX: x + 1.5, minZ: z - 1.5, maxZ: z + 1.5 });
+  // margelle : un anneau épais (profil tourné), et le fond du bassin
+  const prof = [[1.05, 0.02], [1.55, 0.02], [1.6, 0.1], [1.52, 0.66], [1.44, 0.74], [1.22, 0.74], [1.16, 0.66], [1.14, 0.2]].map(([r, y]) => new THREE.Vector2(r, y));
+  mesh(paint(new THREE.LatheGeometry(prof, 28), '#7a7a72', 0.14, '#3a4038'), vmat, 0, 0, 0, g);
+  mesh(new THREE.CircleGeometry(1.16, 28).rotateX(-Math.PI / 2), lambert('#20282a'), 0, 0.2, 0, g);
+  // l'eau : sombre, brillante, avec des rides qui s'élargissent depuis le point de chute
+  const water = mesh(new THREE.CircleGeometry(1.17, 36).rotateX(-Math.PI / 2), new THREE.MeshPhongMaterial({ color: '#2c4a50', shininess: 120, specular: '#cfe0dc', transparent: true, opacity: 0.88 }), 0, 0.58, 0, g);
+  const rings = [0, 1, 2].map((i) => {
+    const r = mesh(new THREE.RingGeometry(0.93, 1, 40).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#b9d0cc', transparent: true, opacity: 0.3, depthWrite: false }), 0, 0.59, -0.18, g);
+    r.userData.phase = i / 3;
+    return r;
+  });
+  // la borne et son goulot de bronze
+  mesh(paint(new THREE.BoxGeometry(0.5, 2, 0.5), '#878a85', 0.1), vmat, 0, 1.0, -0.95, g);
+  mesh(paint(new THREE.BoxGeometry(0.62, 0.14, 0.62), '#878a85', 0.1), vmat, 0, 2.05, -0.95, g);
+  mesh(new THREE.CylinderGeometry(0.035, 0.045, 0.5, 8).rotateX(Math.PI / 2), lambert('#6a5a3a'), 0, 1.45, -0.5, g);
+  // le filet d'eau
+  const stream = mesh(new THREE.CylinderGeometry(0.018, 0.03, 0.86, 6), new THREE.MeshBasicMaterial({ color: '#cfe0dc', transparent: true, opacity: 0.55, depthWrite: false }), 0, 1.01, -0.2, g);
+  colliders.push({ minX: x - 1.6, maxX: x + 1.6, minZ: z - 1.9, maxZ: z + 1.6 });
+  return (time) => {
+    for (const r of rings) {
+      const t = (time * 0.45 + r.userData.phase) % 1;
+      r.scale.setScalar(0.08 + t * 0.95);
+      r.material.opacity = 0.34 * (1 - t);
+    }
+    stream.scale.x = stream.scale.z = 0.85 + Math.sin(time * 17) * 0.15;
+    water.position.y = 0.58 + Math.sin(time * 1.3) * 0.004;
+  };
 }
 
 function phoneBooth(group, x, z, ry, colliders) {
@@ -336,12 +377,31 @@ function phoneBooth(group, x, z, ry, colliders) {
   g.position.set(x, 0, z);
   g.rotation.y = ry;
   group.add(g);
-  mesh(new THREE.BoxGeometry(1, 2.4, 1), lambert('#a8b0b2'), 0, 1.2, 0, g);
-  for (const s of [-1, 1]) mesh(new THREE.BoxGeometry(0.04, 1.6, 0.8), lambert('#2a3a3a', { transparent: true, opacity: 0.6 }), s * 0.5, 1.4, 0, g);
-  mesh(new THREE.BoxGeometry(0.8, 1.6, 0.04), lambert('#2a3a3a', { transparent: true, opacity: 0.6 }), 0, 1.4, 0.5, g);
-  mesh(new THREE.BoxGeometry(1.05, 0.25, 1.05), lambert('#2f4a66'), 0, 2.45, 0, g);
-  mesh(new THREE.BoxGeometry(0.7, 0.12, 0.02), lambert('#e8ece2'), 0, 2.45, 0.53, g);
-  mesh(new THREE.BoxGeometry(0.3, 0.45, 0.2), lambert('#26292b'), 0, 1.5, -0.35, g);
+  const alu = lambert('#8f989a'), glass = new THREE.MeshPhongMaterial({ color: '#b9d4d2', transparent: true, opacity: 0.22, shininess: 90, specular: '#ffffff', side: THREE.DoubleSide, depthWrite: false });
+  // socle, quatre montants d'aluminium, traverses
+  mesh(new THREE.BoxGeometry(1.06, 0.08, 1.06), lambert('#45484a'), 0, 0.04, 0, g);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) mesh(new THREE.BoxGeometry(0.06, 2.3, 0.06), alu, sx * 0.5, 1.2, sz * 0.5, g);
+  for (const y of [0.45, 1.25, 2.3]) for (const s of [-1, 1]) { mesh(new THREE.BoxGeometry(1, 0.04, 0.04), alu, 0, y, s * 0.5, g); mesh(new THREE.BoxGeometry(0.04, 0.04, 1), alu, s * 0.5, y, 0, g); }
+  // trois parois de verre (le quatrième côté est la porte, restée entrouverte)
+  for (const s of [-1, 1]) mesh(new THREE.PlaneGeometry(0.94, 1.82).rotateY(Math.PI / 2), glass, s * 0.5, 1.37, 0, g);
+  mesh(new THREE.PlaneGeometry(0.94, 1.82), glass, 0, 1.37, -0.5, g);
+  const doorLeaf = new THREE.Group();
+  doorLeaf.position.set(-0.5, 0, 0.5);
+  doorLeaf.rotation.y = 0.75;
+  g.add(doorLeaf);
+  mesh(new THREE.PlaneGeometry(0.94, 1.82), glass, 0.47, 1.37, 0, doorLeaf);
+  mesh(new THREE.BoxGeometry(0.94, 0.04, 0.04), alu, 0.47, 0.45, 0, doorLeaf);
+  mesh(new THREE.BoxGeometry(0.04, 1.86, 0.04), alu, 0.94, 1.37, 0, doorLeaf);
+  // bandeau bleu « TÉLÉPHONE », toit
+  mesh(new THREE.BoxGeometry(1.1, 0.24, 1.1), lambert('#2f4a66'), 0, 2.46, 0, g);
+  mesh(new THREE.BoxGeometry(0.7, 0.1, 0.02), lambert('#e8ece2'), 0, 2.46, 0.56, g);
+  mesh(new THREE.BoxGeometry(1.16, 0.05, 1.16), lambert('#3a3f42'), 0, 2.6, 0, g);
+  // l'appareil : boîtier gris, combiné décroché qui pend au bout de son cordon, tablette
+  mesh(new THREE.BoxGeometry(0.3, 0.42, 0.16), lambert('#5f6564'), 0, 1.45, -0.4, g);
+  mesh(new THREE.BoxGeometry(0.2, 0.12, 0.02), lambert('#1c1f21'), 0, 1.52, -0.31, g);
+  mesh(new THREE.BoxGeometry(0.5, 0.03, 0.22), alu, 0, 1.1, -0.38, g);
+  mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.55, 5), lambert('#17191a'), 0.17, 1.02, -0.36, g);
+  mesh(new THREE.CapsuleGeometry(0.028, 0.16, 4, 8), lambert('#17191a'), 0.17, 0.7, -0.36, g);
   colliders.push({ minX: x - 0.6, maxX: x + 0.6, minZ: z - 0.6, maxZ: z + 0.6 });
 }
 
@@ -390,7 +450,7 @@ function lobsterPots(group, x, z, n, colliders) {
     group.add(g);
     mesh(new THREE.BoxGeometry(0.9, 0.06, 0.6), lambert('#63321b'), 0, -0.28, 0, g);
     for (const hx of [-0.35, 0, 0.35]) mesh(new THREE.TorusGeometry(0.28, 0.025, 3, 6, Math.PI).rotateY(Math.PI / 2), lambert('#5a4a32'), hx, -0.27, 0, g);
-    mesh(new THREE.PlaneGeometry(0.9, 0.55, 4, 3), lambert('#83a39a', { wireframe: true }), 0, 0, 0.3, g);
+    for (const sz of [-0.3, 0.3]) { const nm = netMat('#3d4a44'); nm.alphaMap.repeat.set(7, 4); mesh(new THREE.PlaneGeometry(0.9, 0.55), nm, 0, 0, sz, g); }
   }
   colliders.push({ minX: x - 0.5, maxX: x + 2.5, minZ: z - 0.5, maxZ: z + 0.5 });
 }
@@ -400,7 +460,9 @@ function dryingNets(group, x, z) {
   const net = new THREE.PlaneGeometry(3, 2, 10, 6);
   const p = net.attributes.position;
   for (let i = 0; i < p.count; i++) p.setZ(i, Math.sin(p.getX(i) * 2) * 0.15 - (1 - Math.abs(p.getY(i))) * 0.1);
-  mesh(net, lambert('#5b7a8a', { wireframe: true }), x + 1.5, 1.4, z, group);
+  const dm = netMat('#3f4e52');
+  dm.alphaMap.repeat.set(16, 11);
+  mesh(net, dm, x + 1.5, 1.4, z, group);
   for (let i = 0; i < 5; i++) mesh(new THREE.SphereGeometry(0.1, 6, 4), lambert(i % 2 ? '#c08850' : '#e8ece2'), x + 0.4 + i * 0.55, 2.35, z, group);
 }
 
@@ -484,9 +546,9 @@ function gull() {
 export function decorateVillage(group, colliders, tagged) {
   const lh = lighthouse(group, -50, 42);
   chapel(group, -6, -38, colliders);
-  fountain(group, -8, -17, colliders);
+  const fountainTick = fountain(group, -8, -17, colliders);
   phoneBooth(group, 3.2, -6.6, 0, colliders);
-  quatreL(group, 14, -15, 0.4, colliders);
+  quatreL(group, 18.2, -14.4, 0.4, colliders);
   mailbox(group, -10.2, -6.4);
   drystoneWall(group, -36, -16, -22, -16, colliders);
   drystoneWall(group, 22, -15, 36, -14, colliders);
@@ -504,17 +566,7 @@ export function decorateVillage(group, colliders, tagged) {
   const sheets = [];
   laundry(group, -28, -20, -23, -20.5, sheets);
 
-  // Goélands : quelques-uns posés sur les toits, d'autres qui tournent au-dessus du port
-  const resting = [];
-  const perched = [[-18, 9.6, -11], [8.5, 6.8, -12], [-4, 7.2, -10], [-50, 17.6, 42], [25, 7.2, -8]];
-  for (const [x, y, z] of perched) {
-    const b = gull();
-    b.g.position.set(x, y, z);
-    b.g.rotation.y = rand() * 6;
-    b.wings.forEach(({ w, s }) => (w.rotation.z = s * 0.1));
-    group.add(b.g);
-    resting.push({ ...b, y, yaw: b.g.rotation.y, phase: rand() * 20 });
-  }
+  // Goélands : ils tournent au-dessus du port (plus aucun posé sur les toits)
   const flying = [];
   for (let i = 0; i < 6; i++) {
     const b = gull();
@@ -526,14 +578,7 @@ export function decorateVillage(group, colliders, tagged) {
     lighthouseLantern: lh.lantern,
     update(time) {
       sheets.forEach((p, i) => (p.rotation.x = Math.sin(time * 1.3 + i) * 0.25 + 0.15));
-      // Goélands posés : ils se dandinent, tournent la tête, s'ébrouent de temps en temps
-      for (const r of resting) {
-        const t = time + r.phase, shake = Math.max(0, Math.sin(t * 0.37)) ** 14; // ébrouement bref, de loin en loin
-        r.g.rotation.y = r.yaw + Math.sin(t * 0.23) * 0.5 + Math.sin(t * 1.9) * 0.06;
-        r.g.rotation.z = Math.sin(t * 1.3) * 0.05;
-        r.g.position.y = r.y + Math.abs(Math.sin(t * 2.1)) * 0.015 + shake * 0.12;
-        r.wings.forEach(({ w, s }) => (w.rotation.z = s * (0.1 + shake * (0.8 + Math.sin(t * 22) * 0.4))));
-      }
+      fountainTick(time);
       for (const f of flying) {
         const a = time * f.speed + f.phase;
         f.g.position.set(f.cx + Math.cos(a) * f.r, f.h + Math.sin(a * 2) * 1.2, f.cz + Math.sin(a) * f.r);

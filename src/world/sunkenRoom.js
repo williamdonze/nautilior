@@ -152,7 +152,7 @@ export function createSunkenRoom(scene, colliders = []) {
     neons.push({ m, ph: x * 0.37 });
   }
 
-  return {
+  const api = {
     group,
     update(time) {
       for (let i = 0; i < N; i++) {
@@ -172,4 +172,6 @@ export function createSunkenRoom(scene, colliders = []) {
       B.light.intensity = 22 + Math.sin(time * 0.93 * TAU) * 6;
     },
   };
+  api.update(0); // les dalles prennent leur place tout de suite (sinon elles restent empilées à l'origine du monde)
+  return api;
 }
