@@ -1,7 +1,9 @@
 import * as THREE from 'three';
-import { WORLD, ROOFS, LAYOUT, SEABED } from '../config/settings.js';
+import { WORLD, ROOFS, LAYOUT, SEABED, RADIATION } from '../config/settings.js';
 import { createNoise2D } from './noise.js';
-import { getFloorHeight, canyonCenter, surfaceHeight, tunnelAt, tunnelSection } from './seabed.js';
+import { getFloorHeight, canyonCenter, surfaceHeight, tunnelAt, tunnelSection, plateauDepth } from './seabed.js';
+import { WRECK_SPOTS, MARIE } from './landmarks.js';
+import fragmentsData from '../story/fragments.json';
 import { applyDetail } from './detail.js';
 
 /**
@@ -67,16 +69,103 @@ function tunnel(x, z) {
   if (q <= -1 || q >= 1 || c.s < -0.14 || c.s > 1.14) return false;
   const top = surfaceHeight(x, z);
   const H = c.r * 1.5;
-  const ceil = c.y - 2 + (H + 2) * Math.pow(1 - q * q, 0.55) * (0.92 + 0.16 * (noise(x * 0.045 + 3, z * 0.045) * 0.5 + 0.5)) - Math.max(0, noise(x * 0.21, z * 0.21)) * 2.6;
+  const ceil = dome(x, z) + c.y - 2 + (H + 2) * Math.pow(1 - q * q, 0.55) * (0.92 + 0.16 * (noise(x * 0.045 + 3, z * 0.045) * 0.5 + 0.5)) - Math.max(0, noise(x * 0.21, z * 0.21)) * 2.6;
   if (ceil > top - 1.5) return false; // plus de roche au-dessus : c'est la bouche
   out.c = ceil; out.t = top;
   return true;
+}
+
+/* ------------------------------------------------------------------ Cavernes, piliers, poches d'air */
+const { BASINS, CAVERNS, POCKETS, TUNNELS } = LAYOUT;
+let pillars = null;
+/** Les piliers : semés sur une grille, loin de tout ce qui compte (bouches des tunnels, gorge, épaves, souvenirs, poches…) */
+function makePillars() {
+  pillars = [];
+  const hash = (a, b) => { const v = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return v - Math.floor(v); };
+  const keep = [];
+  for (const [x, z] of WRECK_SPOTS) keep.push([x, z, 30]);
+  for (const f of fragmentsData.fragments) keep.push([f.inCanyon ? canyonCenter(f.z) + f.x : f.x, f.z, 30]);
+  for (const p of POCKETS) keep.push([p.x, p.z, p.r + 34]);
+  for (const m of ROOFS.MASSIFS) keep.push([m.x, m.z, m.a + 30]);
+  for (const t of TUNNELS) keep.push([t.x0, t.z0, 80], [t.x1, t.z1, 80]);
+  keep.push([canyonCenter(MARIE.z), MARIE.z, 70], [RADIATION.SOURCE.x, RADIATION.SOURCE.z, 150]);
+  for (let b = 1; b < BASINS.length; b++) {
+    const B = BASINS[b], G = CAVERNS[b].pillars;
+    for (let z = B.z0 - 40; z > Math.max(B.z1, SEABED.Z_END + 90) + 40; z -= G) for (let x = -140; x <= 140; x += G) {
+      if (hash(x, z) > 0.62) continue;
+      const px = x + (hash(x + 9, z) - 0.5) * G * 0.7, pz = z + (hash(x, z + 7) - 0.5) * G * 0.7, r = 6 + hash(x - 3, z - 5) * 10;
+      if (keep.some(([kx, kz, kr]) => Math.hypot(px - kx, pz - kz) < kr + r)) continue;
+      if (b === 2 && Math.abs(px - canyonCenter(pz)) < 62) continue; // la gorge du Canyon reste dégagée
+      pillars.push({ x: px, z: pz, r });
+    }
+  }
+}
+/** Poche d'air en (x, z) : { x, z, r, y (niveau de l'eau), camp } ou null */
+export function pocketAt(x, z) {
+  if (!ready) prepare();
+  for (const p of POCKETS) if (Math.abs(z - p.z) < p.r && Math.abs(x - p.x) < p.r && Math.hypot(x - p.x, z - p.z) < p.r * 0.92) return p;
+  return null;
+}
+export function getPockets() {
+  if (!ready) prepare();
+  return POCKETS;
+}
+/** Coupole d'une poche : de combien la voûte se creuse au-dessus de (x, z) */
+function dome(x, z) {
+  let lift = 0;
+  for (const p of POCKETS) {
+    const d = Math.hypot(x - p.x, z - p.z);
+    if (d < p.r) lift = Math.max(lift, p.h * Math.pow(1 - (d / p.r) ** 2, 0.6));
+  }
+  return lift;
+}
+/** Bassin profond (caverne) qui contient z, ou 0 */
+function cavernIndex(z) {
+  for (let b = 1; b < BASINS.length; b++) if (z < BASINS[b].z0 + 40 && z > BASINS[b].z1 - 40) return b;
+  return 0;
+}
+/**
+ * Voûte de la caverne en (x, z), ou null hors caverne : haute, bosselée, hérissée de pendants ;
+ * elle descend en pilier jusqu'au sol par endroits, et se creuse en coupole au-dessus des poches d'air.
+ */
+export function cavernCeil(x, z) {
+  const b = cavernIndex(z);
+  if (!b) return null;
+  if (!ready) prepare();
+  let c = -plateauDepth(z) + CAVERNS[b].h + noise.fbm(x * 0.008, z * 0.008, 3) * 24 - Math.pow(Math.max(0, noise(x * 0.045 + 11, z * 0.045)), 2) * 16 - Math.max(0, noise(x * 0.2, z * 0.2)) * 2.5;
+  for (const p of pillars) {
+    const dx = x - p.x, dz = z - p.z;
+    if (Math.abs(dx) > p.r * 2.6 || Math.abs(dz) > p.r * 2.6) continue;
+    const d = Math.hypot(dx, dz) * (1 + 0.18 * noise(x * 0.11, z * 0.11));
+    const k = 1 - smooth(p.r * 0.8, p.r * 2.5, d);
+    if (k > 0) c -= (c - (getFloorHeight(x, z) - 3)) * Math.pow(k, 1.7);
+  }
+  return c + dome(x, z);
+}
+function cavern(x, z) {
+  const c = cavernCeil(x, z);
+  if (c === null) return false;
+  if (surfaceHeight(x, z) > c) return false; // paroi : le terrain lui-même fait le mur
+  out.c = c; out.t = 12;
+  return true;
+}
+/** Est-on sous la roche en (x, y, z) ? (tunnel, voûte, caverne : la lumière du jour n'y arrive pas) */
+export function isCovered(x, y, z) {
+  if (cavernIndex(z)) return true;
+  const r = getRoof(x, z);
+  return !!r && y < r.c;
 }
 
 let ready = false;
 function prepare() {
   ready = true;
   for (const m of ROOFS.MASSIFS) { m.cos = Math.cos(m.rot); m.sin = Math.sin(m.rot); m.floor = getFloorHeight(m.x, m.z); }
+  // poches des tunnels : à mi-parcours, dans l'axe
+  for (const t of TUNNELS) if (!POCKETS.some((p) => p.tunnel === t.id)) { const z = (t.z0 + t.z1) / 2; POCKETS.push({ x: tunnelSection(t, z).x, z, r: 13, tunnel: t.id }); }
+  for (const p of POCKETS) p.h = p.camp ? 30 : 18;
+  makePillars();
+  // niveau de l'eau dans chaque poche : cinq mètres sous le sommet de la coupole
+  for (const p of POCKETS) { const r = getRoof(p.x, p.z); p.y = (r ? r.c : -10) - 5; }
 }
 
 /**
@@ -89,6 +178,7 @@ export function getRoof(x, z) {
   if (tunnel(x, z)) return out;
   if (z < SEABED.CANYON.zStart && z > SEABED.CANYON.zEnd) { for (const v of ROOFS.VAULTS) if (z < v.z0 + 6 && z > v.z1 - 6 && vault(v, x, z)) return out; }
   for (const m of ROOFS.MASSIFS) if (massif(m, x, z)) return out;
+  if (cavern(x, z)) return out;
   return null;
 }
 
@@ -99,11 +189,11 @@ export function headroom(x, z) {
 }
 
 /** Maillage d'une région : dessous, dessus et chants, d'après getRoof */
-function build(x0, x1, z0, z1, step) {
+function build(x0, x1, z0, z1, step, sample = getRoof, open = false) {
   const nx = Math.ceil((x1 - x0) / step), nz = Math.ceil((z1 - z0) / step);
   const C = new Float32Array((nx + 1) * (nz + 1)).fill(NaN), T = new Float32Array(C.length), F = new Float32Array(C.length);
   for (let j = 0; j <= nz; j++) for (let i = 0; i <= nx; i++) {
-    const x = x0 + i * step, z = z0 + j * step, r = getRoof(x, z), k = j * (nx + 1) + i;
+    const x = x0 + i * step, z = z0 + j * step, r = sample(x, z), k = j * (nx + 1) + i;
     if (r) { C[k] = r.c; T[k] = r.t; F[k] = getFloorHeight(x, z); }
   }
   const pos = [], idx = [];
@@ -116,8 +206,7 @@ function build(x0, x1, z0, z1, step) {
     if (!has(i, j)) continue;
     const k = j * (nx + 1) + i, ks = [k, k + 1, k + nx + 1, k + nx + 2];
     // dessus (normale vers le haut)
-    const a = vt(i, j), b = vt(i + 1, j), c = vt(i, j + 1), d = vt(i + 1, j + 1);
-    idx.push(a, c, b, b, c, d);
+    if (!open) { const a = vt(i, j), b = vt(i + 1, j), c = vt(i, j + 1), d = vt(i + 1, j + 1); idx.push(a, c, b, b, c, d); }
     // dessous (normale vers le bas), sauf là où le plafond repose sur le sol
     if (ks.some((q) => C[q] > F[q] + 0.05)) { const e = vb(i, j), f = vb(i + 1, j), g = vb(i, j + 1), h = vb(i + 1, j + 1); idx.push(e, f, g, f, h, g); }
     // chants : là où la cellule voisine n'existe pas, on ferme entre dessous et dessus
@@ -127,6 +216,7 @@ function build(x0, x1, z0, z1, step) {
       const s0 = vert(xa, C[p], za), s1 = vert(xb, C[q], zb), s2 = vert(xa, T[p], za), s3 = vert(xb, T[q], zb);
       idx.push(s0, s2, s1, s1, s2, s3);
     };
+    if (open) continue; // (voûte de caverne : rien au-dessus, pas de chants)
     if (!has(i, j - 1)) side(i + 1, j, i, j);
     if (!has(i, j + 1)) side(i, j + 1, i + 1, j + 1);
     if (!has(i - 1, j)) side(i, j, i, j + 1);
@@ -154,6 +244,9 @@ export function createRoofs() {
   }
   // les trois tunnels (toute la largeur du monde : ils serpentent)
   for (const t of LAYOUT.TUNNELS) add(build(-150, 150, t.z1 - 72, t.z0 + 72, ROOFS.STEP));
+  // les voûtes des trois cavernes, par tranches de 200 m (mailles plus larges : elles sont loin au-dessus)
+  const cav = (x, z) => (cavern(x, z) ? out : null);
+  for (let b = 1; b < BASINS.length; b++) for (let z = BASINS[b].z0 + 40; z > BASINS[b].z1 - 40; z -= 200) add(build(-184, 184, Math.max(z - 200, BASINS[b].z1 - 40), z, ROOFS.STEP * 2, cav, true));
   for (const m of ROOFS.MASSIFS) add(build(m.x - m.a - 2, m.x + m.a + 2, m.z - m.a - 2, m.z + m.a + 2, ROOFS.STEP * 0.75));
   return group;
 }

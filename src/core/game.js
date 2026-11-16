@@ -70,7 +70,7 @@ export class Game {
       },
       onDeath: (cause) => this.death(cause),
       onReturn: () => this.goPort('quay', true),
-      onReach: (i) => { if (i > (gameState.reached ?? 0)) { gameState.reached = i; this.persist(); this.hud.notice('Une bouée marque l\'endroit : on pourra repartir d\'ici'); } },
+      onReach: (i) => { if (i > (gameState.reached ?? 0)) { gameState.reached = i; this.persist(); } },
       onPortal: () => this.facePortal(),
       canFacePortal: () => storyState.abyssalHull,
     });
@@ -343,17 +343,17 @@ export class Game {
   }
 
   /**
-   * Le monde est long : une fois un bassin atteint, une bouée y reste, et l'on peut y remettre
-   * le Nautiliar à l'eau directement. On choisit sur le quai.
+   * Le monde est long, et sous la roche. Chaque caverne a un puits qui remonte au village, avec un treuil :
+   * une fois le puits trouvé, on peut y redescendre le Nautiliar directement. On choisit sur le quai.
    */
   async chooseDive() {
     const reached = Math.min(3, gameState.reached ?? 0);
     if (!reached) return this.goDive(0);
     if (this.busy || this.dialogue.isOpen) return;
-    const names = ['Sous le port', 'À la bouée des Épaves', 'À la bouée du Canyon', 'À la bouée des Abysses'];
+    const names = ['Depuis le quai', 'Par le puits des Épaves', 'Par le puits du Canyon', 'Par le puits des Abysses'];
     const choices = names.slice(0, reached + 1).map((text, i) => ({ text, action: `dive${i}`, end: true }));
     choices.push({ text: 'Pas maintenant', action: 'stay', end: true });
-    const action = await this.dialogue.play('sub', { start: 'a', nodes: { a: { text: 'Où mettre le Nautiliar à l\'eau ?', choices } } });
+    const action = await this.dialogue.play('sub', { start: 'a', nodes: { a: { text: 'Les treuils des puits tournent encore. Où descendre le Nautiliar ?', choices } } });
     if (action?.startsWith('dive')) this.goDive(Number(action.slice(4)));
   }
 

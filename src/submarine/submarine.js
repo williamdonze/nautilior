@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { SUBMARINE, WORLD, RADIATION } from '../config/settings.js';
 import { clamp, damp, lerp } from '../core/utils.js';
-import { getRoof } from '../world/roof.js';
+import { getRoof, cavernCeil, pocketAt } from '../world/roof.js';
 import { getFloorHeight } from '../world/seabed.js';
 import { createSubmarineModel, spinPropellers } from './subModel.js';
 import { createCockpit } from './cockpit.js';
@@ -276,12 +276,21 @@ export class Submarine {
       }
     }
 
-    // Surface
+    // Voûte des cavernes : rien au-dessus (même par-dessus un massif)
+    const cc = cavernCeil(p.x, p.z);
+    if (cc !== null && p.y > cc - S.HULL_RADIUS) {
+      p.y = cc - S.HULL_RADIUS;
+      if (this.velocity.y > 0) this.velocity.y *= -0.2;
+    }
+    // Surface : celle de la mer, ou celle d'une poche d'air sous la voûte
+    this.pocket = pocketAt(p.x, p.z);
+    const top = this.pocket ? this.pocket.y : WORLD.SURFACE_Y;
     const maxY = WORLD.SURFACE_Y - S.SURFACE_MARGIN;
-    if (p.y > maxY) {
-      p.y = maxY;
+    if (p.y > top - S.SURFACE_MARGIN) {
+      p.y = top - S.SURFACE_MARGIN;
       if (this.velocity.y > 0) this.velocity.y = 0;
     }
+    this.atAir = !!this.pocket && p.y > this.pocket.y - 2.6; // en surface dans une poche : on respire
 
     // La falaise dépasse la surface : impossible de passer par-dessus
     if (floorAt(p.x, p.z) + S.HULL_RADIUS > maxY) {

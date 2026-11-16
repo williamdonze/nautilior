@@ -3,7 +3,7 @@ import { storyState } from '../story/state.js';
 import { UPGRADES } from '../submarine/stats.js';
 import { getFloorHeight, canyonCenter, tunnelSection } from '../world/seabed.js';
 import fragmentsData from '../story/fragments.json';
-import { RADIATION, SUBMARINE, AIR_BELLS, ROOFS, LAYOUT } from '../config/settings.js';
+import { RADIATION, SUBMARINE, ROOFS, LAYOUT } from '../config/settings.js';
 import { MARIE } from '../world/landmarks.js';
 
 /**
@@ -18,7 +18,8 @@ const tun = (i, k, label) => { const [x, z] = mid(T[i], k); return [x, 7, z, Mat
 const PLACES = {
   depart: [SUBMARINE.SPAWN.x, SUBMARINE.SPAWN.y, SUBMARINE.SPAWN.z, Math.PI, 'Le point de départ, sous le port'],
   arche: [-72, 5, -262, 0.97, "Récif : l'arche de roche"],
-  cloche: [AIR_BELLS.SPOTS[0][0] + 9, 7, AIR_BELLS.SPOTS[0][1] + 9, -2.36, 'Une cloche à air'],
+  puits: [LAYOUT.POCKETS[0].x + 20, 30, LAYOUT.POCKETS[0].z + 30, -2.5, 'Épaves : le puits (grande poche d\'air, treuil)'],
+  poche: [LAYOUT.POCKETS[1].x + 14, 30, LAYOUT.POCKETS[1].z + 20, -2.5, 'Épaves : une petite poche d\'air'],
   veines: [T[0].x0, 9, T[0].z0 + 45, Math.PI, 'Les Veines : la bouche du tunnel (fin du Récif)'],
   veines2: tun(0, 0.5, 'Les Veines : la salle du milieu'),
   epaves: [0, 12, -1000, Math.PI, 'Les Épaves : sortie du tunnel'],

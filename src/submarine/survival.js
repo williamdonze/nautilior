@@ -41,7 +41,7 @@ export class Survival {
     if (this.dead) return;
     const S = SURVIVAL;
     const depth = sub.depth;
-    this.atSurface = depth < S.SURFACE_DEPTH;
+    this.atSurface = depth < S.SURFACE_DEPTH || !!sub.atAir; // à l'air libre, ou dans une poche d'air
 
     // --- Oxygène
     if (this.atSurface) {
