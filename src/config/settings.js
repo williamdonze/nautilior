@@ -14,31 +14,50 @@ export const WORLD = {
   SEED: 1984,
   // Zone navigable (en mètres, 1 unité = 1 m)
   // Zone où apparaissent objets et créatures (le sous-marin, lui, n'est arrêté que par les falaises)
-  BOUNDS: { minX: -140, maxX: 140, minZ: -1105, maxZ: 150 },
+  BOUNDS: { minX: -140, maxX: 140, minZ: -3105, maxZ: 150 },
   // Surface de l'eau
   SURFACE_Y: 0,
 };
 
+/**
+ * Le monde a été allongé (1 400 m → 3 400 m) pour adoucir la descente : on passe de 0 à 1 190 m de fond
+ * par des pentes de 15 à 28° au lieu de falaises. Tout ce qui avait été placé à la main l'a été sur l'ancien monde ;
+ * stretchZ convertit une ancienne position Z en nouvelle, zone par zone (le Récif reste où il est près du port).
+ */
+const STRETCH = [[150, 150], [40, 40], [-175, -450], [-545, -1300], [-880, -2514], [-1180, -3180]];
+export function stretchZ(z) {
+  if (z >= STRETCH[0][0]) return z;
+  for (let i = 0; i < STRETCH.length - 1; i++) {
+    const [a0, b0] = STRETCH[i], [a1, b1] = STRETCH[i + 1];
+    if (z >= a1) return b0 + ((z - a0) / (a1 - a0)) * (b1 - b0);
+  }
+  const [a0, b0] = STRETCH[STRETCH.length - 2], [a1, b1] = STRETCH[STRETCH.length - 1];
+  return b1 + ((z - a1) / (a1 - a0)) * (b1 - b0);
+}
+/** Facteur d'allongement moyen (pour garder la même densité de décor sur un monde plus long) */
+export const STRETCH_K = 3400 / 1400;
+const sz = stretchZ;
+
 export const SEABED = {
   WIDTH: 420,
   Z_START: 220, // le fond s'étend de Z_START à Z_END
-  Z_END: -1180,
+  Z_END: -3180,
   CHUNK_LENGTH: 200, // découpage en morceaux (culling hors champ)
   CELL: 4, // taille d'une maille (m)
-  // Profil de profondeur le long de Z : [z, profondeur] (interpolation douce entre les points)
+  // Profil de profondeur le long de Z : [z, profondeur]. Interpolation monotone (pas de marches), pentes douces.
   PROFILE: [
-    [220, 20], [40, 30], [-150, 145], [-200, 170], [-330, 300], [-380, 320],
-    [-520, 480], [-560, 520], [-620, 640], [-700, 780], [-820, 1000], [-880, 1100], [-1180, 1190],
+    [220, 20], [40, 30], [sz(-150), 145], [sz(-200), 170], [sz(-330), 300], [sz(-380), 320],
+    [sz(-520), 480], [sz(-560), 520], [sz(-620), 640], [sz(-700), 780], [sz(-820), 1000], [sz(-880), 1100], [-3180, 1190],
   ],
-  // Bords du canyon (au-dessus du lit) : [z, profondeur]
-  RIM: [[-560, 520], [-700, 565], [-820, 630], [-880, 1100], [-1180, 1190]],
-  CANYON: { zStart: -560, zEnd: -880, halfWidth: 55, meander: 35 },
+  // Bords du canyon (le plateau, au-dessus de la gorge) : [z, profondeur]. Il rejoint le fond des Abysses en pente.
+  RIM: [[sz(-560), 520], [-1700, 575], [-2000, 660], [-2300, 830], [-2700, 1125], [-3180, 1190]],
+  CANYON: { zStart: sz(-560), zEnd: -2700, halfWidth: 55, meander: 35 },
   AMPLITUDE: 9, // relief du bruit
   RIDGE_AMPLITUDE: 7, // crêtes rocheuses
 };
 
 export const DECOR = {
-  ROCKS: 1800,
+  ROCKS: 4200,
   MARINE_SNOW: 1800,
   MARINE_SNOW_BOX: 60, // taille du cube de particules autour de la caméra
 };
@@ -161,7 +180,7 @@ export const PULSE = {
 export const AIR_BELLS = {
   RADIUS: 7, // distance à laquelle l'air se renouvelle (m)
   REFILL: 14, // air rendu par seconde
-  SPOTS: [[-30, -200], [60, -350], [-70, -500], [20, -640], [-25, -790], [40, -930], [-55, -1010]],
+  SPOTS: [[-30, sz(-200)], [60, sz(-350)], [-70, sz(-500)], [20, sz(-640)], [-25, sz(-790)], [40, sz(-930)], [-55, sz(-1010)]],
 };
 
 /**
@@ -174,14 +193,19 @@ export const ROOFS = {
   STEP: 2, // finesse du maillage (m)
   VAULT_HALF_WIDTH: 60,
   VAULTS: [
-    { z0: -590, z1: -614, h: 20, thick: 9 }, // le Porche
-    { z0: -742, z1: -794, h: 24, thick: 12 }, // la Nef (le squelette de baleine est dessous)
-    { z0: -824, z1: -844, h: 18, thick: 8 },
+    { z0: sz(-590), z1: sz(-614), h: 20, thick: 9 }, // le Porche
+    { z0: sz(-742), z1: sz(-794), h: 24, thick: 12 }, // la Nef (le squelette de baleine est dessous)
+    { z0: sz(-824), z1: sz(-844), h: 18, thick: 8 },
   ],
   MASSIFS: [
     { x: -48, z: -62, a: 19, b: 14, rot: 0.6, H: 15, wt: 6, ht: 8.5 }, // Récif : une petite arche, pour apprendre
-    { x: -2, z: -328, a: 30, b: 22, rot: -0.4, H: 26, wt: 9, ht: 11.5 }, // Épaves
-    { x: -24, z: -910, a: 34, b: 24, rot: 1.1, H: 30, wt: 10, ht: 13 }, // Abysses
+    { x: -2, z: sz(-328), a: 30, b: 22, rot: -0.4, H: 26, wt: 9, ht: 11.5 }, // Épaves
+    // Les grandes dorsales : de longs reliefs posés sur le fond, à l'écart du chemin principal (on peut les contourner),
+    // percés de part en part d'un tunnel naturel de vingt-huit mètres de large qui serpente. ridge = le dessus suit le fond.
+    { x: 80, z: -480, a: 140, b: 44, rot: Math.PI / 2, H: 55, wt: 14, ht: 22, ridge: true, name: 'La Galerie' }, // fin du Récif
+    { x: 100, z: -1000, a: 160, b: 44, rot: Math.PI / 2, H: 60, wt: 14, ht: 22, ridge: true, name: 'Le Boyau' }, // Épaves
+    { x: 100, z: -2620, a: 140, b: 42, rot: Math.PI / 2, H: 60, wt: 13, ht: 22, ridge: true, name: 'La Nuit' }, // Abysses
+    { x: -24, z: sz(-910), a: 34, b: 24, rot: 1.1, H: 30, wt: 10, ht: 13 }, // Abysses
   ],
 };
 
@@ -191,8 +215,8 @@ export const WHALE = {
   SPEED: 3.2, // m/s : le sous-marin peut la suivre
   TURN: 0.22, // rad/s
   HEIGHT: 62, // hauteur de nage au-dessus du lit du Canyon (m) : au-dessus des voûtes
-  Z_START: -575, // elle va et vient entre ces deux Z
-  Z_END: -860,
+  Z_START: sz(-575), // elle va et vient entre ces deux Z
+  Z_END: sz(-860),
   CALM_RADIUS: 70, // en deçà, le pouls s'apaise
   LEAD_RADIUS: 60, // en deçà, elle emmène le sous-marin vers un souvenir
   LEAD_RANGE: 420, // … s'il en reste un à cette distance d'elle (m)
@@ -227,7 +251,7 @@ export const GUARDIAN = {
 };
 
 export const RADIATION = {
-  SOURCE: { x: 0, z: -1060 }, // emplacement du portail
+  SOURCE: { x: 0, z: sz(-1060) }, // emplacement du portail
   RADIUS: 280, // rayon d'influence (m)
   DAMAGE: 3, // dégâts/s au cœur de la zone
   CRUSH_MULT: 2, // la pression abîme jusqu'à 3× plus vite sous radiation

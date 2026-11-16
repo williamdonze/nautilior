@@ -13,11 +13,13 @@ import { headroom } from '../world/roof.js';
 import { getFloorHeight } from '../world/seabed.js';
 import { createNoise2D } from '../world/noise.js';
 import { createRandom, smoothstep } from '../core/utils.js';
-import { RADIATION, SUBMARINE, WORLD } from '../config/settings.js';
-import { WRECK_SPOTS } from '../world/landmarks.js';
+import { RADIATION, SUBMARINE, WORLD, SEABED, stretchZ, STRETCH_K } from '../config/settings.js';
+import { WRECK_SPOTS, VENTS } from '../world/landmarks.js';
 
 // Grille de culling (plan XZ)
-export const GRID = { OX: -216, OZ: -1190, CELLW: 24, CX: 18, CZ: 59 };
+export const GRID = { OX: -216, OZ: SEABED.Z_END - 10, CELLW: 24, CX: 18, CZ: Math.ceil((SEABED.Z_START - SEABED.Z_END + 30) / 24) };
+/** Emprise de la carte du fond (texture) */
+export const MAP = { X0: -210, W: 420, Z0: SEABED.Z_END, L: SEABED.Z_START - SEABED.Z_END };
 const NCELLS = GRID.CX * GRID.CZ;
 const TAU = Math.PI * 2;
 
@@ -26,7 +28,7 @@ const fbm = (x, z, s) => noise.fbm(x * s, z * s, 3) * 0.5 + 0.5;
 
 /** Tapis colorés du Récif (0..1) : même fonction pour les plantes et pour la teinte du fond */
 export function coverAt(x, z) {
-  const reef = smoothstep(-190, -120, z);
+  const reef = smoothstep(stretchZ(-190), stretchZ(-120), z);
   return smoothstep(0.56, 0.74, fbm(x + 300, z - 80, 0.035)) * reef;
 }
 /** Proximité du portail (0..1) : la vie y devient verte et lumineuse */
@@ -36,10 +38,10 @@ export function portalAt(x, z) {
 }
 
 /** Carte du fond pour le shader : r tapis colorés, g verdissement du portail, a sable */
-export function buildGroundMap(w = 128, h = 512) {
+export function buildGroundMap(w = 128, h = 1280) {
   const map = new Uint8Array(w * h * 4);
   for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
-    const x = ((i + 0.5) / w) * 420 - 210, z = ((j + 0.5) / h) * 1400 - 1180, o = (i + w * j) * 4;
+    const x = ((i + 0.5) / w) * MAP.W + MAP.X0, z = ((j + 0.5) / h) * MAP.L + MAP.Z0, o = (i + w * j) * 4;
     map[o] = Math.max(coverAt(x, z), portalAt(x, z) * smoothstep(0.45, 0.65, fbm(x, z, 0.06))) * 255;
     map[o + 1] = portalAt(x, z) * 255;
     map[o + 3] = smoothstep(0.42, 0.6, fbm(x - 70, z + 40, 0.04)) * 255;
@@ -137,7 +139,7 @@ export function buildGarden(density = 1) {
     }
   };
   // Grandes forêts placées à la main le long du Récif : x, z, rayon, densité
-  const FORESTS = [[-70, 120, 40, 0.9], [80, 90, 36, 0.85], [-30, 20, 26, 0.7], [95, -10, 40, 0.9], [-110, -30, 44, 0.9], [20, -70, 30, 0.8], [-60, -110, 36, 0.8], [110, -120, 34, 0.7], [0, 165, 30, 0.6]];
+  const FORESTS = [[-70, 120, 40, 0.9], [80, 90, 36, 0.85], [-30, 20, 26, 0.7], [95, -10, 40, 0.9], [-110, -30, 44, 0.9], [20, -70, 30, 0.8], [-60, -110, 36, 0.8], [110, -120, 34, 0.7], [0, 165, 30, 0.6]].map(([x, z, r, d]) => [x, stretchZ(z), r * 1.4, d]);
   const kelpDens = (x, z, depth) => {
     if (Math.hypot(x - S.x, z - S.z) < 13) return 0;
     if (depth < 150) {
@@ -149,8 +151,8 @@ export function buildGarden(density = 1) {
     return (smoothstep(0.56, 0.7, fbm(x + 500, z, 0.02)) * 0.3 + (nearWreck(x, z, 26) ? 0.35 : 0)) * smoothstep(520, 400, depth);
   };
   const occ = new Set();
-  for (let i = 0; i < 9000; i++) {
-    const x = rr(-196, 196), z = rr(-540, 208), y = getFloorHeight(x, z), depth = -y;
+  for (let i = 0; i < 22000; i++) {
+    const x = rr(-196, 196), z = rr(stretchZ(-540), 208), y = getFloorHeight(x, z), depth = -y;
     if (depth < 9 || rnd() > kelpDens(x, z, depth)) continue;
     const key = Math.floor(x / 2.3) * 4096 + Math.floor(z / 2.3);
     if (occ.has(key) || slopeY(x, z) < 0.55) continue;
@@ -172,8 +174,8 @@ export function buildGarden(density = 1) {
       leaf(big, x + Math.cos(a) * r, y - 0.15, z + Math.sin(a) * r, L, a, rr(0.05, tmax), rr(wmin, wmax), sway, type, rnd(), rnd(), rr(0.3, 0.8));
     }
   };
-  for (let i = Math.floor(52000 * density); i > 0; i--) {
-    const x = rr(-200, 200), z = rr(-1160, 210), y = getFloorHeight(x, z), depth = -y;
+  for (let i = Math.floor(52000 * STRETCH_K * density); i > 0; i--) {
+    const x = rr(-200, 200), z = rr(SEABED.Z_END + 20, 210), y = getFloorHeight(x, z), depth = -y;
     if (depth < 6 || Math.hypot(x - S.x, z - S.z) < 6) continue;
     const ny = slopeY(x, z), u = rnd(), pz = portalAt(x, z);
     const h = depth < 150 ? 0.45 + 0.55 * smoothstep(0.45, 0.65, fbm(x - 90, z + 30, 0.03)) : depth < 500 ? 0.3 : depth < 950 ? 0.1 : 0.04;
@@ -191,14 +193,65 @@ export function buildGarden(density = 1) {
     }
   }
 
+  /* =====================================================================================
+   * Les grands fonds, tels qu'ils sont : rien n'y est une plante (pas de lumière), tout y est animal et fixé.
+   * Prairies de plumes de mer sur la vase, lys de mer accrochés aux reliefs, vers tubicoles autour des
+   * sources chaudes. Clairsemés, en taches, avec de grandes étendues nues entre. Le phare les révèle.
+   * ===================================================================================== */
+  const DEEP = 210;
+  /** Plume de mer : une tige courte, une plume plate et large */
+  const seaPen = (x, y, z, h) => {
+    newStalk(x, y, z, h + 0.3);
+    leaf(big, x, y - 0.05, z, h * 0.35, rnd() * TAU, rr(0, 0.15), 0.025, 0, 1, rnd(), rnd(), 0.5);
+    leaf(big, x, y + h * 0.3, z, h * 0.75, rnd() * TAU, rr(0, 0.18), rr(0.2, 0.3) * h, h * 0.3, 9, rnd(), rnd(), rr(0.45, 0.6));
+    if (rnd() < 0.35) glint(x, y + h * 0.7, z, h * 0.7, rnd(), 1.65, rr(0.02, 0.035)); // elle s'illumine si on la frôle
+  };
+  /** Lys de mer : une longue tige, une couronne de bras plumeux qui filtrent le courant */
+  const crinoid = (x, y, z, h) => {
+    newStalk(x, y, z, h + 0.8);
+    leaf(big, x, y - 0.05, z, h, rnd() * TAU, rr(0, 0.12), 0.03, 0, 1, rnd(), rnd(), 0.5);
+    const n = 8 + ((rnd() * 6) | 0);
+    for (let i = 0; i < n; i++) leaf(big, x, y + h * 0.97, z, rr(0.45, 0.9), (i / n) * TAU + rr(-0.2, 0.2), rr(0.6, 1.3), rr(0.07, 0.11), h, 10, rnd(), rnd(), rr(0.55, 0.85));
+  };
+  /** Vers tubicoles : une touffe de tubes blancs dressés, un panache rouge au bout de chacun */
+  const tubeWorms = (x, y, z, n) => {
+    newStalk(x, y, z, 2.5);
+    for (let i = 0; i < n; i++) {
+      const a = rnd() * TAU, r = Math.sqrt(rnd()) * 1.4, L = rr(0.6, 2.2), tilt = rr(0, 0.25), yaw = rnd() * TAU;
+      const bx = x + Math.cos(a) * r, bz = z + Math.sin(a) * r;
+      leaf(big, bx, y - 0.1, bz, L, yaw, tilt, 0.07, 0.3, 12, rnd(), rnd(), 0.5);
+      leaf(big, bx + Math.cos(yaw) * Math.sin(tilt) * L, y + Math.cos(tilt) * L - 0.1, bz + Math.sin(yaw) * Math.sin(tilt) * L, rr(0.18, 0.3), rnd() * TAU, rr(0.2, 1.2), 0.13, L, 11, rnd(), rnd(), 0.6);
+    }
+  };
+  for (let i = Math.floor(240000 * density); i > 0; i--) {
+    const x = rr(-185, 185), z = rr(SEABED.Z_END + 60, stretchZ(-200)), y = getFloorHeight(x, z), depth = -y;
+    if (depth < DEEP || portalAt(x, z) > 0.4) continue;
+    if (headroom(x, z) < 2.5) continue;
+    const ny = slopeY(x, z), u = rnd();
+    // des taches : prairies sur la vase plate, jardins de lys sur les reliefs, du nu entre les deux
+    const pens = smoothstep(0.4, 0.56, fbm(x + 120, z - 60, 0.014)) * smoothstep(DEEP, DEEP + 120, depth);
+    const lilies = smoothstep(0.46, 0.62, fbm(x - 300, z + 200, 0.018));
+    const a1 = 0.6 * pens, a2 = a1 + 0.07 * lilies, a3 = a2 + 0.012;
+    if (u < a1) { if (ny > 0.8) for (let k = (2 + rnd() * 5) | 0; k > 0; k--) { const bx = x + rr(-1.8, 1.8), bz = z + rr(-1.8, 1.8); seaPen(bx, getFloorHeight(bx, bz), bz, rr(1.1, 3)); } } // en bouquets
+    else if (u < a2) { if (ny > 0.55) crinoid(x, y, z, rr(1, 3.2)); }
+    else if (u < a3 && ny > 0.8) seaPen(x, y, z, rr(0.7, 1.6)); // quelques isolées partout
+  }
+  // Les sources chaudes : quelques champs de vers tubicoles, serrés, autour des cheminées (voir formations.js)
+  for (const [vx, vz] of VENTS) {
+    for (let k = 0; k < 42; k++) {
+      const a = rnd() * TAU, r = 2.5 + Math.pow(rnd(), 1.5) * 13, x = vx + Math.cos(a) * r, z = vz + Math.sin(a) * r;
+      tubeWorms(x, getFloorHeight(x, z), z, (12 + rnd() * 24) | 0);
+    }
+  }
+
   /* ---- Tapis de petites touffes */
-  for (let i = Math.floor(520000 * density); i > 0; i--) {
-    const x = rr(-200, 200), z = rr(-1160, 210), u = rnd();
+  for (let i = Math.floor(520000 * 2.1 * density); i > 0; i--) {
+    const x = rr(-200, 200), z = i % 6 ? rr(stretchZ(-560), 210) : rr(RADIATION.SOURCE.z - 200, RADIATION.SOURCE.z + 200), u = rnd(); // (tapis : Récif, Épaves et abords de la faille)
     const m = coverAt(x, z), pz = portalAt(x, z);
     let kind = 0;
     if (pz > 0.05 && u < pz * 0.6 * smoothstep(0.4, 0.62, fbm(x, z, 0.06))) kind = 8;
     else if (m > 0.3 && u < m * 0.9) kind = 5;
-    else if (z > -560 && u < 0.3 * smoothstep(0.42, 0.6, fbm(x, z, 0.09)) * (z > -160 ? 1 : 0.4)) kind = 7;
+    else if (z > stretchZ(-560) && u < 0.3 * smoothstep(0.42, 0.6, fbm(x, z, 0.09)) * (z > stretchZ(-160) ? 1 : 0.4)) kind = 7;
     if (!kind) continue;
     const y = getFloorHeight(x, z);
     if (y > -5 || slopeY(x, z) < 0.72) continue;
@@ -212,7 +265,11 @@ export function buildGarden(density = 1) {
     }
   }
 
+  // (inventaire, pour vérifier : nombre de feuilles par espèce)
+  const kinds = {};
+  for (let i = 0; i < big.n; i += 14) { const t = big.a[i + 9]; kinds[t] = (kinds[t] ?? 0) + 1; }
   return {
+    kinds,
     big: pack(big, true),
     bigF: pack(big, true, 2, 1.5),
     small: pack(small, true),

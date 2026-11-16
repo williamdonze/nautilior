@@ -202,6 +202,8 @@ Dans le rêve, personne n'explique rien. Au réveil, tout est dit simplement.
 
 ## 11. Mécaniques qui racontent l'histoire
 
+**Les grands fonds, tels qu'ils sont.** L'océan reste un océan : pas de plantes sous deux cents mètres, mais des animaux fixés, pâles, que le phare révèle (gorgones, éponges de verre, plumes de mer, lys de mer, vers tubicoles autour des sources chaudes). Rien ne luit, sauf la bioluminescence au contact de la coque. La seule chose qui n'a rien à faire là, c'est la lumière verte de la faille, et ce qu'elle abîme autour d'elle.
+
 - **Le sonar est un cœur** : même son que le moniteur des fins. Il s'emballe sous la menace, ralentit à la mort, se tait quand on ferme.
 - **Le plongeur pâle** indique la direction du souvenir manquant le plus proche.
 - **Le pouls** : jamais affiché (une jauge vendrait la mèche) ; on l'entend seulement, c'est le bip du sonar. L'effort, le danger, le manque d'air le font monter. Au-dessus d'un seuil, les bêtes deviennent hardies ; plus haut encore, le ver se réveille. On peut passer le ver cœur calme.

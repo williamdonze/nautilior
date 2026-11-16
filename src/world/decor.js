@@ -116,11 +116,20 @@ export function createDecor() {
   // Ombres : rochers, épaves et débris en portent et en reçoivent ; la flore en reçoit seulement
   for (const g of [rocks, landmarks, props, formations]) g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   group.traverse((o) => { if (o.isMesh) o.receiveShadow = true; });
+  const smoke = [];
+  landmarks.traverse((o) => { if (o.userData.smoke) smoke.push(o); });
   return {
     group,
     colliders,
     update(time) {
       uniforms.uTime.value = time;
+      // la fumée des sources chaudes monte, s'élargit et se dissout, en boucle
+      for (const p of smoke) {
+        const S = p.userData.smoke, t = (time * 0.12 + S.i / 6) % 1;
+        p.position.set(S.ox + Math.sin(time * 0.3 + S.i) * 0.6 * t, S.base + t * 14, S.oz + Math.cos(time * 0.25 + S.i) * 0.6 * t);
+        p.scale.setScalar(0.6 + t * 3);
+        p.material.opacity = 0.34 * Math.sin(t * Math.PI);
+      }
     },
   };
 }

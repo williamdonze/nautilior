@@ -89,6 +89,7 @@ Travaille **phase par phase**. À la fin de chaque phase : vérifie que `npm run
 
 ### Phase 6 : monde, créatures et fragments de mémoire
 - 4 zones : Récif (0 à 150 m), Épaves (150 à 500 m), Canyon (500 à 1000 m), Abysses (plus de 1000 m), où se trouve le portail.
+- Forme du monde : un océan ouvert de 3,4 km qui descend en pente douce (`SEABED` et `stretchZ` dans `src/config/settings.js`, `carte.html` pour le voir en 3D). Trois grands tunnels naturels, facultatifs (La Galerie, Le Boyau, La Nuit : `ROOFS.MASSIFS`, `ridge: true`). Flore et faune fixée réalistes : kelp près de la surface, puis gorgones, éponges de verre, plumes de mer, lys de mer, vers tubicoles autour des sources chaudes ; rien de lumineux sauf la bioluminescence au contact et ce qui est justifié (la faille et sa « radiation »).
 - Des créatures : poissons normaux près de la surface, créatures mutées et dangereuses en profondeur (formes déformées, yeux lumineux) qui endommagent la coque.
 - 6 à 8 **fragments de mémoire** répartis par profondeur. Chacun affiche un court souvenir (texte + image pixel ou plan fixe) et fait évoluer les dialogues des villageois.
 

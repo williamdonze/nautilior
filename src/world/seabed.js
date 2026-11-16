@@ -1,23 +1,33 @@
 import * as THREE from 'three';
-import { SEABED, WORLD } from '../config/settings.js';
+import { SEABED, WORLD, stretchZ } from '../config/settings.js';
 import { createNoise2D } from './noise.js';
 import { smoothstep, clamp } from '../core/utils.js';
 import { applyDetail } from './detail.js';
 
 const noise = createNoise2D(WORLD.SEED);
 
-/** Interpolation douce d'une liste de points [z, profondeur] (z décroissant) */
+/**
+ * Interpolation d'une liste de points [z, profondeur] (z décroissant) par une courbe monotone (Fritsch–Carlson) :
+ * la pente varie en douceur d'un point à l'autre, sans marches ni bosses.
+ */
+const tangents = new WeakMap();
 function sampleProfile(points, z) {
   if (z >= points[0][0]) return points[0][1];
-  for (let i = 0; i < points.length - 1; i++) {
-    const [z0, d0] = points[i];
-    const [z1, d1] = points[i + 1];
-    if (z <= z0 && z >= z1) {
-      const t = (z0 - z) / (z0 - z1);
-      return d0 + (d1 - d0) * (t * t * (3 - 2 * t));
-    }
+  const n = points.length;
+  if (z <= points[n - 1][0]) return points[n - 1][1];
+  let m = tangents.get(points);
+  if (!m) {
+    const d = [];
+    for (let i = 0; i < n - 1; i++) d.push((points[i + 1][1] - points[i][1]) / (points[i][0] - points[i + 1][0]));
+    m = [d[0]];
+    for (let i = 1; i < n - 1; i++) m.push(d[i - 1] * d[i] <= 0 ? 0 : (2 * d[i - 1] * d[i]) / (d[i - 1] + d[i]));
+    m.push(d[n - 2]);
+    tangents.set(points, m);
   }
-  return points[points.length - 1][1];
+  let i = 0;
+  while (z < points[i + 1][0]) i++;
+  const [z0, d0] = points[i], [z1, d1] = points[i + 1], h = z0 - z1, t = (z0 - z) / h, t2 = t * t, t3 = t2 * t;
+  return (2 * t3 - 3 * t2 + 1) * d0 + (t3 - 2 * t2 + t) * h * m[i] + (-2 * t3 + 3 * t2) * d1 + (t3 - t2) * h * m[i + 1];
 }
 
 /** Centre du lit du canyon (il serpente) */
@@ -47,7 +57,7 @@ export function getFloorHeight(x, z) {
   const depth = rim + (floor - rim) * mask;
 
   // Relief : plus marqué dans le canyon (parois déchiquetées), plus lisse dans les abysses
-  const roughness = z < -880 ? 0.6 : z < -545 ? 1.8 : 1;
+  const roughness = z < SEABED.CANYON.zEnd ? 0.6 : z < stretchZ(-545) ? 1.6 : 1;
   const relief = noise.fbm(x * 0.011, z * 0.011, 4) * SEABED.AMPLITUDE * roughness;
   const r = 1 - Math.abs(noise(x * 0.018 + 57, z * 0.018 - 31));
   const ridges = r * r * r * SEABED.RIDGE_AMPLITUDE * roughness;
@@ -59,7 +69,7 @@ export function getFloorHeight(x, z) {
   const wz = noise(x * 0.02, 3.3) * 10;
   const e = Math.max(
     smoothstep(152 + wx, 180 + wx, Math.abs(x)),
-    smoothstep(-1122 + wz, -1152 + wz, z),
+    smoothstep(SEABED.Z_END + 58 + wz, SEABED.Z_END + 28 + wz, z),
     smoothstep(170 + wz, 198 + wz, z)
   );
   if (e <= 0) return base;
@@ -115,7 +125,7 @@ function floorColor(center, normal, out) {
   else {
     out.copy(ABYSS[pick]);
     // Vase maladive près du portail
-    out.lerp(SICK, smoothstep(-860, -1060, center.z) * 0.6 * (n > 0.6 ? 1 : 0.4));
+    out.lerp(SICK, smoothstep(stretchZ(-860), stretchZ(-1060), center.z) * 0.6 * (n > 0.6 ? 1 : 0.4));
   }
   // Le fond s'assombrit avec la profondeur
   out.multiplyScalar(1 - clamp(depth / 1400, 0, 0.55));
