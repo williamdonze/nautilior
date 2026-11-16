@@ -80,6 +80,18 @@ Jamais expliquées au joueur, mais tout le jeu doit les respecter.
 | Le Chœur | Les voix autour du lit |
 | La Glaneuse | Les mains des soignants |
 | L'Écorché, les bêtes décharnées | Son propre corps, immobile et abîmé |
+| La Sonde (un tuyau annelé qui cherche une bouche) | La sonde du respirateur |
+| L'Œil (un globe qu'une petite lampe force à rester ouvert) | La lampe du médecin dans ses pupilles |
+| Le Soufflet (deux poches qui se gonflent et se vident) | Ses poumons, que la machine remplit |
+| La Baleine qui chante au-dessus du Canyon | Hélène, qui fredonne tout bas la berceuse de ses deux garçons |
+| Les cloches à air | Les moments où il respire mieux |
+| Le pouls qui s'emballe et attire les bêtes | Son cœur, sur le moniteur |
+| La Chambre engloutie : le lit immense, la potence, la porte 112, les dalles qui dérivent | Sa chambre, la 112, vue de l'intérieur de sa tête |
+| Les lettres d'Anna, une par plongée | Ce qu'Anna lui lit ou lui dit, jour après jour |
+| Les volets qui se rouvrent à chaque souvenir | Sa mémoire qui revient |
+| La seule maison qui reste close | Celle de Yann |
+| La *Marie-Morgane* et ses filets | Le chalutier dont les filets perdus ont pris le Nautiliar |
+| Le petit sous-marin pris dans les mailles | Le sien, ce jour-là |
 | Le plongeur pâle (section 5) | Yann |
 
 ---
@@ -192,6 +204,13 @@ Dans le rêve, personne n'explique rien. Au réveil, tout est dit simplement.
 
 - **Le sonar est un cœur** : même son que le moniteur des fins. Il s'emballe sous la menace, ralentit à la mort, se tait quand on ferme.
 - **Le plongeur pâle** indique la direction du souvenir manquant le plus proche.
+- **Le pouls** : affiché en battements par minute. L'effort, le danger, le manque d'air le font monter. Au-dessus d'un seuil, les bêtes deviennent hardies ; plus haut encore, le ver se réveille. On peut passer le ver cœur calme.
+- **La Baleine** apaise le pouls quand on nage près d'elle, et emmène le sous-marin au-dessus d'un souvenir resté au fond.
+- **Les filets** du Canyon retiennent le sous-marin : on coupe à la pince, ou on arrache tout d'une impulsion. C'est ce qui est arrivé ce jour-là.
+- **Le souvenir du couteau se joue** : une demi-minute dans le Nautiliar d'alors, pris dans les mailles, pendant que quelqu'un coupe dehors. Personne ne dit qui. Quand le sous-marin se libère, la lampe reste en bas.
+- **Le village se rouvre** : chaque souvenir rouvre des volets. À huit, une seule maison reste close.
+- **Les lettres d'Anna** : une nouvelle dans la boîte après chaque plongée. Jamais « coma », jamais « hôpital ».
+- **La Chambre engloutie** entoure la faille : c'est là que le joueur doit commencer à douter pour de bon.
 - **Le carnet** : huit emplacements, visibles dès le début, dans l'ordre de la journée.
 - **La fin dépend des souvenirs** : avec les huit, Loïc se réveille en sachant. Hélène prévient si l'on part vers la faille sans tout avoir : « Il te reste des choses à toi, là-dessous. »
 - **L'écran-titre change** selon la fin vue. Après la Fin 1, la partie ne peut plus être chargée.

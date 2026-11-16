@@ -27,17 +27,18 @@ Rendu sous-marin réaliste et détaillé, dans l'esprit d'« Abyssal Garden » (
 - **Vite** + **JavaScript** (modules ES), pas de framework UI
 - **Three.js** (+ addons `three/examples/jsm` pour le post-processing)
 - **Rapier** (`@dimforge/rapier3d-compat`) pour la physique si nécessaire
-- HUD et dialogues en HTML/CSS par-dessus le canvas, avec une police pixel (par exemple « Press Start 2P » ou « VT323 »)
+- HUD et dialogues en HTML/CSS par-dessus le canvas, police Barlow Condensed
 - Sauvegarde dans `localStorage`
 
 ## Architecture
 ```
 src/
 ├── main.js
-├── core/        # boucle de jeu, renderer, post-processing pixel, inputs
+├── core/        # boucle de jeu, renderer, sons, inputs
 ├── submarine/   # contrôles, physique, caméra, jauges
 ├── claw/        # pince : visée, extension, prise, retour
-├── world/       # sol marin, décor, zones de profondeur, spawn des objets
+├── gpu/         # moteur WebGPU de la plongée (shaders, pont depuis la scène Three.js, kelp)
+├── world/       # sol marin (seabed.js), plafonds (roof.js), décor, créatures, filets, baleine, spawn des objets
 ├── loot/        # définitions des objets, raretés, table de loot pondérée
 ├── port/        # scène du port, marchand, améliorations, collection
 ├── story/       # dialogues, fragments de mémoire, état narratif, fins
