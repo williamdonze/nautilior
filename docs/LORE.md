@@ -205,6 +205,7 @@ Dans le rêve, personne n'explique rien. Au réveil, tout est dit simplement.
 - **Le sonar est un cœur** : même son que le moniteur des fins. Il s'emballe sous la menace, ralentit à la mort, se tait quand on ferme.
 - **Le plongeur pâle** indique la direction du souvenir manquant le plus proche.
 - **Le pouls** : jamais affiché (une jauge vendrait la mèche) ; on l'entend seulement, c'est le bip du sonar. L'effort, le danger, le manque d'air le font monter. Au-dessus d'un seuil, les bêtes deviennent hardies ; plus haut encore, le ver se réveille. On peut passer le ver cœur calme.
+- **Les bêtes** ne chargent qu'un cœur qui s'emballe : moteurs coupés, elles tournent sans attaquer. Jamais plus de trois à la fois. Le faisceau du phare les fait reculer. Aucune n'approche d'une cloche à air ni de la baleine.
 - **La Baleine** apaise le pouls quand on nage près d'elle, et emmène le sous-marin au-dessus d'un souvenir resté au fond.
 - **Les filets** du Canyon retiennent le sous-marin : on coupe à la pince, ou on arrache tout d'une impulsion. C'est ce qui est arrivé ce jour-là.
 - **Le souvenir du couteau se joue** : une demi-minute dans le Nautiliar d'alors, pris dans les mailles, pendant que quelqu'un coupe dehors. Personne ne dit qui. Quand le sous-marin se libère, la lampe reste en bas.

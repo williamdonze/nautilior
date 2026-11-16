@@ -132,7 +132,13 @@ export const ECHO = {
 export const DEFENSE = {
   RADIUS: 55, // portée de l'onde (m)
   FEAR_TIME: 7, // durée de la fuite (s)
-  COOLDOWN: 18, // recharge (s)
+  COOLDOWN: 18, // recharge (s) ; améliorable chez Marcel (upgrades.json, « pulse »)
+  MAX_ATTACKERS: 3, // jamais plus de bêtes en train de charger à la fois ; les autres rôdent
+  BEAM_RANGE: 0.75, // le faisceau du phare fait reculer les bêtes jusqu'à cette part de sa portée
+  BEAM_ANGLE: 0.8, // … dans cette part de son ouverture
+  BEAM_FEAR: 2.2, // durée du recul (s)
+  BELL_REFUGE: 22, // aucune bête hostile à moins de cette distance d'une cloche à air (m)
+  WHALE_REFUGE: 50, // … ni de la baleine (m)
 };
 
 /**

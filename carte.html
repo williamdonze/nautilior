@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nautiliar — carte du monde sous-marin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <style>
+      html, body { margin: 0; height: 100%; background: #061015; color: #d3e2dc; font: 400 15px 'Barlow Condensed', system-ui, sans-serif; letter-spacing: 0.04em; overflow: hidden; }
+      canvas { display: block; }
+      #panel { position: fixed; top: 14px; left: 14px; width: 250px; padding: 12px 14px; background: rgba(6, 16, 20, 0.86); border: 1px solid rgba(190, 220, 210, 0.22); border-radius: 4px; }
+      #panel h1 { margin: 0 0 2px; font-size: 20px; font-weight: 500; letter-spacing: 0.14em; }
+      #panel p { margin: 2px 0 8px; color: #7fa39c; font-size: 13px; line-height: 1.25; }
+      #panel h2 { margin: 10px 0 4px; font-size: 11px; font-weight: 500; letter-spacing: 0.28em; color: #7fa39c; }
+      label { display: block; cursor: pointer; }
+      button { margin: 2px 2px 2px 0; padding: 3px 9px; background: rgba(190, 220, 210, 0.08); border: 1px solid rgba(190, 220, 210, 0.24); border-radius: 2px; color: inherit; font: inherit; cursor: pointer; }
+      button:hover { background: rgba(190, 220, 210, 0.2); }
+      #read { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); padding: 6px 16px; background: rgba(6, 16, 20, 0.86); border: 1px solid rgba(190, 220, 210, 0.22); border-radius: 4px; font-size: 17px; white-space: nowrap; }
+      #read b { color: #e2c98c; font-weight: 500; }
+      #pins { margin-top: 6px; max-height: 120px; overflow: auto; font-size: 13px; color: #e2c98c; user-select: text; }
+      .tag { position: fixed; transform: translate(-50%, -130%); padding: 1px 7px; font-size: 13px; white-space: nowrap; background: rgba(6, 16, 20, 0.7); border-left: 2px solid var(--c, #e2c98c); text-shadow: 0 1px 4px #000; pointer-events: none; }
+      .tag.zone { font-size: 17px; letter-spacing: 0.2em; background: none; border: none; color: #fff; opacity: 0.75; }
+    </style>
+  </head>
+  <body>
+    <div id="panel">
+      <h1>CARTE DU MONDE</h1>
+      <p>Clic gauche : tourner · clic droit : déplacer · molette : zoom.<br />Double-clic sur le fond : poser un repère (coordonnées à me donner).</p>
+      <h2>ALLER À</h2>
+      <div id="views"></div>
+      <h2>AFFICHER</h2>
+      <div id="layers"></div>
+      <h2>REPÈRES POSÉS</h2>
+      <div id="pins">aucun</div>
+    </div>
+    <div id="read">Survole le fond pour lire sa position</div>
+    <script type="module" src="/src/dev/map.js"></script>
+  </body>
+</html>

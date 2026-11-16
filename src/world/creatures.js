@@ -235,7 +235,9 @@ class Mutant {
         this.wander.copy(base).add(new THREE.Vector3().randomDirection().multiplyScalar(dist < 90 ? 12 : 18));
       }
       desired.subVectors(this.wander, this.pos).normalize();
-      if (dist < cfg.aggroRadius && this.cooldown <= 0) {
+      // elle ne charge qu'un cœur qui s'emballe, et seulement s'il reste une place parmi les attaquants
+      if (dist < cfg.aggroRadius && this.cooldown <= 0 && (events.slots?.free ?? 1) > 0) {
+        if (events.slots) events.slots.free--;
         this.state = 'charge';
         this.timer = 0;
         if (!cfg.contact) events.growl?.(this);
@@ -417,6 +419,7 @@ export class Creatures {
     }
 
     let damage = 0;
+    this.events.slots = this.slots;
     for (const m of this.mutants) damage += m.update(dt, time, sub, this.events);
     return damage;
   }

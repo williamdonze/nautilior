@@ -161,6 +161,7 @@ export class Dive {
     // Cloches à air : des étapes dans les grandes descentes
     this.airBells = new AirBells(scene, this.decor.colliders);
     // Le plongeur pâle, qui montre où chercher
+    this._refuge = new THREE.Vector3();
     this.paleDiver = new PaleDiver(scene);
     this.nets = new NetForest(scene, this.decor.colliders);
     this.whale = new Whale(scene);
@@ -314,6 +315,46 @@ export class Dive {
     return C;
   }
 
+  /**
+   * Ce qui rend les bêtes supportables (voir DEFENSE dans config/settings.js) :
+   *  - elles ne chargent qu'un cœur qui s'emballe (moteurs coupés, on a la paix) ;
+   *  - jamais plus de DEFENSE.MAX_ATTACKERS à la fois, les autres rôdent ;
+   *  - le faisceau du phare les fait reculer : le danger vient de derrière et des côtés ;
+   *  - près d'une cloche à air ou de la baleine, aucune n'approche.
+   */
+  tameBeasts(dt) {
+    const { sub, creatures, wildlife } = this, P = sub.position;
+    const refuge = this.atBell || (this.whale.near ?? 0) > 0.25;
+    const bold = (this.bpm ?? 0) > PULSE.HUNT && !refuge;
+    const slots = (this.aggro ??= { free: 0 });
+    slots.free = bold ? Math.max(0, DEFENSE.MAX_ATTACKERS - creatures.threat - wildlife.threat) : 0;
+    creatures.slots = wildlife.slots = slots;
+    // le cœur s'est calmé : celles qui chargeaient renoncent
+    if (!bold) for (const m of creatures.mutants) if (m.state === 'charge') { m.state = 'wander'; m.cooldown = 2.5; }
+    wildlife.bold = bold;
+    // Refuges : tout ce qui est hostile s'écarte des cloches et de la baleine
+    this.refugeTimer = (this.refugeTimer ?? 0) - dt;
+    if (this.refugeTimer <= 0) {
+      this.refugeTimer = 0.4;
+      const spots = this.airBells.spots.map((b) => [b.x, b.y, b.z, DEFENSE.BELL_REFUGE]);
+      if (this.whale.pos.distanceTo(P) < 260) spots.push([this.whale.pos.x, this.whale.pos.y, this.whale.pos.z, DEFENSE.WHALE_REFUGE]);
+      for (const [x, y, z, r] of spots) {
+        if (Math.hypot(x - P.x, z - P.z) > 160) continue;
+        this._refuge.set(x, y, z);
+        creatures.scare(this._refuge, r, 3);
+        wildlife.scareHostile(this._refuge, r, 3);
+      }
+    }
+    // Le phare : ce qui entre dans le faisceau recule
+    if (sub.spot.intensity > 1) {
+      sub.getLightRay(this._lightPos, this._lightDir);
+      const range = (stats.lightRange ?? 30) * DEFENSE.BEAM_RANGE, cos = Math.cos(sub.spot.angle * DEFENSE.BEAM_ANGLE);
+      const inBeam = (p) => { const dx = p.x - this._lightPos.x, dy = p.y - this._lightPos.y, dz = p.z - this._lightPos.z, d = Math.hypot(dx, dy, dz); return d < range && d > 0.5 && (dx * this._lightDir.x + dy * this._lightDir.y + dz * this._lightDir.z) / d > cos; };
+      for (const m of creatures.mutants) if (m.state !== 'retreat' && inBeam(m.pos)) { m.state = 'retreat'; m.timer = DEFENSE.BEAM_FEAR; }
+      for (const a of wildlife.animals) if (a.spec.damage > 0 && a.state !== 'scared' && a.spec.behavior !== 'walker' && inBeam(a.pos)) a.scare(DEFENSE.BEAM_FEAR);
+    }
+  }
+
   /** Tout ce qui bouge, pour le sonar 3D (dessiné avec les points de son propre corps) */
   movers() {
     const M = (this._movers ??= []);
@@ -367,11 +408,11 @@ export class Dive {
    */
   pulse() {
     if (this.pulseCooldown > 0 || this.autopilot) return;
-    this.pulseCooldown = DEFENSE.COOLDOWN;
+    this.pulseCooldown = (stats.pulseCooldown ?? DEFENSE.COOLDOWN);
     this.sound.pulse?.();
-    this.creatures.scare(this.sub.position, DEFENSE.RADIUS, DEFENSE.FEAR_TIME);
-    this.wildlife.scare(this.sub.position, DEFENSE.RADIUS, DEFENSE.FEAR_TIME);
-    this.guardian?.scare(DEFENSE.FEAR_TIME * 0.5);
+    this.creatures.scare(this.sub.position, DEFENSE.RADIUS, (stats.pulseFear ?? DEFENSE.FEAR_TIME));
+    this.wildlife.scare(this.sub.position, DEFENSE.RADIUS, (stats.pulseFear ?? DEFENSE.FEAR_TIME));
+    this.guardian?.scare((stats.pulseFear ?? DEFENSE.FEAR_TIME) * 0.5);
     if (this.nets.blast(this.sub.position, NETS.BLAST)) this.sound.release?.();
     this.radar.pulse?.();
     this.pulseFx = 1;
@@ -401,7 +442,6 @@ export class Dive {
     this.bpm += (target - this.bpm) * Math.min(1, dt * (target > this.bpm ? PULSE.RISE : PULSE.CALM));
     const stress = Math.min(1, Math.max(0, (this.bpm - PULSE.REST) / 60));
     // les bêtes sentent un cœur qui s'emballe
-    this.wildlife.bold = this.bpm > PULSE.HUNT;
     this.guardian.provoked = this.bpm > PULSE.WORM;
     this.hud.setPulse2?.(this.bpm);
     this.beatPhase = (this.beatPhase ?? 0) + (dt * this.bpm) / 60;
@@ -475,7 +515,7 @@ export class Dive {
     this.pulseCooldown = Math.max(0, this.pulseCooldown - dt);
     this.pulseFx = Math.max(0, this.pulseFx - dt * 0.9);
     if (this.echoAge != null && (this.echoAge += dt) > ECHO.DURATION) this.echoAge = null;
-    hud.setPulse?.(1 - this.pulseCooldown / DEFENSE.COOLDOWN);
+    hud.setPulse?.(1 - this.pulseCooldown / (stats.pulseCooldown ?? DEFENSE.COOLDOWN));
     // Pendant une cinématique, ni l'air ni la coque ne s'épuisent
     if (!this.autopilot) survival.update(dt, sub);
     sub.update(dt, time, survival.dead || this.autopilot ? this.noInput : this.input);
@@ -500,7 +540,7 @@ export class Dive {
         throttle: sub.throttle,
         speed: sub.speed,
         cargo: { count: this.hold.items?.length ?? this.hold.count ?? 0, max: this.hold.capacity ?? this.hold.max ?? 0 },
-        pulseReady: 1 - this.pulseCooldown / DEFENSE.COOLDOWN,
+        pulseReady: 1 - this.pulseCooldown / (stats.pulseCooldown ?? DEFENSE.COOLDOWN),
         echo: survival.stats.sonar3d ? this.echoAge == null : null,
         aim: this.aim.inRange && !!this.aim.pickup && !this.hold.full,
         clawBusy: this.claw.busy,
@@ -596,6 +636,7 @@ export class Dive {
       hud.showZone(zone);
     }
     if (!survival.dead) {
+      this.tameBeasts(dt);
       const damage = this.creatures.update(dt, time, sub, zone);
       if (damage > 0 && !this.autopilot) survival.damage(damage, 'creature');
       this.wildlife.calm = this.creatures.calm;

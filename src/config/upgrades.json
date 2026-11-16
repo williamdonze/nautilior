@@ -1,5 +1,5 @@
 {
-  "_comment": "Améliorations vendues par le mécano. Chaque niveau remplace les caractéristiques listées dans 'stats'. Le niveau 0 est l'équipement d'origine. Coûts en francs. speedMul / liftMul (coque) = vitesse d'avance et de montée/descente ; auraIntensity / auraRange (phare) = lumière diffuse autour du sous-marin.",
+  "_comment": "Améliorations vendues par le mécano. Chaque niveau remplace les caractéristiques listées dans 'stats'. Le niveau 0 est l'équipement d'origine. Coûts en francs. speedMul / liftMul (coque) = vitesse d'avance et de montée/descente ; auraIntensity / auraRange (phare) = lumière diffuse autour du sous-marin. pulseCooldown / pulseFear (impulsion) = recharge de l'impulsion de défense et durée de la fuite des bêtes (s).",
   "categories": [
     {
       "id": "oxygen",
@@ -269,6 +269,44 @@
           "description": "Touche R : une onde dessine en points, à travers le noir, la forme de tout ce qui entoure le Nautiliar.",
           "stats": {
             "sonar3d": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "pulse",
+      "name": "Impulsion",
+      "levels": [
+        {
+          "label": "Condensateur d'origine",
+          "cost": 0,
+          "stats": {
+            "pulseCooldown": 18,
+            "pulseFear": 7
+          }
+        },
+        {
+          "label": "Condensateur rebobiné",
+          "cost": 900,
+          "stats": {
+            "pulseCooldown": 13,
+            "pulseFear": 8
+          }
+        },
+        {
+          "label": "Double condensateur",
+          "cost": 2600,
+          "stats": {
+            "pulseCooldown": 10,
+            "pulseFear": 9
+          }
+        },
+        {
+          "label": "Banc de condensateurs",
+          "cost": 6500,
+          "stats": {
+            "pulseCooldown": 8,
+            "pulseFear": 10
           }
         }
       ]
