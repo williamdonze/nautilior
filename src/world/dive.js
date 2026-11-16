@@ -494,6 +494,12 @@ export class Dive {
         hull: survival.hullRatio,
         heading: ((((-sub.yaw * 180) / Math.PI) % 360) + 360) % 360,
         throttle: sub.throttle,
+        speed: sub.speed,
+        cargo: { count: this.hold.items?.length ?? this.hold.count ?? 0, max: this.hold.capacity ?? this.hold.max ?? 0 },
+        pulseReady: 1 - this.pulseCooldown / DEFENSE.COOLDOWN,
+        echo: survival.stats.sonar3d ? this.echoAge == null : null,
+        aim: this.aim.inRange && !!this.aim.pickup && !this.hold.full,
+        clawBusy: this.claw.busy,
         time,
       });
     } else follow.update(dt, sub);
