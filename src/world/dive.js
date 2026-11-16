@@ -559,7 +559,8 @@ export class Dive {
       const n = Math.sin(time * 31) * Math.sin(time * 7.3) + Math.sin(time * 2.1 + Math.sin(time * 0.37) * 4);
       lamp = n > (hr < 0.25 ? -0.35 : -1.25) ? 0.8 + 0.2 * Math.sin(time * 53) : 0.04;
     }
-    sub.spot.intensity = stats.lightIntensity * 1.8 * beamK * lamp;
+    // (le rendu de repli Three.js n'a pas la même réponse lumineuse : phare moitié moins fort, sinon le fond brûle)
+    sub.spot.intensity = stats.lightIntensity * 1.8 * beamK * lamp * (gpuMode.active ? 1 : 0.5);
     sub.spot.distance = stats.lightRange * 1.3;
     rp.spot = beamK * (stats.lightIntensity / 85) * lamp;
     this.pixel.setRays(rp);

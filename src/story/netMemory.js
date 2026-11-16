@@ -51,8 +51,9 @@ export async function playNetMemory(game) {
   const yann = new PaleDiver(scene), yo = yann.object, c = yann.character;
   yo.visible = true;
   yo.userData.fade = 0;
+  dive.memoryActor = yo; // (repère pour les tests)
   let alive = true, time = 0, last = performance.now(), cutting = 0, free = false;
-  const local = new THREE.Vector3(-8, 0.2, 7.2), goal = new THREE.Vector3(-1.6, 0.4, 7.2), world = new THREE.Vector3();
+  const local = new THREE.Vector3(-8, -0.7, 7.2), goal = new THREE.Vector3(-1.6, -0.5, 7.2), world = new THREE.Vector3();
   const loop = (now) => {
     if (!alive) return;
     const dt = Math.min(0.05, (now - last) / 1000);
@@ -90,7 +91,7 @@ export async function playNetMemory(game) {
   // Trois pans, l'un après l'autre
   const where = [[-1.5, 0.3], [1.4, 0], [0, 0.9]];
   for (let i = 0; i < 3; i++) {
-    goal.set(where[i][0] * 1.1, where[i][1] + 0.2, 7.2);
+    goal.set(where[i][0] * 1.1, where[i][1] * 0.6 - 0.7, 7.2);
     await wait(2200);
     cutting = 1;
     for (let k = 0; k < 4; k++) { sound.clank?.(0.25); await wait(480); }
