@@ -511,6 +511,14 @@ fn pal(h: f32) -> vec3f {
     case 4 { col = mix(vec3f(.30, .15, .02), vec3f(.42, .25, .04), s1); pr = vec4f(.2, 1., .1, 0.); spc = vec3f(1., .85, .5); shp = vec2f(.5, .4); wav = 1.8; }
     case 5 { col = mix(vec3f(.85, .05, .40), vec3f(.60, .10, .80), step(.7, s1)); col = mix(col, vec3f(.95, .25, .55), step(.75, s2)); pr = vec4f(.22, .8, 0., .30); spc = vec3f(1., .35, .8); shp = vec2f(.6, .6); fls = 2.; }
     case 6 { col = mix(vec3f(.80, .16, .16), vec3f(.92, .36, .42), s1); pr = vec4f(.06, 1., 0., .10); spc = vec3f(1., .5, .5); shp = vec2f(.4, .3); wav = 2.; }
+    // --- flore des tunnels et des grands fonds : elle fait sa propre lumière (pr.w > 1)
+    case 9 { col = mix(vec3f(.80, .05, .07), vec3f(.95, .16, .10), s1); pr = vec4f(.1, 1., 0., 1.75 + .5 * sin(t * 1.9 + s2 * 6.3)); spc = vec3f(1., .3, .3); shp = vec2f(.35, .22); wav = .7; fls = .5; } // veine rouge (elle bat)
+    case 10 { col = mix(vec3f(.06, .20, .85), vec3f(.20, .42, 1.), s1); pr = vec4f(.1, 1., .2, 1.75 + .5 * sin(t * 1.9 + s2 * 6.3 + 1.6)); spc = vec3f(.4, .6, 1.); shp = vec2f(.35, .22); wav = .7; fls = .5; } // veine bleue
+    case 11 { col = mix(vec3f(.30, .62, .70), vec3f(.48, .80, .78), s1); pr = vec4f(.5, 1.2, .95, 1.55); spc = vec3f(.7, 1., 1.); shp = vec2f(.95, .45); wav = .12; fls = .15; } // lame de verre
+    case 12 { col = mix(vec3f(.62, .58, .48), vec3f(.78, .70, .62), s1); pr = vec4f(.1, 1.2, .1, 1.42); spc = vec3f(1., .95, .8); shp = vec2f(.5, .28); wav = 2.6; fls = 1.6; } // plume de mer, cils
+    case 13 { col = mix(vec3f(.92, .84, .86), vec3f(.98, .92, .80), s1); pr = vec4f(.3, 1.3, .2, 1.6); spc = vec3f(1., .9, .85); shp = vec2f(.75, .8); wav = .8; } // fleur de chevet
+    case 14 { col = mix(vec3f(.42, .66, .56), vec3f(.60, .78, .70), s1); pr = vec4f(.05, 1.4, .3, 1.25); spc = vec3f(.6, 1., .8); shp = vec2f(.2, .12); wav = 1.2; fls = .6; } // liane (tubulure) qui pend
+    case 15 { col = mix(vec3f(.95, .42, .06), vec3f(1., .20, .05), s1); pr = vec4f(.2, 1., 0., 1.9); spc = vec3f(1., .6, .2); shp = vec2f(.6, .5); wav = 1.4; } // braise : panaches des sources chaudes
     case 8 { col = mix(vec3f(.05, .50, .16), vec3f(.20, .62, .22), s1); pr = vec4f(.3, 1., 0., 1.4); spc = vec3f(.4, 1., .5); shp = vec2f(.55, .5); wav = 1.6; }
     default { col = mix(vec3f(.05, .40, .36), vec3f(.10, .52, .58), s1); pr = vec4f(.1, .9, .2, .04); spc = vec3f(.3, 1., .9); shp = vec2f(.6, .5); }
   }

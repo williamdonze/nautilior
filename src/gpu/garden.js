@@ -9,11 +9,12 @@
  * Types : 0 kelp vert/doré · 1 tige · 2 herbier turquoise · 3 algue sombre irisée · 4 algue ambrée
  *         5 tapis rose · 6 fronde rouge · 7 touffe bleu-vert · 8 pousse verte luminescente (portail)
  */
-import { headroom } from '../world/roof.js';
-import { getFloorHeight } from '../world/seabed.js';
+import { headroom, getRoof } from '../world/roof.js';
+import { getFloorHeight, canyonCenter, tunnelAt, tunnelSection } from '../world/seabed.js';
 import { createNoise2D } from '../world/noise.js';
 import { createRandom, smoothstep } from '../core/utils.js';
-import { RADIATION, SUBMARINE, WORLD, SEABED } from '../config/settings.js';
+import { RADIATION, SUBMARINE, WORLD, SEABED, LAYOUT } from '../config/settings.js';
+import fragmentsData from '../story/fragments.json';
 import { WRECK_SPOTS } from '../world/landmarks.js';
 
 // Grille de culling (plan XZ)
@@ -130,7 +131,7 @@ export function buildGarden(density = 1) {
       const t = Math.pow(rnd(), 0.9), h = t * H, p = stem((rnd() * strands) | 0, h);
       const L = ((0.55 + 0.75 * rnd() * rnd()) * (1 - 0.5 * t * t) * sc + 0.25) * (kind === 1 ? 1.25 : 1.15);
       const tilt = rr(0.4, 1.0) + (rr(0.15, 0.45) - rr(0.4, 1.0)) * t;
-      const type = kind === 1 ? (rnd() < 0.8 ? 3 : 4) : kind === 2 ? (rnd() < 0.5 ? 4 : 0) : 0;
+      const type = kind === 3 ? (rnd() < 0.85 ? 11 : 15) : kind === 1 ? (rnd() < 0.8 ? 3 : 4) : kind === 2 ? (rnd() < 0.5 ? 4 : 0) : 0;
       leaf(big, p[0], y + h, p[1], L, rnd() * TAU, tilt, L * (kind === 1 ? rr(0.09, 0.13) : rr(0.15, 0.21)) + 0.03, h, type, rnd(), rnd(), rr(0.38, 0.95));
     }
     for (let i = Math.floor(H * (kind === 1 ? 16 : 13) * density); i > 0; i--) {
@@ -191,6 +192,94 @@ export function buildGarden(density = 1) {
       const yaw = Math.atan2(-dz, -dx), n = (5 + rnd() * 7) | 0;
       newStalk(x, y, z, 2.2);
       for (let j = 0; j < n; j++) leaf(big, x, y, z, rr(0.5, 1.6), yaw + rr(-0.9, 0.9), rr(0.3, 1.1), rr(0.06, 0.12), 0.5, depth > 120 ? (rnd() < 0.7 ? 3 : 6) : rnd() < 0.3 ? 6 : 0, rnd(), rnd(), rr(0.2, 0.6));
+    }
+  }
+
+  /* =====================================================================================
+   * Flore des tunnels et des grands fonds. Rien de tout cela n'est une plante : ça luit tout seul.
+   * Chaque tunnel a la sienne ; les Abysses ont leurs prairies ; les souvenirs ont leurs fleurs.
+   * ===================================================================================== */
+  const tuft = (x, y, z, n, type, lmin, lmax, wmin, wmax, tmin, tmax, sway, yaw = null, spread = 0.5) => {
+    newStalk(x, y, z, lmax + sway);
+    for (let i = 0; i < n; i++) {
+      const a = rnd() * TAU, r = rnd() * spread, L = rr(lmin, lmax);
+      leaf(big, x + Math.cos(a) * r, y - 0.1, z + Math.sin(a) * r, L, yaw === null ? a : yaw + rr(-0.5, 0.5), rr(tmin, tmax), rr(wmin, wmax), sway, type, rnd(), rnd(), rr(0.3, 0.75));
+    }
+  };
+  /** Ce qui pend d'un plafond (tilt ≈ π : vers le bas) */
+  const hang = (x, y, z, n, type, lmin, lmax, wmin, wmax) => {
+    newStalk(x, y - lmax, z, lmax);
+    for (let i = 0; i < n; i++) leaf(big, x + rr(-0.5, 0.5), y + 0.2, z + rr(-0.5, 0.5), rr(lmin, lmax), rnd() * TAU, Math.PI - rr(0, 0.22), rr(wmin, wmax), 0.5, type, rnd(), rnd(), rr(0.4, 0.7));
+  };
+  /** Lys de mer : une tige, une couronne de bras au sommet */
+  const lily = (x, y, z, h, type) => {
+    newStalk(x, y, z, h + 1);
+    leaf(big, x, y - 0.1, z, h, rnd() * TAU, rr(0, 0.12), 0.07, 0, 1, rnd(), rnd(), 0.5);
+    const n = (9 + rnd() * 8) | 0;
+    for (let i = 0; i < n; i++) leaf(big, x, y + h * 0.96, z, rr(0.5, 1.1), (i / n) * TAU, rr(0.5, 1.15), rr(0.05, 0.09), h, type, rnd(), rnd(), rr(0.55, 0.9));
+  };
+
+  for (const t of LAYOUT.TUNNELS) {
+    const len = t.z0 - t.z1, tries = Math.floor(len * 62 * density);
+    for (let i = 0; i < tries; i++) {
+      const z = rr(t.z1 - 30, t.z0 + 30), c = tunnelSection(t, z), cx = c.x, cr = c.r;
+      const x = cx + rr(-1, 1) * cr * 1.15, y = getFloorHeight(x, z), R = getRoof(x, z);
+      if (!R || R.c - y < 1.5) continue;
+      const roofC = R.c, q = Math.abs(x - cx) / (cr * 1.2), u = rnd(), n01 = fbm(x, z, 0.05);
+      if (t.id === 'veines') {
+        // Des racines rouges et bleues courent sur le sol et remontent les parois ; d'autres pendent de la voûte.
+        const type = fbm(x + 40, z, 0.02) > 0.5 ? 9 : 10;
+        if (u < 0.34) tuft(x, y, z, (7 + rnd() * 10) | 0, type, 2, 7, 0.16, 0.36, 0.9 + q * 0.3, 1.45, 0.6, Math.PI * (x > cx ? 0 : 1), 1.2);
+        else if (u < 0.5 && n01 > 0.45) hang(x, roofC, z, (4 + rnd() * 7) | 0, type, 3, 6 + (roofC - y) * 0.4, 0.13, 0.3);
+        else if (u < 0.56) tuft(x, y, z, (10 + rnd() * 10) | 0, type, 0.8, 2.4, 0.12, 0.24, 0.1, 0.8, 0.8);
+        if (u < 0.1) glint(x, y + rr(0.5, 6), z, 0, rnd(), type === 9 ? 0.9 : 0.7, rr(0.015, 0.04));
+      } else if (t.id === 'trachee') {
+        // Des cils pâles en rangs serrés sur les arceaux : ils battent tous ensemble, dans le sens du souffle.
+        const rib = Math.pow(Math.max(0, Math.cos((z / t.ribs) * TAU)), 8);
+        if (rib > 0.25 && u < 0.85) {
+          if (rnd() < 0.6) tuft(x, y, z, (8 + rnd() * 8) | 0, 12, 1.4, 3.6, 0.12, 0.24, 0.25, 0.7, 2.2, Math.PI * 0.5, 0.6);
+          else hang(x, roofC, z, (5 + rnd() * 6) | 0, 12, 2, 5, 0.12, 0.24);
+        } else if (u < 0.05) tuft(x, y, z, (5 + rnd() * 5) | 0, 12, 0.5, 1.2, 0.04, 0.08, 0.2, 0.9, 1.2);
+      } else {
+        // Le Jardin de verre : buissons de lames translucides, arbres de verre, panaches de braise autour des sources, lianes.
+        const grove = smoothstep(0.42, 0.6, n01);
+        if (u < 0.22 * (0.3 + grove)) tuft(x, y, z, (6 + rnd() * 10) | 0, 11, 1.2, 4.5 + grove * 4, 0.12, 0.34, 0.02, 0.5, 0.2, null, 0.9);
+        else if (u < 0.36 && grove > 0.5 && q < 0.7) { const H = Math.min(roofC - y - 2, rr(8, 22)); if (H > 5) column(x, y - 0.3, z, H, 3, 0.7); }
+        else if (u < 0.46 && fbm(x - 200, z + 90, 0.035) > 0.62) tuft(x, y, z, (10 + rnd() * 14) | 0, 15, 0.8, 2.6, 0.1, 0.2, 0.1, 0.7, 1.4);
+        else if (u < 0.5 && n01 < 0.42) hang(x, roofC, z, (2 + rnd() * 4) | 0, 14, 3, 5 + (roofC - y) * 0.45, 0.14, 0.26);
+        if (u < 0.16) glint(x, y + rr(0.5, roofC - y - 1), z, 0, rnd(), rnd() < 0.75 ? 0.7 : 0.2, rr(0.015, 0.045));
+      }
+    }
+  }
+
+  /* ---- Canyon et Abysses : prairies de plumes, lys de mer, verre épars ; la Salle et ses lianes */
+  for (let i = Math.floor(130000 * density); i > 0; i--) {
+    // deux tirages sur trois dans les Abysses : c'est là que la plaine doit être habitée
+    const x = rr(-190, 190), z = i % 3 ? rr(SEABED.Z_END + 60, LAYOUT.BASINS[3].z0 + 30) : rr(LAYOUT.BASINS[2].z1, LAYOUT.BASINS[2].z0), y = getFloorHeight(x, z);
+    if (tunnelAt(z) || slopeY(x, z) < 0.6 || portalAt(x, z) > 0.5) continue;
+    const abyss = z < LAYOUT.BASINS[3].z0 + 40, u = rnd(), R = getRoof(x, z);
+    if (R && R.c - y < 2) continue;
+    const field = smoothstep(0.46, 0.62, fbm(x + 120, z - 60, 0.018)), lil = smoothstep(0.5, 0.66, fbm(x - 300, z + 200, 0.022));
+    if (R && R.c - y > 14 && u < 0.5) { hang(x, R.c, z, (3 + rnd() * 5) | 0, 14, 3, 6 + (R.c - y) * 0.4, 0.14, 0.28); continue; } // voûtes, la Salle
+    if (u < (abyss ? 0.6 : 0.22) * (0.15 + field)) tuft(x, y, z, (6 + rnd() * 9) | 0, 12, 1.0, 3.2, 0.14, 0.3, 0.05, 0.45, 1.6);
+    else if (u < (abyss ? 0.55 : 0.25) * (0.1 + lil)) lily(x, y, z, rnd() < 0.08 ? rr(5, 9) : rr(1.4, 3.6), abyss ? 12 : 3);
+    else if (abyss && u < 0.09) tuft(x, y, z, (5 + rnd() * 7) | 0, 11, 1, 4, 0.14, 0.3, 0.02, 0.45, 0.2);
+    else if (abyss && u < 0.098 && !R) column(x, y - 0.3, z, rr(9, 20), 3, 0.6); // arbres de verre : on les voit de loin, on s'y repère
+    else if (!abyss && u < 0.03) { const H = rr(5, 13); if (!R || R.c - y > H + 2) column(x, y - 0.3, z, H, 1, 0.5); } // « coraux noirs »
+    if (abyss && u < 0.02) glint(x, y + rr(0.4, 3), z, 0, rnd(), 0.7, rr(0.012, 0.03));
+  }
+
+  /* ---- Les fleurs de chevet : elles ne poussent qu'autour des souvenirs (on apprend à les chercher) */
+  for (const f of fragmentsData.fragments) {
+    const fx = f.inCanyon ? canyonCenter(f.z) + f.x : f.x;
+    for (let i = 0; i < 46; i++) {
+      const a = rnd() * TAU, r = 1.6 + Math.pow(rnd(), 1.6) * 9, x = fx + Math.cos(a) * r, z = f.z + Math.sin(a) * r, y = getFloorHeight(x, z);
+      const h = rr(0.5, 1.5);
+      newStalk(x, y, z, h + 0.6);
+      leaf(big, x, y - 0.05, z, h, rnd() * TAU, rr(0, 0.25), 0.05, 0, 1, rnd(), rnd(), 0.5);
+      const n = 5 + ((rnd() * 3) | 0);
+      for (let k = 0; k < n; k++) leaf(big, x, y + h * 0.95, z, rr(0.22, 0.4), (k / n) * TAU, rr(0.7, 1.2), rr(0.16, 0.24), h, 13, rnd(), rnd(), rr(0.6, 0.9));
+      if (rnd() < 0.5) glint(x, y + h + rr(0.2, 1.4), z, 0, rnd(), 0.95, rr(0.012, 0.028));
     }
   }
 
