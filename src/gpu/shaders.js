@@ -177,6 +177,7 @@ const S_B = S_G + /*wgsl*/`
 @group(0) @binding(6) var tD: texture_2d<f32>;
 @group(0) @binding(7) var tM: texture_2d<f32>;
 @group(0) @binding(8) var tB: texture_2d<f32>;
+@group(0) @binding(9) var tLm: texture_2d<f32>;
 // Flexion d'une algue : chaque tige est une chaîne de 8 points simulée sur le processeur (kelpSim.js).
 // col = numéro de tige + 1 (0 = aucune), h = hauteur le long de la tige (m). Renvoie le déplacement.
 fn bend(col: f32, h: f32) -> vec3f {
@@ -218,14 +219,19 @@ fn vol(p: vec3f) -> vec4f { return vec4f(1.); }
 fn muv(p: vec3f) -> vec2f { return vec2f((p.x - (${MAP.X0}.)) / ${MAP.W}., (p.z - (${MAP.Z0}.)) / ${MAP.L}.); }
 fn amb(p: vec3f, n: vec3f, sky: f32, z: f32) -> vec3f {
   let up = n.y * .5 + .5;
-  return mix(vec3f(.22, .60, .80), vec3f(.34, .56, .82), z) * exp(kd(z) * DK * min(p.y, 0.) * 1.2) * (.3 + .7 * sky) * (.24 + .76 * up * up) * 1.3 * (.55 + .45 * sat(-p.y / 30.)) + vec3f(.003, .010, .016);
+  return mix(vec3f(.22, .60, .80), vec3f(.34, .56, .82), z) * exp(kd(z) * DK * min(p.y, 0.) * 1.2) * (.3 + .7 * sky) * (.24 + .76 * up * up) * 1.3 * (.55 + .45 * sat(-p.y / 30.)) + vec3f(.003, .010, .016) + lmap(p) * (.55 + .45 * up);
 }
 fn zone(p: vec3f) -> f32 { return 0.; }
+// Lumière de la flore : une carte du monde vue de dessus, où chaque touffe lumineuse a déposé sa couleur (voir garden.js).
+// Elle éclaire le fond, la roche, les bêtes et la coque : on navigue à vue là où ça pousse.
+fn lmap(p: vec3f) -> vec3f { let c = textureSampleLevel(tLm, sC, muv(p), 0.).rgb; return c * c * .42; }
+// Sous la roche, l'eau est immobile et limpide : on voit les lueurs de plus loin (g.sun.w = 1 quand on est couvert).
+fn clr() -> f32 { return 1. - .5 * g.sun.w; }
 fn side(p: vec3f, n: vec3f, open: f32, z: f32) -> vec3f { return mix(WCOL, PCOL, z) * exp(kd(z) * DK * min(p.y, 0.)) * open * (1. - abs(n.y)) * .7; }
 // skylight at most 150 m along the ray: past that, terrain and the background behind it (vsB) get the same haze
 fn fog(c: vec3f, wp: vec3f, z: f32) -> vec3f {
   let v = wp - g.cam.xyz; let d = length(v); let rd = v / d;
-  return c * exp(-sg(z) * d) * ss(230., 185., d) + fogIn(g.cam.xyz, rd, d, z, g.sun.xyz) * g.fx.y + GLOWC * g.fx.x * (1. - exp(-.02 * d));
+  return c * exp(-sg(z) * d * clr()) * ss(230., 185., d) + lmap(g.cam.xyz + rd * min(d, 30.) * .5) * (1. - exp(-.012 * d)) * .22 + fogIn(g.cam.xyz, rd, d, z, g.sun.xyz) * g.fx.y + GLOWC * g.fx.x * (1. - exp(-.02 * d));
 }
 // Lumières du jeu (phare, veilleuses, portail) : éclairement reçu en p, atténué par l'eau.
 // two = 1 pour les surfaces fines (feuilles) éclairées des deux côtés.
@@ -497,7 +503,7 @@ fn pal(h: f32) -> vec3f {
   let u = f32(vi & 1u) * 2. - 1.; let v = sin(f32(vi >> 1u) / (ROWS - 1.) * 1.5708);
   let ty = i32(i.c.x * 255. + .5); let s1 = i.c.y; let s2 = i.c.z;
   let t = g.cam.w;
-  let len = i.a.w; let hA = i.b.w;
+  var len = i.a.w; let hA = i.b.w;
   let cy = cos(i.b.x); let sy = sin(i.b.x); let ct = cos(i.b.y); let st = sin(i.b.y);
   let d = vec3f(st * cy, ct, st * sy); let pe = vec3f(ct * cy, -st, ct * sy); let sd = vec3f(-sy, 0., cy);
   // per type: x sparkle prob, y translucency, z iridescence, w emissive
@@ -519,11 +525,22 @@ fn pal(h: f32) -> vec3f {
     case 13 { col = mix(vec3f(.92, .84, .86), vec3f(.98, .92, .80), s1); pr = vec4f(.3, 1.3, .2, 1.6); spc = vec3f(1., .9, .85); shp = vec2f(.75, .8); wav = .8; } // fleur de chevet
     case 14 { col = mix(vec3f(.42, .66, .56), vec3f(.60, .78, .70), s1); pr = vec4f(.05, 1.4, .3, 1.25); spc = vec3f(.6, 1., .8); shp = vec2f(.2, .12); wav = 1.2; fls = .6; } // liane (tubulure) qui pend
     case 15 { col = mix(vec3f(.95, .42, .06), vec3f(1., .20, .05), s1); pr = vec4f(.2, 1., 0., 1.9); spc = vec3f(1., .6, .2); shp = vec2f(.6, .5); wav = 1.4; } // braise : panaches des sources chaudes
+    case 16 { col = mix(vec3f(1., .52, .30), vec3f(1., .70, .45), s1); pr = vec4f(.2, 1.2, .1, 1.75); spc = vec3f(1., .7, .5); shp = vec2f(.7, .7); wav = .5; } // pétale d'œillet (il s'ouvre quand on approche : voir plus bas)
+    case 17 { col = mix(vec3f(.80, .64, .62), vec3f(.92, .78, .74), s1); pr = vec4f(.1, 1.4, .1, 1.3 + .25 * sin(t * .5)); spc = vec3f(1., .85, .8); shp = vec2f(.6, .6); wav = .9; len *= 1. + .22 * sin(t * .5); } // feuille d'arbre-poumon : tout l'arbre respire
+    case 18 { let hq = fract(s1 * 3.99); col = mix(mix(vec3f(.2, .85, .95), vec3f(.62, .36, 1.), step(.33, hq)), vec3f(1., .62, .2), step(.66, hq)); pr = vec4f(.3, 1.2, .8, 1.8); spc = col; shp = vec2f(.98, .1); wav = 0.; fls = 0.; } // tuyau d'orgue
+    case 19 { col = mix(vec3f(.45, .82, 1.), vec3f(.70, .95, 1.), s1); pr = vec4f(.2, 1.3, .4, 1.95); spc = vec3f(.7, .95, 1.); shp = vec2f(.2, .1); wav = 1.3; fls = .7; } // filament de saule de verre
+    case 20 { col = mix(vec3f(1., .60, .16), vec3f(.20, .90, .80), step(.5, s1)); pr = vec4f(.1, 1.1, .2, 1.85); spc = col; shp = vec2f(.85, .9); wav = .1; fls = .2; } // chapeau de champignon-lanterne
+    case 21 { col = mix(vec3f(1., .86, .58), vec3f(.80, .92, 1.), s1); pr = vec4f(.3, 1.3, .3, 1.9); spc = vec3f(1., .9, .7); shp = vec2f(.7, .8); wav = .3; } // cloche de lustre
+    case 22 { col = vec3f(.96, .84, .52); pr = vec4f(.2, 1., .2, 1.65); spc = vec3f(1., .9, .6); shp = vec2f(.6, .3); wav = 0.; fls = 0.; } // fleur-horloge
+    case 23 { col = mix(vec3f(.36, .28, .24), vec3f(.46, .38, .32), s1); pr = vec4f(0., .3, 0., 1.06); shp = vec2f(.3, .16); wav = .1; fls = .2; } // bois pâle (verger, arbres à l'envers)
+    case 24 { col = mix(vec3f(.30, .85, .70), vec3f(.55, 1., .80), s1); pr = vec4f(.2, 1.2, .2, 1.7); spc = vec3f(.6, 1., .8); shp = vec2f(.55, .5); wav = 1.5; } // feuillage des arbres à l'envers
     case 8 { col = mix(vec3f(.05, .50, .16), vec3f(.20, .62, .22), s1); pr = vec4f(.3, 1., 0., 1.4); spc = vec3f(.4, 1., .5); shp = vec2f(.55, .5); wav = 1.6; }
     default { col = mix(vec3f(.05, .40, .36), vec3f(.10, .52, .58), s1); pr = vec4f(.1, .9, .2, .04); spc = vec3f(.3, 1., .9); shp = vec2f(.6, .5); }
   }
   pr.x = step(hs(s1 * 91.7 + s2 * 37.1 + i.b.x), pr.x);
-  let k = (i.c.w - .3) * 2.0 + sin(t * (.8 + s1) * fls + s2 * 40. + hA * .25) * .10 * fls;
+  var k = (i.c.w - .3) * 2.0 + sin(t * (.8 + s1) * fls + s2 * 40. + hA * .25) * .10 * fls;
+  // l'œillet : un bouton fermé, qui s'ouvre en corolle à l'approche du sous-marin
+  if (ty == 16) { k = mix(-1.25, .45, 1. - ss(9., 24., distance(i.a.xyz, g.sub.xyz))); }
   let wph = v * (3. + 5. * s2) + s1 * 30. + t * 1.1;
   let wv = sin(wph) * .12 * wav;
   let kq = k * 1.7; let ka = select(kq, .06, abs(kq) < .06);
@@ -550,21 +567,59 @@ fn pal(h: f32) -> vec3f {
   return o;
 }
 struct GO { @builtin(position) cp: vec4f, @location(0) uv: vec2f, @location(1) @interpolate(flat) col: vec3f };
+// Huit teintes de lampes : ambre, blanc chaud, rouge, bleu, turquoise, vert pâle, violet, rose
+fn lampCol(h: f32) -> vec3f {
+  let i = i32(h * 8.);
+  switch i {
+    case 0 { return vec3f(1., .58, .14); }
+    case 1 { return vec3f(1., .92, .74); }
+    case 2 { return vec3f(1., .14, .12); }
+    case 3 { return vec3f(.22, .42, 1.); }
+    case 4 { return vec3f(.2, .95, .9); }
+    case 5 { return vec3f(.5, 1., .6); }
+    case 6 { return vec3f(.7, .36, 1.); }
+    default { return vec3f(1., .5, .76); }
+  }
+}
+/*
+ * Points lumineux. b.y = mode + teinte : 0 étincelle du Récif (scintille au soleil) ; 1 lampe (fixe, s'éteint quand le
+ * sous-marin passe) ; 2 graine (dérive, s'écarte de la coque) ; 3 cascade (monte de a.w mètres, en boucle) ; 4 lampion (monte et descend).
+ */
 @vertex fn vsGl(@builtin(vertex_index) vi: u32, @location(0) a: vec4f, @location(1) b: vec4f) -> GO {
   var o: GO; let q = vec2f(f32(vi & 1u), f32(vi >> 1u)) * 2. - 1.; let t = g.cam.w;
-  var p = a.xyz; let sw = sway(a.xz, a.w, t); p.x += sw.x; p.z += sw.y;
-  p += bend(b.w, a.w); // les étincelles suivent la tige qui plie
-  p += .1 * vec3f(sin(t * .7 + b.x * 50.), sin(t * .9 + b.x * 70.), cos(t * .8 + b.x * 90.));
+  let mode = i32(floor(b.y)); let hue = fract(b.y);
+  var p = a.xyz; var lk = 1.;
+  if (mode < 2) {
+    let sw = sway(a.xz, a.w, t); p.x += sw.x; p.z += sw.y;
+    p += bend(b.w, a.w); // les étincelles suivent la tige qui plie
+    p += .1 * vec3f(sin(t * .7 + b.x * 50.), sin(t * .9 + b.x * 70.), cos(t * .8 + b.x * 90.));
+  } else if (mode == 2) {
+    p += vec3f(sin(t * .11 + b.x * 40.) * 2.5, sin(t * .07 + b.x * 17.) * 1.6, cos(t * .09 + b.x * 29.) * 2.5);
+    let ds = p - g.sub.xyz; let dl = length(ds);
+    p += ds / max(dl, .1) * max(0., 7. - dl) * .8;
+  } else if (mode == 3) {
+    let f = fract(t * .035 + b.x);
+    p.y += f * a.w; p.x += sin(f * 9. + b.x * 60.) * 1.2; p.z += cos(f * 7. + b.x * 33.) * 1.2;
+    lk = sin(f * 3.14159);
+  } else {
+    p.y += sin(t * .22 + b.x * 30.) * 4.; p.x += sin(t * .09 + b.x * 12.) * 2.;
+    lk = .75 + .25 * sin(t * 1.3 + b.x * 50.);
+  }
   let d = length(p - g.cam.xyz);
-  if (d > 120. || dot(p - g.cam.xyz, g.fwd.xyz) < -1.) { o.cp = vec4f(0., 0., 2., 1.); return o; }
+  if (d > 170. || dot(p - g.cam.xyz, g.fwd.xyz) < -1.) { o.cp = vec4f(0., 0., 2., 1.); return o; }
   let tw = pow(.5 + .5 * sin(t * (.35 + .9 * hs(b.x)) + b.x * 100.), 4.);
-  let sz = min(max(b.z, d * .0026), d * .0045);
+  var sz = min(max(b.z, d * .0026), d * .0045);
+  if (mode == 1) {
+    // une lampe : fixe, à peine vacillante ; elle s'éteint quand la coque passe, et se rallume derrière
+    lk = (.82 + .18 * sin(t * (.6 + hs(b.x)) + b.x * 80.)) * ss(3.5, 10., distance(p, g.sub.xyz));
+  }
+  if (mode > 0) { sz = min(max(b.z, d * .004), d * .014); lk *= 1.25; }
   let w = p + (g.right.xyz * q.x + g.up.xyz * q.y) * sz;
   o.cp = g.vp * vec4f(w, 1.); o.uv = q;
   let z = zone(p);
   let lit = .3 + 1.8 * shadow1(p) * sunE(p.y, z).g;
-  let e = b.z / sz;
-  o.col = pal(b.y) * (.12 + tw * 1.7) * lit * e * e * exp(-SIG.g * d) * ss(.4, 1.5, d) * 17.;
+  let e = max(b.z / sz, select(0., .55, mode > 0));
+  o.col = mix(pal(hue) * (.12 + tw * 1.7) * lit, lampCol(hue) * lk, f32(mode > 0)) * e * e * exp(-SIG.g * d * clr()) * ss(.4, 1.5, d) * 17.;
   return o;
 }
 @fragment fn fsGl(i: GO) -> @location(0) vec4f {

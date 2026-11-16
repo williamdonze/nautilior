@@ -56,6 +56,8 @@ export const LAYOUT = {
     { x: -75, z: -2350, r: 24, camp: 2 }, { x: 95, z: -2520, r: 14 }, { x: -100, z: -2720, r: 14 }, { x: 85, z: -2900, r: 14 },
     { x: 100, z: -3665, r: 24, camp: 3 }, { x: 105, z: -3800, r: 14 }, { x: -105, z: -3990, r: 14 },
   ],
+  /** Le verger : des pommiers en fleurs, dans les Abysses */
+  VERGER: { x: 96, z: -3850, r: 34, trees: 15 },
   /** La Salle : une caverne immense sous un dôme, dans les Abysses (x, z du centre ; a, b = demi-axes ; h = hauteur sous voûte) */
   SALLE: { x: -78, z: -3720, a: 84, b: 68, rot: 0.5, H: 74, h: 46, wt: 16, ht: 20 },
 };
