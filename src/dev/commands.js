@@ -36,6 +36,7 @@ const PLACES = {
   jardin2: tun(2, 0.68, 'Le Jardin de verre : la grande salle'),
   abysses: [20, 14, -3500, Math.PI, 'Les Abysses : sortie du tunnel'],
   salle: [LAYOUT.SALLE.x, 14, LAYOUT.SALLE.z, 0.5, 'Abysses : la Salle (caverne)'],
+  verger: [LAYOUT.VERGER.x - 30, 10, LAYOUT.VERGER.z + 30, 2.4, 'Abysses : le verger'],
   chambre: [-18, 20, S.z + 98, -2.4, 'Abysses : la Chambre engloutie (le lit, la potence, la porte 112)'],
   porte: [2, 14, S.z + 110, Math.PI, 'Abysses : la porte 112, sur le chemin de la faille'],
   faille: [0, 12, S.z + 27, Math.PI, 'La faille'],

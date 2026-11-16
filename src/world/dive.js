@@ -643,6 +643,17 @@ export class Dive {
     this.riftNear = Math.max(0, Math.min(1, (300 - portalDist) / 275));
     if (this.riftNear > 0) this.sunkenRoom.update(time);
     this.lake.update(time, sub.position);
+    // Les orgues : une note grave quand la coque les frôle
+    this.organTimer = (this.organTimer ?? 0) - dt;
+    if (this.organs && this.organTimer <= 0 && sub.speed > 0.6) {
+      const O = this.organs, p = sub.position;
+      for (let i = 0; i < O.length; i += 3) {
+        if (Math.abs(O[i + 2] - p.z) > 7 || Math.abs(O[i] - p.x) > 7 || Math.abs(O[i + 1] - p.y) > 14) continue;
+        sound.organ?.(i);
+        this.organTimer = 1.4;
+        break;
+      }
+    }
     if (this.portalFx.update(dt, time, this.riftNear) && this.riftNear > 0.15) sound.crackle?.(this.riftNear);
     sound.setRift?.(this.riftNear * this.portal.open, this.bpm ?? 56);
     this.portal.update(time, this.camera.position, pointScale.value);

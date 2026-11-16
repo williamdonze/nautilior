@@ -149,6 +149,7 @@ ROOFS.VAULTS.forEach((v, i) => { const z = (v.z0 + v.z1) / 2, x = canyonCenter(z
   const mid = pts[Math.floor(pts.length / 2)];
   mark(mid.x, mid.y - 19, mid.z, 'Trajet de la baleine', '#f2d9a0', true);
 }
+mark(LAYOUT.VERGER.x, F(LAYOUT.VERGER.x, LAYOUT.VERGER.z) + 8, LAYOUT.VERGER.z, 'Le verger', '#ffe9ee');
 // zones : un nom au bord, à la bonne profondeur
 for (const zn of zones) { const z = ((zn.zMin ?? 0) + (zn.zMax ?? 0)) / 2; mark(X0 - 26, F(0, z) + 10, z, `${zn.name.toUpperCase()} · ${zn.maxDepth > 5000 ? `plus de ${zn.minDepth}` : `${zn.minDepth}–${zn.maxDepth}`} m`, '#ffffff', true); }
 
