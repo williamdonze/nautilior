@@ -9,6 +9,7 @@
  * Types : 0 kelp vert/doré · 1 tige · 2 herbier turquoise · 3 algue sombre irisée · 4 algue ambrée
  *         5 tapis rose · 6 fronde rouge · 7 touffe bleu-vert · 8 pousse verte luminescente (portail)
  */
+import { headroom } from '../world/roof.js';
 import { getFloorHeight } from '../world/seabed.js';
 import { createNoise2D } from '../world/noise.js';
 import { createRandom, smoothstep } from '../core/utils.js';
@@ -155,7 +156,11 @@ export function buildGarden(density = 1) {
     if (occ.has(key) || slopeY(x, z) < 0.55) continue;
     occ.add(key);
     const deep = depth > 150 || (depth > 95 && rnd() < 0.5);
-    const H = Math.min(depth - rr(0.8, 5), deep ? rr(7, 20) : rr(15, 40));
+    let H = Math.min(depth - rr(0.8, 5), deep ? rr(7, 20) : rr(15, 40));
+    // sous un plafond, le kelp s'arrête au plafond ; dans un pilier plein, il ne pousse pas
+    const room = headroom(x, z);
+    if (room < 2.5) continue;
+    H = Math.min(H, room - 0.6);
     column(x, y - 0.3, z, H, deep ? 1 : rnd() < 0.04 ? 2 : 0, 1);
   }
 

@@ -157,12 +157,33 @@ export const AIR_BELLS = {
   SPOTS: [[-30, -200], [60, -350], [-70, -500], [20, -640], [-25, -790], [40, -930], [-55, -1010]],
 };
 
+/**
+ * Plafonds de roche (voir world/roof.js).
+ * VAULTS : voûtes du Canyon, de z0 (entrée) à z1 (plus profond) ; h = hauteur sous voûte au-dessus du lit, thick = épaisseur.
+ * MASSIFS : dômes percés d'un tunnel ; a, b = demi-axes, rot = orientation du tunnel, H = hauteur,
+ * wt = demi-largeur du tunnel, ht = sa hauteur.
+ */
+export const ROOFS = {
+  STEP: 2, // finesse du maillage (m)
+  VAULT_HALF_WIDTH: 60,
+  VAULTS: [
+    { z0: -590, z1: -614, h: 20, thick: 9 }, // le Porche
+    { z0: -742, z1: -794, h: 24, thick: 12 }, // la Nef (le squelette de baleine est dessous)
+    { z0: -824, z1: -844, h: 18, thick: 8 },
+  ],
+  MASSIFS: [
+    { x: -48, z: -62, a: 19, b: 14, rot: 0.6, H: 15, wt: 6, ht: 8.5 }, // Récif : une petite arche, pour apprendre
+    { x: -2, z: -328, a: 30, b: 22, rot: -0.4, H: 26, wt: 9, ht: 11.5 }, // Épaves
+    { x: -24, z: -910, a: 34, b: 24, rot: 1.1, H: 30, wt: 10, ht: 13 }, // Abysses
+  ],
+};
+
 /** La Baleine du Canyon (paisible) */
 export const WHALE = {
   LENGTH: 34, // m
   SPEED: 3.2, // m/s : le sous-marin peut la suivre
   TURN: 0.22, // rad/s
-  HEIGHT: 48, // hauteur de nage au-dessus du lit du Canyon (m)
+  HEIGHT: 62, // hauteur de nage au-dessus du lit du Canyon (m) : au-dessus des voûtes
   Z_START: -575, // elle va et vient entre ces deux Z
   Z_END: -860,
   CALM_RADIUS: 70, // en deçà, le pouls s'apaise
