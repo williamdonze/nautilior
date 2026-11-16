@@ -10,7 +10,6 @@ export const gameState = {
   tide: 1, // numéro de marée : décide où reposent les objets au fond
   tideDives: 0, // plongées faites pendant cette marée
   taken: [], // objets déjà remontés pendant cette marée (ils ne reparaissent pas)
-  reached: 0, // bassin le plus lointain atteint (0 Récif … 3 Abysses) : on peut y remettre le Nautiliar à l'eau
 };
 
 const DEFAULTS = JSON.stringify(gameState);

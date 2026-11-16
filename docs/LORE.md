@@ -84,10 +84,7 @@ Jamais expliquées au joueur, mais tout le jeu doit les respecter.
 | L'Œil (un globe qu'une petite lampe force à rester ouvert) | La lampe du médecin dans ses pupilles |
 | Le Soufflet (deux poches qui se gonflent et se vident) | Ses poumons, que la machine remplit |
 | La Baleine qui chante au-dessus du Canyon | Hélène, qui fredonne tout bas la berceuse de ses deux garçons |
-| Les poches d'air sous la voûte | Les moments où il respire seul |
-| Les puits et leurs treuils | Ceux qui le tirent vers le haut, chaque jour |
-| Le verger en fleurs au fond des Abysses | Le jardin de la maison, en mai |
-| Les fleurs-horloges, toutes sur la même heure | 4 h 12 |
+| Les cloches à air | Les moments où il respire mieux |
 | Le pouls qui s'emballe et attire les bêtes | Son cœur, sur le moniteur |
 | La Chambre engloutie : le lit immense, la potence, la porte 112, les dalles qui dérivent | Sa chambre, la 112, vue de l'intérieur de sa tête |
 | Les lettres d'Anna, une par plongée | Ce qu'Anna lui lit ou lui dit, jour après jour |
@@ -95,12 +92,6 @@ Jamais expliquées au joueur, mais tout le jeu doit les respecter.
 | La seule maison qui reste close | Celle de Yann |
 | La *Marie-Morgane* et ses filets | Le chalutier dont les filets perdus ont pris le Nautiliar |
 | Le petit sous-marin pris dans les mailles | Le sien, ce jour-là |
-| Les Veines (tunnel aux racines rouges et bleues qui battent) | La perfusion, son sang |
-| La Trachée (tunnel annelé où un courant va et vient) | Le respirateur, souffle après souffle |
-| Le Jardin de verre (tunnel de lames translucides et de braises) | Les flacons, les tubes, les voyants de la chambre, la nuit |
-| La Salle et son lac noir, immobile | Ce qui, en lui, ne bouge plus |
-| Les lianes qui pendent des voûtes | Les tubulures |
-| Les fleurs pâles autour de chaque souvenir | Le bouquet qu'on change à son chevet |
 | Le plongeur pâle (section 5) | Yann |
 
 ---
@@ -211,25 +202,16 @@ Dans le rêve, personne n'explique rien. Au réveil, tout est dit simplement.
 
 ## 11. Mécaniques qui racontent l'histoire
 
-**La forme du monde.** Le Récif est le seul endroit à ciel ouvert. Passé le premier tunnel, on est sous la roche jusqu'à la faille : trois cavernes géantes (Épaves, Canyon, Abysses), hautes de cent mètres, portées par des piliers, reliées par des tunnels (Les Veines, La Trachée, Le Jardin de verre). Dans les Abysses, la Salle abrite un lac ; le dernier souvenir repose sur sa rive. Plus de quatre kilomètres en tout.
-
-**L'air.** Par endroits la voûte se creuse en coupole : une poche d'air, avec sa surface et sa lueur. On y respire. Dans chaque caverne, la plus grande est un **puits** : un conduit qui remonte au village, avec un treuil. On y accroche le Nautiliar et Marcel le hisse, soute comprise ; on peut ensuite y redescendre directement.
-
-**Ce qui pousse.** Rien de tout cela n'est une plante, et rien n'existe : ça luit tout seul. Champs de lampes qui s'éteignent au passage, mousses de braise, rivières de lumière qui mènent aux souvenirs, œillets qui s'ouvrent quand on approche, arbres-poumons qui respirent ensemble, orgues de verre qui sonnent quand on les frôle, saules de verre, champignons-lanternes, lustres, arbres enracinés dans la voûte, fleurs-horloges arrêtées sur 4 h 12, et, dans les Abysses, un verger de pommiers en fleurs. Chaque lieu a sa couleur : ambre aux Épaves, bleu au Canyon, vert pâle aux Abysses.
-
 - **Le sonar est un cœur** : même son que le moniteur des fins. Il s'emballe sous la menace, ralentit à la mort, se tait quand on ferme.
 - **Le plongeur pâle** indique la direction du souvenir manquant le plus proche.
 - **Le pouls** : jamais affiché (une jauge vendrait la mèche) ; on l'entend seulement, c'est le bip du sonar. L'effort, le danger, le manque d'air le font monter. Au-dessus d'un seuil, les bêtes deviennent hardies ; plus haut encore, le ver se réveille. On peut passer le ver cœur calme.
-- **Les bêtes** ne chargent qu'un cœur qui s'emballe : moteurs coupés, elles tournent sans attaquer. Jamais plus de trois à la fois. Le faisceau du phare les fait reculer. Aucune n'approche d'une poche d'air ni de la baleine.
+- **Les bêtes** ne chargent qu'un cœur qui s'emballe : moteurs coupés, elles tournent sans attaquer. Jamais plus de trois à la fois. Le faisceau du phare les fait reculer. Aucune n'approche d'une cloche à air ni de la baleine.
 - **La Baleine** apaise le pouls quand on nage près d'elle, et emmène le sous-marin au-dessus d'un souvenir resté au fond.
 - **Les filets** du Canyon retiennent le sous-marin : on coupe à la pince, ou on arrache tout d'une impulsion. C'est ce qui est arrivé ce jour-là.
 - **Le souvenir du couteau se joue** : une demi-minute dans le Nautiliar d'alors, pris dans les mailles, pendant que quelqu'un coupe dehors. Personne ne dit qui. Quand le sous-marin se libère, la lampe reste en bas.
 - **Le village se rouvre** : chaque souvenir rouvre des volets. À huit, une seule maison reste close.
 - **Les lettres d'Anna** : une nouvelle dans la boîte après chaque plongée. Jamais « coma », jamais « hôpital ».
 - **La Chambre engloutie** entoure la faille : c'est là que le joueur doit commencer à douter pour de bon.
-- **Les fleurs de chevet** : des fleurs pâles poussent en cercle autour de chaque souvenir resté au fond. Le joueur apprend à les chercher.
-- **Les puits** : trouver le puits d'une caverne permet d'y redescendre directement depuis le quai.
-- **La Trachée respire** : toutes les quatorze secondes, le courant s'inverse. On avance avec lui.
 - **Le carnet** : huit emplacements, visibles dès le début, dans l'ordre de la journée.
 - **La fin dépend des souvenirs** : avec les huit, Loïc se réveille en sachant. Hélène prévient si l'on part vers la faille sans tout avoir : « Il te reste des choses à toi, là-dessous. »
 - **L'écran-titre change** selon la fin vue. Après la Fin 1, la partie ne peut plus être chargée.

@@ -12,7 +12,6 @@
 import { buildShaders } from './shaders.js';
 import { Bridge, VERTEX_LAYOUT, INSTANCE_LAYOUT, MAX_PTS } from './bridge.js';
 import { buildGarden, buildGroundMap, GRID } from './garden.js';
-import { isCovered } from '../world/roof.js';
 import { RADIATION, ECHO } from '../config/settings.js';
 import { KelpSim } from './kelpSim.js';
 
@@ -87,10 +86,6 @@ export class GpuDiveRenderer {
     /* ---- Le jardin (kelp, herbiers, tapis) et la neige marine */
     const G = (this.garden = buildGarden(Q.flora));
     this.kelp = new KelpSim(device, G.stalks);
-    this.organs = G.organs; // (la plongée s'en sert : ils sonnent quand on les frôle)
-    // carte de la lumière de la flore (même emprise que la carte du fond)
-    const tLight = tex(G.light.w, G.light.h, 'rgba8unorm', TU.TEXTURE_BINDING | TU.COPY_DST);
-    Qu.writeTexture({ texture: tLight }, G.light.data, { bytesPerRow: G.light.w * 4 }, [G.light.w, G.light.h]);
     const vbuf = (data) => { const b = device.createBuffer({ size: Math.max(4, (data.byteLength + 3) & ~3), usage: BU.VERTEX | BU.COPY_DST }); Qu.writeBuffer(b, 0, data); return b; };
     this.ibBig = vbuf(new Uint8Array(G.big.buf)); this.ibBigF = vbuf(new Uint8Array(G.bigF.buf));
     this.ibSmall = vbuf(new Uint8Array(G.small.buf)); this.ibGl = vbuf(new Uint8Array(G.glints.buf));
@@ -116,11 +111,11 @@ export class GpuDiveRenderer {
       { binding: 1, visibility: VF, sampler: {} }, { binding: 2, visibility: VF, sampler: {} }, { binding: 3, visibility: VF, sampler: { type: 'comparison' } },
       { binding: 4, visibility: VF, texture: { sampleType: 'depth' } },
       { binding: 5, visibility: VF, texture: {} }, { binding: 6, visibility: VF, texture: {} }, { binding: 7, visibility: VF, texture: {} },
-      { binding: 8, visibility: VF, texture: { sampleType: 'unfilterable-float' } }, { binding: 9, visibility: VF, texture: {} }] });
+      { binding: 8, visibility: VF, texture: { sampleType: 'unfilterable-float' } }] });
     const mkBG0 = (u, sh) => device.createBindGroup({ layout: bgl0, entries: [
       { binding: 0, resource: { buffer: u } }, { binding: 1, resource: sRep }, { binding: 2, resource: sClamp }, { binding: 3, resource: sCmp },
       { binding: 4, resource: sh.createView() }, { binding: 5, resource: this.tWater.createView() }, { binding: 6, resource: tDetail.createView() },
-      { binding: 7, resource: tMap.createView() }, { binding: 8, resource: this.kelp.texture.createView() }, { binding: 9, resource: tLight.createView() }] });
+      { binding: 7, resource: tMap.createView() }, { binding: 8, resource: this.kelp.texture.createView() }] });
     this.bg0 = mkBG0(this.ubo, this.tShadow);
     this.bg0s = mkBG0(this.uboS, tDummy);
     const bgl1 = device.createBindGroupLayout({ entries: [{ binding: 0, visibility: SS.FRAGMENT, texture: {} }] });
@@ -339,7 +334,7 @@ export class GpuDiveRenderer {
     m[36] = c.rx; m[37] = c.ry; m[38] = c.rz; m[39] = c.tanh * c.asp;
     m[40] = c.ux; m[41] = c.uy; m[42] = c.uz; m[43] = c.tanh;
     m[44] = c.fx; m[45] = c.fy; m[46] = c.fz; m[47] = near;
-    m[48] = SUN[0]; m[49] = SUN[1]; m[50] = SUN[2]; m[51] = this.cover ?? 0; // (sun.w : sous la roche, l'eau est plus limpide)
+    m[48] = SUN[0]; m[49] = SUN[1]; m[50] = SUN[2]; m[51] = 0;
     // Exposition : l'œil s'habitue au noir des grands fonds
     const depth = -c.y;
     const ek = Math.min(1, Math.max(0, (depth - 8) / 26)), dark = Math.min(1, Math.max(0, (depth - 60) / 380));
@@ -355,10 +350,7 @@ export class GpuDiveRenderer {
     m[67] = 1 - (dive.survival?.hullRatio ?? 1); // dégâts de coque (rayures, suie)
     const pd = Math.hypot(c.x - S.x, c.z - S.z), pk = Math.min(1, Math.max(0, (300 - pd) / 240));
     m[68] = (pk * pk * 0.7 * (dive.portal?.open ?? 1) + (dive.survival?.radiation ?? 0) * 0.5) * (0.75 + 0.6 * beat);
-    // Sous la roche (tunnel, voûte, caverne), la lumière du jour n'arrive plus : il ne reste que le phare et ce qui luit
-    const under = isCovered(c.x, c.y, c.z) ? 1 : 0;
-    this.cover = (this.cover ?? 0) + (under - (this.cover ?? 0)) * 0.04;
-    m[69] = (0.8 + 0.2 * shallow) * (1 - 0.93 * this.cover);
+    m[69] = 0.8 + 0.2 * shallow;
     m[70] = bridge.writeLights(UB, 72, LIGHT_K);
     m[71] = bridge.spot ? 0.006 + 0.02 * dark : 0; // faisceau visible surtout dans le noir
 

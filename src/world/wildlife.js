@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import data from '../config/wildlife.json';
 import { WILDLIFE_MODELS } from './wildlifeModels.js';
 import { ABYSS_MODELS } from './abyssModels.js';
-import { getFloorHeight, confine } from './seabed.js';
+import { getFloorHeight } from './seabed.js';
 import { WORLD } from '../config/settings.js';
 
 /**
@@ -37,16 +37,11 @@ class Animal {
   }
 
   place(sub) {
-    let x = 0, z = 0, floor = 0;
-    for (let tries = 0; tries < 8; tries++) {
-      const a = Math.random() * Math.PI * 2, d = SPAWN_MIN + Math.random() * (SPAWN_MAX - SPAWN_MIN);
-      x = THREE.MathUtils.clamp(sub.position.x + Math.cos(a) * d, WORLD.BOUNDS.minX, WORLD.BOUNDS.maxX);
-      z = THREE.MathUtils.clamp(sub.position.z + Math.sin(a) * d, WORLD.BOUNDS.minZ, WORLD.BOUNDS.maxZ);
-      floor = getFloorHeight(x, z);
-      if (floor < sub.position.y + 30) break; // (sinon : une barre rocheuse, pas d'eau à cet endroit)
-    }
+    const a = Math.random() * Math.PI * 2, d = SPAWN_MIN + Math.random() * (SPAWN_MAX - SPAWN_MIN);
+    const x = THREE.MathUtils.clamp(sub.position.x + Math.cos(a) * d, WORLD.BOUNDS.minX, WORLD.BOUNDS.maxX);
+    const z = THREE.MathUtils.clamp(sub.position.z + Math.sin(a) * d, WORLD.BOUNDS.minZ, WORLD.BOUNDS.maxZ);
+    const floor = getFloorHeight(x, z);
     this.pos.set(x, this.spec.behavior === 'walker' ? floor : Math.min(-4, Math.max(floor + this.spec.altitude[0], sub.position.y + (Math.random() - 0.5) * 20)), z);
-    confine(this.pos);
   }
 
   /** Effrayée (impulsion du sous-marin) : elle fuit pendant `time` secondes */
@@ -181,7 +176,6 @@ class Animal {
     this.pos.x += Math.sin(this.yaw) * this.speed * dt;
     this.pos.z += Math.cos(this.yaw) * this.speed * dt;
     this.pos.y += climb * this.speed * dt;
-    confine(this.pos); // sous une barre, l'eau n'est que dans le tunnel
     this.roll += (-this.turn * 0.6 - this.roll) * Math.min(1, dt * 3);
     this.object.rotation.set(this.pitch, this.yaw, this.roll);
 
