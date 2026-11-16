@@ -92,6 +92,12 @@ Jamais expliquées au joueur, mais tout le jeu doit les respecter.
 | La seule maison qui reste close | Celle de Yann |
 | La *Marie-Morgane* et ses filets | Le chalutier dont les filets perdus ont pris le Nautiliar |
 | Le petit sous-marin pris dans les mailles | Le sien, ce jour-là |
+| Les Veines (tunnel aux racines rouges et bleues qui battent) | La perfusion, son sang |
+| La Trachée (tunnel annelé où un courant va et vient) | Le respirateur, souffle après souffle |
+| Le Jardin de verre (tunnel de lames translucides et de braises) | Les flacons, les tubes, les voyants de la chambre, la nuit |
+| La Salle et son lac noir, immobile | Ce qui, en lui, ne bouge plus |
+| Les lianes qui pendent des voûtes | Les tubulures |
+| Les fleurs pâles autour de chaque souvenir | Le bouquet qu'on change à son chevet |
 | Le plongeur pâle (section 5) | Yann |
 
 ---
@@ -202,6 +208,8 @@ Dans le rêve, personne n'explique rien. Au réveil, tout est dit simplement.
 
 ## 11. Mécaniques qui racontent l'histoire
 
+**La forme du monde.** Quatre bassins en pente douce (Récif, Épaves, Canyon, Abysses), sur plus de quatre kilomètres, séparés par trois barres rocheuses qui affleurent. On ne passe d'un bassin au suivant que par un tunnel géant : Les Veines, La Trachée, Le Jardin de verre. Dans les Abysses, une caverne, la Salle, abrite un lac ; le dernier souvenir repose sur sa rive. Rien de ce qui pousse sous deux cents mètres n'est une plante : ça luit tout seul, et ça n'existe pas.
+
 - **Le sonar est un cœur** : même son que le moniteur des fins. Il s'emballe sous la menace, ralentit à la mort, se tait quand on ferme.
 - **Le plongeur pâle** indique la direction du souvenir manquant le plus proche.
 - **Le pouls** : jamais affiché (une jauge vendrait la mèche) ; on l'entend seulement, c'est le bip du sonar. L'effort, le danger, le manque d'air le font monter. Au-dessus d'un seuil, les bêtes deviennent hardies ; plus haut encore, le ver se réveille. On peut passer le ver cœur calme.
@@ -212,6 +220,9 @@ Dans le rêve, personne n'explique rien. Au réveil, tout est dit simplement.
 - **Le village se rouvre** : chaque souvenir rouvre des volets. À huit, une seule maison reste close.
 - **Les lettres d'Anna** : une nouvelle dans la boîte après chaque plongée. Jamais « coma », jamais « hôpital ».
 - **La Chambre engloutie** entoure la faille : c'est là que le joueur doit commencer à douter pour de bon.
+- **Les fleurs de chevet** : des fleurs pâles poussent en cercle autour de chaque souvenir resté au fond. Le joueur apprend à les chercher.
+- **Les bouées** : chaque bassin atteint garde une bouée ; on peut y remettre le Nautiliar à l'eau depuis le quai.
+- **La Trachée respire** : toutes les quatorze secondes, le courant s'inverse. On avance avec lui.
 - **Le carnet** : huit emplacements, visibles dès le début, dans l'ordre de la journée.
 - **La fin dépend des souvenirs** : avec les huit, Loïc se réveille en sachant. Hélène prévient si l'on part vers la faille sans tout avoir : « Il te reste des choses à toi, là-dessous. »
 - **L'écran-titre change** selon la fin vue. Après la Fin 1, la partie ne peut plus être chargée.

@@ -70,6 +70,7 @@ export class Game {
       },
       onDeath: (cause) => this.death(cause),
       onReturn: () => this.goPort('quay', true),
+      onReach: (i) => { if (i > (gameState.reached ?? 0)) { gameState.reached = i; this.persist(); this.hud.notice('Une bouée marque l\'endroit : on pourra repartir d\'ici'); } },
       onPortal: () => this.facePortal(),
       canFacePortal: () => storyState.abyssalHull,
     });
@@ -341,10 +342,25 @@ export class Game {
     this.busy = false;
   }
 
-  goDive() {
+  /**
+   * Le monde est long : une fois un bassin atteint, une bouée y reste, et l'on peut y remettre
+   * le Nautiliar à l'eau directement. On choisit sur le quai.
+   */
+  async chooseDive() {
+    const reached = Math.min(3, gameState.reached ?? 0);
+    if (!reached) return this.goDive(0);
+    if (this.busy || this.dialogue.isOpen) return;
+    const names = ['Sous le port', 'À la bouée des Épaves', 'À la bouée du Canyon', 'À la bouée des Abysses'];
+    const choices = names.slice(0, reached + 1).map((text, i) => ({ text, action: `dive${i}`, end: true }));
+    choices.push({ text: 'Pas maintenant', action: 'stay', end: true });
+    const action = await this.dialogue.play('sub', { start: 'a', nodes: { a: { text: 'Où mettre le Nautiliar à l\'eau ?', choices } } });
+    if (action?.startsWith('dive')) this.goDive(Number(action.slice(4)));
+  }
+
+  goDive(start = 0) {
     this.transition(() => {
       this.setMode('dive');
-      this.dive.enter(gameState.tide, storyState.fragments, gameState.taken);
+      this.dive.enter(gameState.tide, storyState.fragments, gameState.taken, start);
       this.persist();
     }, 'Le Nautiliar s\'enfonce sous la surface.');
   }
@@ -404,7 +420,7 @@ export class Game {
     if (it.action === 'openCollection') return this.panels.open('collection');
     if (it.action === 'dive') {
       if (!storyState.flags.subGiven) return this.talk('sub');
-      this.goDive();
+      return this.chooseDive();
     }
   }
 

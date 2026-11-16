@@ -130,6 +130,7 @@ export const PICKUPS = {
   NEAR_SPAWN: 28, // objets supplémentaires placés près du point de départ
   NEAR_RADIUS: 60,
   TIDE_DIVES: 3, // toutes les 3 plongées, la marée redistribue les objets (ailleurs) ; entre-temps, ce qui est pris est pris
+  PER_TUNNEL: 22, // objets semés dans chaque tunnel
   MARK_RADIUS: 26, // en deçà, un contour blanc signale les objets que rien ne cache (m)
   NEAR_RENDER: 70, // seuls les objets à moins de cette distance sont visés (performance)
 };
@@ -217,6 +218,12 @@ export const ROOFS = {
     { x: 70, z: -3576, a: 34, b: 24, rot: 1.1, H: 30, wt: 10, ht: 13 }, // Abysses
     LAYOUT.SALLE, // la Salle : un dôme creux (h = hauteur de la caverne)
   ],
+};
+
+/** La Trachée : le tunnel respire (courant alterné le long de son axe) */
+export const TRACHEE = {
+  PERIOD: 14, // durée d'un souffle complet (s)
+  FORCE: 2.4, // accélération du courant au plus fort (m/s²) : on le sent, on peut lutter
 };
 
 /** La Baleine du Canyon (paisible) */

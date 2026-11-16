@@ -89,6 +89,7 @@ Travaille **phase par phase**. À la fin de chaque phase : vérifie que `npm run
 
 ### Phase 6 : monde, créatures et fragments de mémoire
 - 4 zones : Récif (0 à 150 m), Épaves (150 à 500 m), Canyon (500 à 1000 m), Abysses (plus de 1000 m), où se trouve le portail.
+- Forme du monde (voir `LAYOUT` dans `src/config/settings.js`, et `carte.html` pour la voir en 3D) : quatre bassins en pente douce sur 4,4 km, séparés par trois barres rocheuses ; on passe de l'un à l'autre par un tunnel géant (Les Veines, La Trachée, Le Jardin de verre). Dans les Abysses : la Salle (caverne) et son lac. `seabed.js` décrit le sol, `roof.js` la roche au-dessus de l'eau, `gpu/garden.js` toute la flore.
 - Des créatures : poissons normaux près de la surface, créatures mutées et dangereuses en profondeur (formes déformées, yeux lumineux) qui endommagent la coque.
 - 6 à 8 **fragments de mémoire** répartis par profondeur. Chacun affiche un court souvenir (texte + image pixel ou plan fixe) et fait évoluer les dialogues des villageois.
 

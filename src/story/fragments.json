@@ -119,8 +119,8 @@
     {
       "id": "soins",
       "name": "Feuille de soins",
-      "x": 9,
-      "z": -3876,
+      "x": -44,
+      "z": -3706,
       "art": "chart",
       "description": "Une feuille à en-tête, sèche, posée sur le fond comme sur une table.",
       "title": "Jour 112",
