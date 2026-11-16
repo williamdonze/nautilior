@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { CAMERA, RENDER, SUBMARINE, WORLD } from '../config/settings.js';
 import { damp, clamp } from '../core/utils.js';
 import { getFloorHeight } from '../world/seabed.js';
+import { getRoof } from '../world/roof.js';
 
 /**
  * Caméra à la troisième personne qui suit le sous-marin en douceur.
@@ -92,6 +93,19 @@ export class FollowCamera {
       if (p.y < needed) p.y += (needed - p.y) * damp(8, dt);
     }
     p.y = Math.min(p.y, WORLD.SURFACE_Y - 0.4);
+    // Sous une voûte, la caméra reste sous la voûte (et jamais dans la roche)
+    const Rs = getRoof(s.x, s.z);
+    let under = Rs && s.y < Rs.c ? Rs.c : null;
+    if (under !== null) {
+      // … tout le long de la ligne de visée : le bord de la dalle ne doit pas passer devant l'objectif
+      for (const t of [0.3, 0.6, 0.85, 1]) {
+        const r = getRoof(s.x + (p.x - s.x) * t, s.z + (p.z - s.z) * t);
+        if (r && r.c > s.y) under = Math.min(under, r.c);
+      }
+      if (p.y > under - 0.9) p.y = Math.max(s.y + 0.4, under - 0.9);
+    }
+    const Rc = getRoof(p.x, p.z);
+    if (Rc && p.y > Rc.c - 0.6 && p.y < Rc.t + 0.6) p.y = s.y < (Rc.c + Rc.t) / 2 ? Math.max(s.y - 1, Rc.c - 0.6) : Rc.t + 0.6;
 
     // Secousse qui s'amortit rapidement
     this.camera.position.copy(p);

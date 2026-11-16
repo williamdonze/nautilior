@@ -1,3 +1,4 @@
+import { headroom } from '../world/roof.js';
 import * as THREE from 'three';
 import { PICKUPS, SUBMARINE, WORLD } from '../config/settings.js';
 import { createRandom } from '../core/utils.js';
@@ -53,6 +54,7 @@ export class Pickups {
     // Chaque emplacement a son numéro et son propre tirage : retirer un objet ne déplace pas les autres
     const index = this.counter++;
     if (this.taken?.has(index)) return null;
+    if (headroom(x, z) < 3.5) return null; // sous un massif plein : rien à ramasser là
     const main = this.rand;
     this.rand = createRandom((this.seedBase ?? 1) + index * 131);
     const p = this.spawn(rollItem(-getFloorHeight(x, z), this.rand), x, z);

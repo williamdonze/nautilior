@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { SUBMARINE, WORLD, RADIATION } from '../config/settings.js';
 import { clamp, damp, lerp } from '../core/utils.js';
+import { getRoof } from '../world/roof.js';
 import { getFloorHeight } from '../world/seabed.js';
 import { createSubmarineModel, spinPropellers } from './subModel.js';
 import { createCockpit } from './cockpit.js';
@@ -236,6 +237,42 @@ export class Submarine {
         if (this.velocity.y < 0) this.velocity.y *= -0.25; // petit rebond mou
         this.velocity.x *= 0.96;
         this.velocity.z *= 0.96;
+      }
+    }
+
+    // Plafonds : voûtes et massifs (voir world/roof.js)
+    const R = getRoof(p.x, p.z);
+    if (R) {
+      const r = S.HULL_RADIUS, lo = R.c - r, hi = R.t + r, mid = (R.c + R.t) / 2;
+      if (p.y > lo && p.y < hi) {
+        // de quel côté était-on l'instant d'avant ? dessous, on reste dessous ; dessus, on reste dessus
+        const under = this._prev.y < mid;
+        const fix = under ? p.y - lo : hi - p.y;
+        const open = !under || R.c - getFloorHeight(p.x, p.z) > r * 1.5; // y a-t-il de l'eau sous ce plafond ?
+        // on glisse le long d'une roche en pente douce ; plus raide, c'est une paroi
+        const slide = Math.abs(p.y - this._prev.y) + Math.hypot(p.x - this._prev.x, p.z - this._prev.z) * 1.5 + 0.05;
+        if (fix > slide || !open) {
+          this.onImpact?.(this.speed);
+          p.x = this._prev.x;
+          p.z = this._prev.z;
+          this.velocity.x *= -0.25;
+          this.velocity.z *= -0.25;
+          // … et si l'on montait (ou descendait) dans la roche à cet endroit-là aussi, on s'arrête
+          const P = getRoof(p.x, p.z);
+          if (P && p.y > P.c - r && p.y < P.t + r) {
+            p.y = this._prev.y;
+            this.velocity.y *= -0.2;
+          }
+        } else if (under) {
+          // la coque racle le plafond
+          if (this.velocity.y > 1.2 && this.contactTimer <= 0) this.onImpact?.(this.velocity.y);
+          this.contactTimer = 0.6;
+          p.y = lo;
+          if (this.velocity.y > 0) this.velocity.y *= -0.2;
+        } else {
+          p.y = hi;
+          if (this.velocity.y < 0) this.velocity.y *= -0.2;
+        }
       }
     }
 
