@@ -18,6 +18,8 @@ const rand = createRandom(WORLD.SEED + 404);
 const WRECKS = [
   [55, -325, 0.5], [-40, -576, 1], [70, -737, 1.3], [-90, -875, 0.9], [10, -1013, 1.5], [-50, -1128, 1.1], [110, -1197, 1], [-120, -691, 0.8], [-95, -640, 1.1], [95, -1260, 1.2], [-110, -980, 0.9], [60, -760, 1.0],
 ];
+/** Sources chaudes (fumeurs) : [x, z]. Deux dans le lit du Canyon, deux dans les Abysses ; des vers tubicoles autour. */
+export const VENTS = [[canyonCenter(-2050) - 6, -2050], [canyonCenter(-2350) + 8, -2350], [-100, -2560], [-60, -3060]];
 /** Positions des épaves (pour y semer plus d'objets) */
 export const WRECK_SPOTS = WRECKS.map(([x, z]) => [x, z]);
 /** La Marie-Morgane : le chalutier dont les filets ont pris le Nautiliar. Elle repose dans le Canyon ; on y entre. */
@@ -249,6 +251,45 @@ function spire(x, z, height) {
   return m;
 }
 
+/**
+ * Cheminée de source chaude : une colonne de minéraux, bosselée, noire et rouille, encroûtée de blanc,
+ * et une fumée sombre qui monte lentement (des sulfures, pas de la magie).
+ */
+function chimney(x, z, colliders) {
+  const g = new THREE.Group(), floor = getFloorHeight(x, z);
+  g.position.set(x, floor - 0.5, z);
+  const n = 2 + Math.floor(rand() * 3);
+  for (let k = 0; k < n; k++) {
+    const h = rand.range(5, 14), r0 = rand.range(1.2, 2.4), prof = [];
+    for (let i = 0; i <= 12; i++) { const t = i / 12; prof.push(new THREE.Vector2(r0 * (1 - 0.65 * t) * (0.85 + 0.3 * Math.abs(Math.sin(t * 9 + k))), t * h)); }
+    prof.push(new THREE.Vector2(0.05, h));
+    let geo = new THREE.LatheGeometry(prof, 14);
+    const p = geo.attributes.position;
+    for (let i = 0; i < p.count; i++) { const y = p.getY(i), w = 1 + wnoise(p.getX(i) * 0.8 + k, y * 0.6) * 0.25; p.setX(i, p.getX(i) * w); p.setZ(i, p.getZ(i) * w); }
+    geo = rusted(geo, '#24201d', '#6a3a1e', 0.35, x + k);
+    // encroûtements blancs (sulfates) par plaques
+    const col = geo.attributes.color;
+    for (let i = 0; i < col.count; i++) if (wnoise(p.getX(i) * 1.7 + 4, p.getY(i) * 1.3) > 0.45) col.setXYZ(i, 0.62, 0.6, 0.55);
+    const m = new THREE.Mesh(geo, rockMat);
+    const ox = rand.range(-2.5, 2.5), oz = rand.range(-2.5, 2.5);
+    m.position.set(ox, 0, oz);
+    m.rotation.set(rand.range(-0.08, 0.08), 0, rand.range(-0.08, 0.08));
+    g.add(m);
+    for (let y = 1; y < h; y += 2.5) colliders.push({ x: x + ox, y: floor + y, z: z + oz, r: r0 * (1 - 0.6 * (y / h)) + 0.4 });
+    // la fumée : des volutes sombres, transparentes, qui montent et s'élargissent
+    for (let i = 0; i < 6; i++) {
+      const puff = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), new THREE.MeshLambertMaterial({ color: '#141210', transparent: true, opacity: 0.32, depthWrite: false }));
+      puff.position.set(ox, h + 1 + i * 2.2, oz);
+      puff.scale.setScalar(0.6 + i * 0.45);
+      puff.raycast = () => {};
+      puff.userData.smoke = { base: h + 1, i, ox, oz };
+      g.add(puff);
+    }
+  }
+  g.userData.vent = true;
+  return g;
+}
+
 /** Squelette de baleine : colonne et côtes */
 function whale(x, z, colliders) {
   const g = new THREE.Group();
@@ -341,6 +382,7 @@ export function createLandmarks(colliders, uniforms) {
     group.add(spire(x, z, rand.range(15, 45)));
   }
   group.add(whale(canyonCenter(stretchZ(-760)) + 8, stretchZ(-760), colliders));
+  for (const [vx, vz] of VENTS) group.add(chimney(vx, vz, colliders));
   const mm = wreck(canyonCenter(MARIE.z) + MARIE.dx, MARIE.z, MARIE.size, colliders, MARIE_OPTS);
   group.add(mm);
   group.userData.marie = mm;

@@ -417,13 +417,17 @@ fn rift(uv: vec2f, open: f32, beat: f32, near: f32, zip: f32) -> vec3f {
     var cc = mix(vec3f(.80, .08, .10), vec3f(.90, .22, .40), fract(hue * 4.));
     if (hue > .7) { cc = vec3f(.88, .42, .10); }
     if (hue > .9) { cc = vec3f(.55, .22, .75); }
-    alb = cc * i.c * (.4 + .8 * D.h); flu = .75; gloss = .25; bump = 1.2;
+    let deepC = ss(-300., -700., i.wp.y); // plus bas, des gorgones et des coraux bambou : pâles, presque blancs
+    cc = mix(cc, mix(vec3f(.86, .80, .70), vec3f(.92, .58, .38), step(.72, hue)), deepC);
+    alb = cc * i.c * (.4 + .8 * D.h); flu = .75 * (1. - deepC); gloss = .25; bump = 1.2;
   }
   else if (kind == 13) {
     let hue = fract(i.par.w * 7.31);
     var cc = mix(vec3f(.60, .17, .08), vec3f(.64, .35, .10), fract(hue * 3.));
     if (hue > .75) { cc = vec3f(.44, .18, .42); }
-    alb = cc * i.c * (.45 + .75 * D.h); flu = .55; gloss = .2; bump = 1.1;
+    let deepS = ss(-300., -700., i.wp.y); // éponges de verre : crème, translucides
+    cc = mix(cc, vec3f(.84, .82, .74), deepS);
+    alb = cc * i.c * (.45 + .75 * D.h); flu = .55 * (1. - deepS); gloss = .2 + .3 * deepS; bump = 1.1;
   }
   else { alb *= .92 + .16 * D.h; bump = .08; }
   var a = i.col.a * tx.a;
@@ -511,6 +515,11 @@ fn pal(h: f32) -> vec3f {
     case 4 { col = mix(vec3f(.30, .15, .02), vec3f(.42, .25, .04), s1); pr = vec4f(.2, 1., .1, 0.); spc = vec3f(1., .85, .5); shp = vec2f(.5, .4); wav = 1.8; }
     case 5 { col = mix(vec3f(.85, .05, .40), vec3f(.60, .10, .80), step(.7, s1)); col = mix(col, vec3f(.95, .25, .55), step(.75, s2)); pr = vec4f(.22, .8, 0., .30); spc = vec3f(1., .35, .8); shp = vec2f(.6, .6); fls = 2.; }
     case 6 { col = mix(vec3f(.80, .16, .16), vec3f(.92, .36, .42), s1); pr = vec4f(.06, 1., 0., .10); spc = vec3f(1., .5, .5); shp = vec2f(.4, .3); wav = 2.; }
+    // --- faune fixée des grands fonds (réelle) : pâle, mate ; c'est le phare qui la révèle
+    case 9 { col = mix(vec3f(.78, .42, .30), vec3f(.86, .62, .50), s1); col = mix(col, vec3f(.86, .82, .74), step(.6, s2)); col *= 1.3; pr = vec4f(0., .9, .1, .15); shp = vec2f(.45, .7); wav = .5; fls = .4; } // plume de mer
+    case 10 { col = mix(vec3f(.78, .66, .36), vec3f(.70, .30, .22), step(.65, s1)); pr = vec4f(0., .8, .05, .12); shp = vec2f(.3, .25); wav = 1.6; fls = 1.1; } // bras de lys de mer
+    case 11 { col = mix(vec3f(.72, .06, .08), vec3f(.85, .16, .12), s1); pr = vec4f(0., 1., .1, 0.); shp = vec2f(.6, .6); wav = 1.2; fls = 1.4; } // panache de ver tubicole
+    case 12 { col = mix(vec3f(.80, .78, .72), vec3f(.68, .66, .60), s1); pr = vec4f(0., .3, 0., 0.); shp = vec2f(.04, .08); wav = .05; fls = .1; } // tube de ver (blanc, rigide)
     case 8 { col = mix(vec3f(.05, .50, .16), vec3f(.20, .62, .22), s1); pr = vec4f(.3, 1., 0., 1.4); spc = vec3f(.4, 1., .5); shp = vec2f(.55, .5); wav = 1.6; }
     default { col = mix(vec3f(.05, .40, .36), vec3f(.10, .52, .58), s1); pr = vec4f(.1, .9, .2, .04); spc = vec3f(.3, 1., .9); shp = vec2f(.6, .5); }
   }
@@ -556,7 +565,12 @@ struct GO { @builtin(position) cp: vec4f, @location(0) uv: vec2f, @location(1) @
   let z = zone(p);
   let lit = .3 + 1.8 * shadow1(p) * sunE(p.y, z).g;
   let e = b.z / sz;
-  o.col = pal(b.y) * (.12 + tw * 1.7) * lit * e * e * exp(-SIG.g * d) * ss(.4, 1.5, d) * 17.;
+  o.col = pal(fract(b.y)) * (.12 + tw * 1.7) * lit * e * e * exp(-SIG.g * d) * ss(.4, 1.5, d) * 17.;
+  // b.y >= 1 : bioluminescence réelle (plumes de mer, ophiures) : rien, sauf un éclat bleu bref quand la coque passe tout près
+  if (b.y >= 1.) {
+    let near = ss(9., 2.5, distance(p, g.sub.xyz));
+    o.col = vec3f(.25, .7, 1.) * near * (.55 + .45 * sin(t * 11. + b.x * 60.)) * e * e * exp(-SIG.g * d) * 26.;
+  }
   return o;
 }
 @fragment fn fsGl(i: GO) -> @location(0) vec4f {

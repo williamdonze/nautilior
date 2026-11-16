@@ -14,7 +14,7 @@ import { getFloorHeight } from '../world/seabed.js';
 import { createNoise2D } from '../world/noise.js';
 import { createRandom, smoothstep } from '../core/utils.js';
 import { RADIATION, SUBMARINE, WORLD, SEABED, stretchZ, STRETCH_K } from '../config/settings.js';
-import { WRECK_SPOTS } from '../world/landmarks.js';
+import { WRECK_SPOTS, VENTS } from '../world/landmarks.js';
 
 // Grille de culling (plan XZ)
 export const GRID = { OX: -216, OZ: SEABED.Z_END - 10, CELLW: 24, CX: 18, CZ: Math.ceil((SEABED.Z_START - SEABED.Z_END + 30) / 24) };
@@ -193,6 +193,57 @@ export function buildGarden(density = 1) {
     }
   }
 
+  /* =====================================================================================
+   * Les grands fonds, tels qu'ils sont : rien n'y est une plante (pas de lumière), tout y est animal et fixé.
+   * Prairies de plumes de mer sur la vase, lys de mer accrochés aux reliefs, vers tubicoles autour des
+   * sources chaudes. Clairsemés, en taches, avec de grandes étendues nues entre. Le phare les révèle.
+   * ===================================================================================== */
+  const DEEP = 210;
+  /** Plume de mer : une tige courte, une plume plate et large */
+  const seaPen = (x, y, z, h) => {
+    newStalk(x, y, z, h + 0.3);
+    leaf(big, x, y - 0.05, z, h * 0.35, rnd() * TAU, rr(0, 0.15), 0.025, 0, 1, rnd(), rnd(), 0.5);
+    leaf(big, x, y + h * 0.3, z, h * 0.75, rnd() * TAU, rr(0, 0.18), rr(0.2, 0.3) * h, h * 0.3, 9, rnd(), rnd(), rr(0.45, 0.6));
+    if (rnd() < 0.35) glint(x, y + h * 0.7, z, h * 0.7, rnd(), 1.65, rr(0.02, 0.035)); // elle s'illumine si on la frôle
+  };
+  /** Lys de mer : une longue tige, une couronne de bras plumeux qui filtrent le courant */
+  const crinoid = (x, y, z, h) => {
+    newStalk(x, y, z, h + 0.8);
+    leaf(big, x, y - 0.05, z, h, rnd() * TAU, rr(0, 0.12), 0.03, 0, 1, rnd(), rnd(), 0.5);
+    const n = 8 + ((rnd() * 6) | 0);
+    for (let i = 0; i < n; i++) leaf(big, x, y + h * 0.97, z, rr(0.45, 0.9), (i / n) * TAU + rr(-0.2, 0.2), rr(0.6, 1.3), rr(0.07, 0.11), h, 10, rnd(), rnd(), rr(0.55, 0.85));
+  };
+  /** Vers tubicoles : une touffe de tubes blancs dressés, un panache rouge au bout de chacun */
+  const tubeWorms = (x, y, z, n) => {
+    newStalk(x, y, z, 2.5);
+    for (let i = 0; i < n; i++) {
+      const a = rnd() * TAU, r = Math.sqrt(rnd()) * 1.4, L = rr(0.6, 2.2), tilt = rr(0, 0.25), yaw = rnd() * TAU;
+      const bx = x + Math.cos(a) * r, bz = z + Math.sin(a) * r;
+      leaf(big, bx, y - 0.1, bz, L, yaw, tilt, 0.07, 0.3, 12, rnd(), rnd(), 0.5);
+      leaf(big, bx + Math.cos(yaw) * Math.sin(tilt) * L, y + Math.cos(tilt) * L - 0.1, bz + Math.sin(yaw) * Math.sin(tilt) * L, rr(0.18, 0.3), rnd() * TAU, rr(0.2, 1.2), 0.13, L, 11, rnd(), rnd(), 0.6);
+    }
+  };
+  for (let i = Math.floor(240000 * density); i > 0; i--) {
+    const x = rr(-185, 185), z = rr(SEABED.Z_END + 60, stretchZ(-200)), y = getFloorHeight(x, z), depth = -y;
+    if (depth < DEEP || portalAt(x, z) > 0.4) continue;
+    if (headroom(x, z) < 2.5) continue;
+    const ny = slopeY(x, z), u = rnd();
+    // des taches : prairies sur la vase plate, jardins de lys sur les reliefs, du nu entre les deux
+    const pens = smoothstep(0.4, 0.56, fbm(x + 120, z - 60, 0.014)) * smoothstep(DEEP, DEEP + 120, depth);
+    const lilies = smoothstep(0.46, 0.62, fbm(x - 300, z + 200, 0.018));
+    const a1 = 0.6 * pens, a2 = a1 + 0.07 * lilies, a3 = a2 + 0.012;
+    if (u < a1) { if (ny > 0.8) for (let k = (2 + rnd() * 5) | 0; k > 0; k--) { const bx = x + rr(-1.8, 1.8), bz = z + rr(-1.8, 1.8); seaPen(bx, getFloorHeight(bx, bz), bz, rr(1.1, 3)); } } // en bouquets
+    else if (u < a2) { if (ny > 0.55) crinoid(x, y, z, rr(1, 3.2)); }
+    else if (u < a3 && ny > 0.8) seaPen(x, y, z, rr(0.7, 1.6)); // quelques isolées partout
+  }
+  // Les sources chaudes : quelques champs de vers tubicoles, serrés, autour des cheminées (voir formations.js)
+  for (const [vx, vz] of VENTS) {
+    for (let k = 0; k < 42; k++) {
+      const a = rnd() * TAU, r = 2.5 + Math.pow(rnd(), 1.5) * 13, x = vx + Math.cos(a) * r, z = vz + Math.sin(a) * r;
+      tubeWorms(x, getFloorHeight(x, z), z, (12 + rnd() * 24) | 0);
+    }
+  }
+
   /* ---- Tapis de petites touffes */
   for (let i = Math.floor(520000 * 2.1 * density); i > 0; i--) {
     const x = rr(-200, 200), z = i % 6 ? rr(stretchZ(-560), 210) : rr(RADIATION.SOURCE.z - 200, RADIATION.SOURCE.z + 200), u = rnd(); // (tapis : Récif, Épaves et abords de la faille)
@@ -214,7 +265,11 @@ export function buildGarden(density = 1) {
     }
   }
 
+  // (inventaire, pour vérifier : nombre de feuilles par espèce)
+  const kinds = {};
+  for (let i = 0; i < big.n; i += 14) { const t = big.a[i + 9]; kinds[t] = (kinds[t] ?? 0) + 1; }
   return {
+    kinds,
     big: pack(big, true),
     bigF: pack(big, true, 2, 1.5),
     small: pack(small, true),

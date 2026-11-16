@@ -278,8 +278,8 @@ function createCoralGardens(group) {
   // Massifs : un centre, des dizaines de colonies autour. Denses au Récif, rares et pâles plus bas.
   const gardens = Math.round(260 * 2 * density);
   for (let g = 0; g < gardens; g++) {
-    const deep = rand() < 0.22;
-    const gx = rand.range(-175, 175), gz = deep ? rand.range(stretchZ(-700), stretchZ(-170)) : rand.range(stretchZ(-170), 205), gr = rand.range(4, 11);
+    const deep = rand() < 0.4;
+    const gx = rand.range(-175, 175), gz = deep ? rand.range(SEABED.Z_END + 80, stretchZ(-170)) : rand.range(stretchZ(-170), 205), gr = rand.range(4, 11);
     if (Math.hypot(gx - S.x, gz - S.z) < 8) continue;
     const hue = rand();
     const n = Math.round((deep ? 9 : 26) * rand.range(0.6, 1.4));
