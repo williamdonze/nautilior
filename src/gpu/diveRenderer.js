@@ -19,6 +19,7 @@ const HDR = 'rgba16float', DEPTH = 'depth32float';
 const NB = 6; // niveaux du halo
 const SUN = (() => { const v = [0.27, 1, -0.24], l = Math.hypot(...v); return v.map((c) => c / l); })();
 const EXPO = 0.62, RAYS = 0.54;
+const WATER_CLEAR = 0.45; // part d'absorption en moins dans les grands fonds
 const LIGHT_K = 0.05; // conversion des intensités Three.js (candelas) vers ce moteur
 const SHADOW_R = 120, SHADOW_D0 = -200, SHADOW_D1 = 90;
 
@@ -334,7 +335,9 @@ export class GpuDiveRenderer {
     m[36] = c.rx; m[37] = c.ry; m[38] = c.rz; m[39] = c.tanh * c.asp;
     m[40] = c.ux; m[41] = c.uy; m[42] = c.uz; m[43] = c.tanh;
     m[44] = c.fx; m[45] = c.fy; m[46] = c.fz; m[47] = near;
-    m[48] = SUN[0]; m[49] = SUN[1]; m[50] = SUN[2]; m[51] = 0;
+    m[48] = SUN[0]; m[49] = SUN[1]; m[50] = SUN[2];
+    // clarté de l'eau : absorption normale jusqu'à 60 m, presque moitié moindre au-delà de 300 m (on voit loin dans le faisceau)
+    m[51] = 1 - WATER_CLEAR * Math.min(1, Math.max(0, (-c.y - 60) / 240));
     // Exposition : l'œil s'habitue au noir des grands fonds
     const depth = -c.y;
     const ek = Math.min(1, Math.max(0, (depth - 8) / 26)), dark = Math.min(1, Math.max(0, (depth - 60) / 380));
@@ -352,7 +355,7 @@ export class GpuDiveRenderer {
     m[68] = (pk * pk * 0.7 * (dive.portal?.open ?? 1) + (dive.survival?.radiation ?? 0) * 0.5) * (0.75 + 0.6 * beat);
     m[69] = 0.8 + 0.2 * shallow;
     m[70] = bridge.writeLights(UB, 72, LIGHT_K);
-    m[71] = bridge.spot ? 0.006 + 0.02 * dark : 0; // faisceau visible surtout dans le noir
+    m[71] = bridge.spot ? (0.006 + 0.02 * dark) * 0.38 : 0; // faisceau visible surtout dans le noir (compensé : le phare a été rendu 2,5 fois plus fort)
 
     /* ---- Soleil : carte d'ombres centrée sur la caméra (calée sur ses texels pour ne pas scintiller) */
     const sunLit = depth < 450;
