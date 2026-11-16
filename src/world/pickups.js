@@ -1,4 +1,4 @@
-import { headroom } from '../world/roof.js';
+import { headroom, getRoof } from '../world/roof.js';
 import * as THREE from 'three';
 import { PICKUPS, SUBMARINE, WORLD } from '../config/settings.js';
 import { createRandom } from '../core/utils.js';
@@ -6,9 +6,9 @@ import { rollItem, getRarity, UNIQUE_ITEMS } from '../loot/loot.js';
 import zonesData from '../config/zones.json';
 import fragmentsData from '../story/fragments.json';
 import { WRECK_SPOTS } from './landmarks.js';
-import { canyonCenter } from './seabed.js';
+import { canyonCenter, meshFloorHeight } from './seabed.js';
 import { createItemModel } from '../loot/models.js';
-import { createHalo, createPillar } from '../loot/glow.js';
+import { createHalo, createPillar, createRing } from '../loot/glow.js';
 import { getFloorHeight } from './seabed.js';
 
 const HIGHLIGHT = new THREE.Color('#cdb57c');
@@ -129,7 +129,8 @@ export class Pickups {
     object.updateMatrixWorld(true);
     // Le bas de la boîte englobante touche le sol
     const box = new THREE.Box3().setFromObject(object);
-    object.position.y = getFloorHeight(x, z) - box.min.y - 0.05;
+    // posé sur le fond tel qu'il est dessiné (voir meshFloorHeight), à peine enfoncé
+    object.position.y = Math.max(meshFloorHeight(x, z), getFloorHeight(x, z) - 0.25) - box.min.y - 0.03;
     const size = box.getSize(new THREE.Vector3());
 
     const pickup = {
@@ -159,6 +160,14 @@ export class Pickups {
       this.scene.add(pickup.pillar);
     }
 
+    // Contour blanc : il n'apparaît que de près, quand rien ne cache l'objet (voir mark)
+    pickup.ring = createRing(Math.max(1.5, pickup.radius * 3.2 + 0.7));
+    pickup.ring.position.copy(object.position);
+    pickup.ring.position.y += size.y * 0.5 + 0.25;
+    pickup.ring.visible = false;
+    pickup.seen = 0;
+    this.scene.add(pickup.ring);
+
     object.userData.pickup = pickup;
     this.scene.add(object);
     this.list.push(pickup);
@@ -182,7 +191,7 @@ export class Pickups {
   }
 
   removeGlow(pickup) {
-    for (const key of ['halo', 'pillar']) {
+    for (const key of ['halo', 'pillar', 'ring']) {
       const o = pickup[key];
       if (!o) continue;
       this.scene.remove(o);
@@ -204,6 +213,47 @@ export class Pickups {
   drop(item, position) {
     const a = this.rand() * Math.PI * 2;
     return this.spawn(item, position.x + Math.cos(a) * 2, position.z + Math.sin(a) * 2);
+  }
+
+  /**
+   * Contour blanc autour des objets proches que rien ne cache (ni le relief, ni un rocher, ni une épave).
+   * @param {THREE.Vector3} eye position du sous-marin
+   */
+  mark(dt, time, eye) {
+    this.markTimer = (this.markTimer ?? 0) - dt;
+    const check = this.markTimer <= 0;
+    if (check) this.markTimer = 0.3;
+    const R2 = PICKUPS.MARK_RADIUS * PICKUPS.MARK_RADIUS;
+    for (const p of this.list) {
+      if (!p.ring) continue;
+      const o = p.object.position, d2 = o.distanceToSquared(eye);
+      if (d2 > R2 * 1.6) { if (p.seen > 0) { p.seen = 0; p.ring.visible = false; } p.clear = false; continue; }
+      if (check) p.clear = d2 < R2 && !p.held && this.lineOfSight(eye, p.ring.position);
+      p.seen = Math.max(0, Math.min(1, p.seen + (p.clear ? dt * 2.5 : -dt * 3)));
+      p.ring.visible = p.seen > 0.01;
+      if (p.ring.visible) p.ring.material.opacity = p.seen * (0.5 + 0.2 * Math.sin(time * 3 + p.phase));
+    }
+  }
+
+  /** Rien entre a et b ? (relief, plafonds, rochers et épaves) */
+  lineOfSight(a, b) {
+    const dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z, len = Math.hypot(dx, dy, dz);
+    const n = Math.max(3, Math.ceil(len / 2));
+    for (let i = 1; i < n; i++) {
+      const t = i / n, x = a.x + dx * t, y = a.y + dy * t, z = a.z + dz * t;
+      if (getFloorHeight(x, z) > y + 0.15) return false;
+      const r = getRoof(x, z);
+      if (r && y > r.c && y < r.t) return false;
+    }
+    for (const c of this.colliders) {
+      // sphère contre segment (on ignore ce qui touche l'objet lui-même)
+      const ex = c.x - a.x, ey = c.y - a.y, ez = c.z - a.z;
+      const t = Math.max(0, Math.min(1, (ex * dx + ey * dy + ez * dz) / (len * len)));
+      if (t > 0.9) continue;
+      const px = a.x + dx * t - c.x, py = a.y + dy * t - c.y, pz = a.z + dz * t - c.z;
+      if (px * px + py * py + pz * pz < c.r * c.r * 0.8) return false;
+    }
+    return true;
   }
 
   setHighlighted(pickup) {

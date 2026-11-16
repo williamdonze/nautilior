@@ -97,6 +97,7 @@ export const PICKUPS = {
   NEAR_SPAWN: 28, // objets supplémentaires placés près du point de départ
   NEAR_RADIUS: 60,
   TIDE_DIVES: 3, // toutes les 3 plongées, la marée redistribue les objets (ailleurs) ; entre-temps, ce qui est pris est pris
+  MARK_RADIUS: 26, // en deçà, un contour blanc signale les objets que rien ne cache (m)
   NEAR_RENDER: 70, // seuls les objets à moins de cette distance sont visés (performance)
 };
 

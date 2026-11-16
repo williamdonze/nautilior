@@ -506,6 +506,7 @@ export class Dive {
     const canGrab = this.view === 'first';
     this.pickups.setHighlighted(canGrab && !this.claw.busy && this.aim.inRange ? this.aim.pickup : null);
     this.pickups.update(time, camera.position);
+    this.pickups.mark(dt, time, sub.position);
     hud.updateReticle(aimPointer, this.aim, this.claw.busy, this.hold.full, canGrab);
     this.captureFx.update(dt, camera);
 

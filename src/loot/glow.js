@@ -84,3 +84,33 @@ export function createPillar(color, height) {
   pillar.userData.gpu = 'pillar'; // dessiné nativement par le moteur WebGPU
   return pillar;
 }
+
+/** Texture d'anneau fin (contour) */
+let ringTexture = null;
+function getRingTexture() {
+  if (ringTexture) return ringTexture;
+  const size = 128, canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 3;
+  ctx.shadowColor = '#fff';
+  ctx.shadowBlur = 5;
+  ctx.beginPath();
+  ctx.arc(size / 2, size / 2, size * 0.43, 0, Math.PI * 2);
+  ctx.stroke();
+  ringTexture = new THREE.CanvasTexture(canvas);
+  return ringTexture;
+}
+
+/**
+ * Contour blanc autour d'un objet à ramasser : un anneau fin, face à la caméra.
+ * (Le moteur WebGPU le dessine lui-même : userData.ring.)
+ */
+export function createRing(size) {
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: getRingTexture(), color: '#ffffff', transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, fog: false, opacity: 0 }));
+  sprite.scale.setScalar(size);
+  sprite.userData.ring = true;
+  sprite.raycast = () => {};
+  return sprite;
+}

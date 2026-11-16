@@ -339,6 +339,7 @@ export class Bridge {
     if (this.nSingle >= MAX_SINGLE || o.material.opacity <= 0.002) return;
     const geo = this.geometry(this.quad);
     this.params(o.material, o, geo);
+    if (o.userData.ring) this._p.par[2] = 1; // contour fin au lieu d'un halo plein
     const w = o.matrixWorld.elements, out = this.single, k = this.nSingle * INST;
     const sx = Math.hypot(w[0], w[1], w[2]), sy = Math.hypot(w[4], w[5], w[6]);
     // Face à la caméra mais sans son roulis : le haut du halo reste le haut du monde

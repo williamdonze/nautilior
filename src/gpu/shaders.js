@@ -439,7 +439,11 @@ fn rift(uv: vec2f, open: f32, beat: f32, near: f32, zip: f32) -> vec3f {
   if (kind == 5) { c = alb + i.emi.rgb; }
   else if (kind == 6) { c = rift(i.uv, i.emi.a, i.par.z, i.par.w, i.col.r); }
   else if (kind == 7) { c = i.emi.rgb * i.par.z * pow(1. - i.uv.y, 2.); }
-  else if (kind == 9) { let r = length(i.uv - .5) * 2.; c = alb * pow(sat(1. - r), 2.2); }
+  else if (kind == 9) {
+    let r = length(i.uv - .5) * 2.;
+    c = alb * pow(sat(1. - r), 2.2);
+    if (i.par.z > .5) { c = alb * (1. - ss(.012, .05, abs(r - .86))) * 1.6; } // anneau : contour d'un objet à ramasser
+  }
   else {
     let N = normalize(n + D.n * bump);
     let L = g.sun.xyz;
@@ -612,7 +616,7 @@ struct VO { @builtin(position) cp: vec4f, @location(0) wp: vec3f };
   let rr = refract(V, n, 1.33);
   let sd = max(dot(rr, g.sun.xyz), 0.);
   let fr = pow(1. - sqrt(max(k, 0.)), 5.);
-  let sky = (vec3f(.30, .78, 1.) * 1.3 * clamp(1. + 3.8 * (s.x * .6 - s.y * .8), .25, 3.) + vec3f(1., .95, .85) * (pow(sd, 60.) * 1.3 + pow(sd, 500.) * 12.)) * (1. - fr);
+  let sky = (vec3f(.40, .62, .68) * 1.05 * clamp(1. + 3.8 * (s.x * .6 - s.y * .8), .25, 3.) + vec3f(1., .95, .85) * (pow(sd, 60.) * 1.3 + pow(sd, 500.) * 12.)) * (1. - fr);
   let z = zone(i.wp);
   let R = reflect(V, n);
   let refl = fogIn(i.wp, R, 300., z, g.sun.xyz) * 1.15;
