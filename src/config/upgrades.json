@@ -206,48 +206,48 @@
           "label": "Lampe et sonar d'origine",
           "cost": 0,
           "stats": {
-            "lightIntensity": 55,
-            "lightRange": 90,
-            "lightAngle": 0.5,
+            "lightIntensity": 140,
+            "lightRange": 125,
+            "lightAngle": 0.62,
             "radarRange": 45,
-            "auraIntensity": 4,
-            "auraRange": 12
+            "auraIntensity": 12,
+            "auraRange": 20
           }
         },
         {
           "label": "Ampoule neuve, sonar réglé",
           "cost": 300,
           "stats": {
-            "lightIntensity": 80,
-            "lightRange": 110,
-            "lightAngle": 0.55,
+            "lightIntensity": 200,
+            "lightRange": 155,
+            "lightAngle": 0.68,
             "radarRange": 65,
-            "auraIntensity": 9,
-            "auraRange": 18
+            "auraIntensity": 22,
+            "auraRange": 28
           }
         },
         {
           "label": "Projecteur de chalutier, sonar militaire",
           "cost": 1000,
           "stats": {
-            "lightIntensity": 115,
-            "lightRange": 135,
-            "lightAngle": 0.6,
+            "lightIntensity": 290,
+            "lightRange": 190,
+            "lightAngle": 0.74,
             "radarRange": 90,
-            "auraIntensity": 16,
-            "auraRange": 24
+            "auraIntensity": 38,
+            "auraRange": 36
           }
         },
         {
           "label": "Projecteur à arc, sonar à balayage",
           "cost": 2800,
           "stats": {
-            "lightIntensity": 160,
-            "lightRange": 160,
-            "lightAngle": 0.66,
+            "lightIntensity": 400,
+            "lightRange": 225,
+            "lightAngle": 0.8,
             "radarRange": 120,
-            "auraIntensity": 28,
-            "auraRange": 32
+            "auraIntensity": 60,
+            "auraRange": 46
           }
         }
       ]

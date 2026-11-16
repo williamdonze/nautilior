@@ -140,7 +140,10 @@ const S_G = /*wgsl*/`
 struct G { vp: mat4x4f, sm: mat4x4f, cam: vec4f, right: vec4f, up: vec4f, fwd: vec4f, sun: vec4f, res: vec4f, mis: vec4f,
   sub: vec4f, subv: vec4f, fx: vec4f, lp: array<vec4f, 6>, lc: array<vec4f, 6>, ld: array<vec4f, 6> };
 const DK = ${DK};
-const SIG = vec3f(.058, .0235, .0195);
+const SIG0 = vec3f(.058, .0235, .0195);
+// Absorption de l'eau. g.sun.w = clarté : 1 près de la surface, plus bas en profondeur (l'eau des grands fonds est
+// limpide : on y voit loin ce que le phare éclaire). Voir diveRenderer.js.
+fn sig() -> vec3f { return SIG0 * g.sun.w; }
 const KD = vec3f(.056, .0245, .0170);
 const WCOL = vec3f(.16, .58, .90);
 const KDZ = vec3f(.034, .023, .018);
@@ -154,7 +157,7 @@ fn ss(a: f32, b: f32, x: f32) -> f32 { let t = clamp((x - a) / (b - a), 0., 1.);
 fn ign(p: vec2f) -> f32 { return fract(52.9829189 * fract(dot(p, vec2f(.06711056, .00583715)))); }
 fn hs(x: f32) -> f32 { return fract(sin(x * 127.1) * 43758.5453); }
 fn kd(z: f32) -> vec3f { return mix(KD, KDZ, z); }
-fn sg(z: f32) -> vec3f { return mix(SIG, vec3f(.034, .026, .022), z); }
+fn sg(z: f32) -> vec3f { return mix(sig(), vec3f(.034, .026, .022) * g.sun.w, z); }
 fn fin(c: vec3f) -> vec4f { return vec4f(min(max(c, vec3f(0.)), vec3f(40.)), 1.); }
 const KDF = vec3f(.043, .045, .042);
 fn fogIn(ro: vec3f, rd: vec3f, d: f32, z: f32, sun: vec3f) -> vec3f {
@@ -241,13 +244,13 @@ fn lights(p: vec3f, n: vec3f, two: f32) -> vec3f {
   var s = vec3f(0.);
   for (var i = 0; i < i32(g.fx.z); i++) {
     let la = lightAt(i, p); let nl = dot(n, la.xyz);
-    s += g.lc[i].rgb * exp(-SIG * distance(g.lp[i].xyz, p)) * la.w * mix(sat(nl), abs(nl) * .7 + .3, two);
+    s += g.lc[i].rgb * exp(-sig() * distance(g.lp[i].xyz, p)) * la.w * mix(sat(nl), abs(nl) * .7 + .3, two);
   }
   return s;
 }
 fn lightsVol(p: vec3f) -> vec3f {
   var s = vec3f(0.);
-  for (var i = 0; i < i32(g.fx.z); i++) { s += g.lc[i].rgb * exp(-SIG * distance(g.lp[i].xyz, p)) * lightAt(i, p).w; }
+  for (var i = 0; i < i32(g.fx.z); i++) { s += g.lc[i].rgb * exp(-sig() * distance(g.lp[i].xyz, p)) * lightAt(i, p).w; }
   return s;
 }
 fn qrot(q: vec4f, v: vec3f) -> vec3f { return v + 2. * cross(q.xyz, cross(q.xyz, v) + q.w * v); }
@@ -471,7 +474,7 @@ fn rift(uv: vec2f, open: f32, beat: f32, near: f32, zip: f32) -> vec3f {
       c += (am + li * .6 + E * .3) * (mix(vec3f(.45, .7, .7), ir, i.par.z) * pow(1. - ndv, 3.) * 1.1 + alb * .5 * pow(1. - ndv, 1.5));
     }
   }
-  if ((fl & 4u) != 0u) { return vec4f(min(c * a * exp(-SIG * dist * select(1., .25, kind == 6)), vec3f(30.)), 0.); }
+  if ((fl & 4u) != 0u) { return vec4f(min(c * a * exp(-sig() * dist * select(1., .25, kind == 6)), vec3f(30.)), 0.); }
   return vec4f(min(max(fog(c, i.wp, 0.), vec3f(0.)), vec3f(40.)) * a, a);
 }
 `;
@@ -565,11 +568,11 @@ struct GO { @builtin(position) cp: vec4f, @location(0) uv: vec2f, @location(1) @
   let z = zone(p);
   let lit = .3 + 1.8 * shadow1(p) * sunE(p.y, z).g;
   let e = b.z / sz;
-  o.col = pal(fract(b.y)) * (.12 + tw * 1.7) * lit * e * e * exp(-SIG.g * d) * ss(.4, 1.5, d) * 17.;
+  o.col = pal(fract(b.y)) * (.12 + tw * 1.7) * lit * e * e * exp(-sig().g * d) * ss(.4, 1.5, d) * 17.;
   // b.y >= 1 : bioluminescence réelle (plumes de mer, ophiures) : rien, sauf un éclat bleu bref quand la coque passe tout près
   if (b.y >= 1.) {
     let near = ss(9., 2.5, distance(p, g.sub.xyz));
-    o.col = vec3f(.25, .7, 1.) * near * (.55 + .45 * sin(t * 11. + b.x * 60.)) * e * e * exp(-SIG.g * d) * 26.;
+    o.col = vec3f(.25, .7, 1.) * near * (.55 + .45 * sin(t * 11. + b.x * 60.)) * e * e * exp(-sig().g * d) * 26.;
   }
   return o;
 }
@@ -686,7 +689,7 @@ fn quad(i: u32) -> vec2f { return vec2f(f32(i & 1u), f32(i >> 1u)) * 2. - 1.; }
   var c = mix(lo, hi, ss(-.5, .8, i.uv.y + rim * .4)) * (.5 + 1.2 * rim) + E * hl * 1.6;
   var al = disc * sat(.03 + rim * rim * rim * .9 + hl);
   let v = i.wp - g.cam.xyz; let d = length(v);
-  let T = exp(-SIG.g * d) * ss(1.2, 3., d);
+  let T = exp(-sig().g * d) * ss(1.2, 3., d);
   c = c * T + fogIn(g.cam.xyz, v / d, d, z, g.sun.xyz) * (1. - T);
   al *= mix(.35, 1., T);
   return vec4f(min(max(c * al, vec3f(0.)), vec3f(20.)), al);
@@ -707,7 +710,7 @@ fn quad(i: u32) -> vec2f { return vec2f(f32(i & 1u), f32(i >> 1u)) * 2. - 1.; }
     col = b.rgb * vis * 1.8; kind = 1.; zb = 1.04;
   } else {
     let lit = select(vec3f(1.), sunE(a.y, 0.) * .5 + amb(a.xyz, vec3f(0., 1., 0.), 1., 0.) + lightsVol(a.xyz) * .5, b.w < .5);
-    col = b.rgb * lit * exp(-SIG * d) * min(1., a.w / sz);
+    col = b.rgb * lit * exp(-sig() * d) * min(1., a.w / sz);
   }
   o.cp = g.vp * vec4f(a.xyz + (g.right.xyz * q.x + g.up.xyz * q.y) * sz, 1.); o.uv = q; o.wp = a.xyz;
   o.cp.z *= zb; // l'écho passe juste devant la surface qu'il dessine
@@ -741,7 +744,7 @@ fn quad(i: u32) -> vec2f { return vec2f(f32(i & 1u), f32(i >> 1u)) * 2. - 1.; }
   let m = ss(1., .2, r);
   let z = zone(i.wp);
   let c = (sunE(i.wp.y, z) * i.pr.y * .8 + amb(i.wp, vec3f(0., 1., 0.), 1., z) * .3 + i.lv * .22) * mix(vec3f(1.), vec3f(.7, 1., .9), i.pr.z);
-  return vec4f(min(max(c * m * m * i.pr.x * exp(-SIG.g * i.pr.w), vec3f(0.)), vec3f(8.)), 0.);
+  return vec4f(min(max(c * m * m * i.pr.x * exp(-sig().g * i.pr.w), vec3f(0.)), vec3f(8.)), 0.);
 }
 `;
 
@@ -783,7 +786,7 @@ const W_RAYS = S_G + W_FS + /*wgsl*/`
     for (var n = 0; n < ${SPOTN}; n++) {
       let t = (f32(n) + j) * ds; let v = ro + rd * t - lpos; let d = length(v);
       let w = sat(1. - pow(d / rng, 4.));
-      sp += ss(co, mix(co, 1., .55), dot(v / max(d, 1e-3), ldir)) * w * w / max(pow(d, g.lc[0].w), .6) * exp(-SIG * (t + d) * .7);
+      sp += ss(co, mix(co, 1., .55), dot(v / max(d, 1e-3), ldir)) * w * w / max(pow(d, g.lc[0].w), .6) * exp(-sig() * (t + d) * .7);
     }
     let mus = max(dot(rd, -ldir), 0.);
     sp *= ds * g.lc[0].rgb * g.fx.w * (.6 + 1.4 * mus * mus);
