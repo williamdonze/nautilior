@@ -394,14 +394,15 @@ export class Game {
     }
     for (const line of clue.lines) await this.dialogue.narrate(line, false);
     // Relecture : après une fin, on sait ce que c'était
-    if (getEndings().length && clue.truth) await this.dialogue.narrate(`(${clue.truth})`, false);
   }
 
   /** Lance la conversation adaptée avec un personnage, puis l'action éventuelle */
   async talk(npcId) {
     const conv = pickConversation(npcId);
     if (!conv) return;
+    this.dialogue.onCue = (cue) => { if (cue === 'showSub' && this.mode === 'port') this.port.showSub(); };
     const action = await this.dialogue.play(npcId, conv);
+    this.port.releaseCamera();
     this.persist();
     if (action === 'openShop') this.panels.open('shop');
     else if (action === 'openUpgrades') this.panels.open('upgrades');
@@ -444,6 +445,7 @@ export class Game {
       this.paused = true;
       this.sound.stopEngine();
     }
+    this.memoryView.context = { port: this.port };
     await this.memoryView.show(fragmentsData.fragments[index], index + 1);
     this.paused = false;
     this.busy = false;

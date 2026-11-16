@@ -318,10 +318,17 @@ export class Bridge {
     }
     for (const m of movers) {
       const r = m.hostile ? 1.6 : 0.9, g = m.hostile ? 0.25 : 0.95, b = m.hostile ? 0.15 : 1;
+      if (m.school) {
+        // banc : un point par poisson (maillage instancié)
+        const im = m.school.mesh, arr = im.instanceMatrix.array, w = im.matrixWorld.elements;
+        for (let i = 0; i < im.count; i++) { const x = arr[i * 16 + 12], y = arr[i * 16 + 13], z = arr[i * 16 + 14]; put(w[0] * x + w[4] * y + w[8] * z + w[12], w[1] * x + w[5] * y + w[9] * z + w[13], w[2] * x + w[6] * y + w[10] * z + w[14], 0.09, r, g, b); }
+        continue;
+      }
+      const per = 160 * (m.dense ?? 1);
       m.object.traverse((c) => {
         const pos = c.isMesh && !c.isInstancedMesh && c.geometry?.attributes.position;
         if (!pos) return;
-        const e = c.matrixWorld.elements, st = Math.max(1, Math.floor(pos.count / 160));
+        const e = c.matrixWorld.elements, st = Math.max(1, Math.floor(pos.count / per));
         for (let i = 0; i < pos.count; i += st) {
           const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
           put(e[0] * x + e[4] * y + e[8] * z + e[12], e[1] * x + e[5] * y + e[9] * z + e[13], e[2] * x + e[6] * y + e[10] * z + e[14], 0.07, r, g, b);
@@ -339,6 +346,7 @@ export class Bridge {
     if (this.nSingle >= MAX_SINGLE || o.material.opacity <= 0.002) return;
     const geo = this.geometry(this.quad);
     this.params(o.material, o, geo);
+    if (o.userData.ring) this._p.par[2] = 1; // contour fin au lieu d'un halo plein
     const w = o.matrixWorld.elements, out = this.single, k = this.nSingle * INST;
     const sx = Math.hypot(w[0], w[1], w[2]), sy = Math.hypot(w[4], w[5], w[6]);
     // Face à la caméra mais sans son roulis : le haut du halo reste le haut du monde

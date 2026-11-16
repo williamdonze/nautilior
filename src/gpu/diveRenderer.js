@@ -338,7 +338,8 @@ export class GpuDiveRenderer {
     // Exposition : l'œil s'habitue au noir des grands fonds
     const depth = -c.y;
     const ek = Math.min(1, Math.max(0, (depth - 8) / 26)), dark = Math.min(1, Math.max(0, (depth - 60) / 380));
-    m[56] = EXPO * (0.6 + 0.4 * ek) * (1 + 0.7 * dark); m[57] = RAYS; m[58] = 1;
+    const shallow = Math.min(1, depth / 90); // ciel couvert : près de la surface, la lumière reste grise et douce
+    m[56] = EXPO * (0.6 + 0.4 * ek) * (1 + 0.7 * dark) * (0.74 + 0.26 * shallow); m[57] = RAYS; m[58] = 1;
     // battement : 1 au bip du sonar, puis ça retombe ; l'eau verte, les veines du sol et l'image pulsent avec lui
     const beat = Math.exp(-(dive.beatPhase ?? 1) * 5);
     m[59] = (dive.survival?.radiation ?? 0) * 0.0035 * (1 + beat * 1.2) * (dive.portal?.open ?? 1); // ondulation de l'image près du portail
@@ -349,7 +350,7 @@ export class GpuDiveRenderer {
     m[67] = 1 - (dive.survival?.hullRatio ?? 1); // dégâts de coque (rayures, suie)
     const pd = Math.hypot(c.x - S.x, c.z - S.z), pk = Math.min(1, Math.max(0, (300 - pd) / 240));
     m[68] = (pk * pk * 0.7 * (dive.portal?.open ?? 1) + (dive.survival?.radiation ?? 0) * 0.5) * (0.75 + 0.6 * beat);
-    m[69] = 1;
+    m[69] = 0.8 + 0.2 * shallow;
     m[70] = bridge.writeLights(UB, 72, LIGHT_K);
     m[71] = bridge.spot ? 0.006 + 0.02 * dark : 0; // faisceau visible surtout dans le noir
 

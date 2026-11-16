@@ -36,25 +36,31 @@ const mesh = (parent, geo, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Me
  * qui s'ouvre comme une corolle sur une couronne d'aiguilles. Une lueur descend le long du corps.
  */
 export function createSonde() {
-  const root = new THREE.Group(), N = 18, SP = 0.6, S = 1.8;
+  const root = new THREE.Group(), N = 18, SP = 0.6 * 1.8, S = 1.8;
   const mat = skin('#c2d0cb'), dark = plain('#3a2226', { side: THREE.DoubleSide });
-  const rib = (c, t) => c.setScalar(0.62 + 0.38 * Math.pow(Math.abs(Math.sin(t * Math.PI * 3.5)), 0.5));
-  const cores = [];
-  const segments = [];
-  for (let i = 0; i < N; i++) {
-    const r = 0.4 * (1 - Math.pow(i / N, 2) * 0.72);
-    // chaque tronçon déborde largement sur ses voisins : aucun jour dans les virages serrés
-    const prof = [];
-    for (let k = 0; k <= 14; k++) { const u = k / 14, z = (u - 0.5) * SP * 1.9; prof.push([r * Math.pow(Math.sin(Math.PI * u), 0.35) * (0.9 + 0.1 * Math.cos(u * Math.PI * 7)), z]); }
-    const seg = new THREE.Group();
-    mesh(seg, turned(prof, 22, rib), mat);
-    // la lueur qui voyage à l'intérieur
-    const core = mesh(seg, new THREE.SphereGeometry(r * 0.45, 10, 8), new THREE.MeshBasicMaterial({ color: '#000000' }));
-    cores.push(core);
-    seg.position.z = -(i + 1) * SP;
-    root.add(seg);
-    segments.push(seg);
+  /*
+   * Le corps : UN tube continu, reconstruit à chaque image le long de l'échine (les points de `chain`).
+   * Plus de tronçons séparés : rien ne peut se déboîter ni bâiller dans les virages serrés.
+   */
+  const ROWS = N * 4 + 1, W = 15, pos = new Float32Array(ROWS * W * 3), nor = new Float32Array(pos.length), col = new Float32Array(pos.length), idx = [];
+  for (let i = 0; i < ROWS; i++) for (let j = 0; j < W; j++) {
+    // anneaux : clair sur la crête, sombre dans le creux
+    const k = 0.62 + 0.38 * Math.pow(Math.abs(Math.sin((i / 4) * Math.PI)), 0.5), o = (i * W + j) * 3;
+    col[o] = col[o + 1] = col[o + 2] = k;
   }
+  for (let i = 0; i < ROWS - 1; i++) for (let j = 0; j < W - 1; j++) { const a = i * W + j, b = a + W; idx.push(a, b, a + 1, a + 1, b, b + 1); }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  geo.setIndex(idx);
+  geo.userData.dynamic = true;
+  const tubeMesh = mesh(root, geo, mat);
+  tubeMesh.frustumCulled = false;
+  const chain = Array.from({ length: N }, (_, i) => new THREE.Vector3(0, 0, -(i + 1) * SP));
+  // trois lueurs qui descendent le long du corps
+  const cores = [0, 1, 2].map(() => { const h = createHalo('#9fe8c8', 1.6); h.material.opacity = 0; root.add(h); return h; });
+
   // Tête : un col annelé, puis le pavillon
   const head = new THREE.Group();
   root.add(head);
@@ -74,28 +80,58 @@ export function createSonde() {
   jaw.position.set(0, -0.3, 0.6);
   head.add(jaw);
   const lip = turned([[0.62, 0.25], [0.9, 0.58], [0.98, 0.7], [0.9, 0.68]], 30, (c, t) => c.setScalar(0.75 + 0.25 * t));
-  // on ne garde que le tiers inférieur de la corolle
-  const idx = [], lp = lip.attributes.position, li = lip.index.array;
-  for (let i = 0; i < li.length; i += 3) if (lp.getY(li[i]) < -0.25 && lp.getY(li[i + 1]) < -0.25 && lp.getY(li[i + 2]) < -0.25) idx.push(li[i], li[i + 1], li[i + 2]);
-  lip.setIndex(idx);
+  const li2 = [], lp = lip.attributes.position, li = lip.index.array;
+  for (let i = 0; i < li.length; i += 3) if (lp.getY(li[i]) < -0.25 && lp.getY(li[i + 1]) < -0.25 && lp.getY(li[i + 2]) < -0.25) li2.push(li[i], li[i + 1], li[i + 2]);
+  lip.setIndex(li2);
   mesh(jaw, lip, skin('#c2d0cb', { side: THREE.DoubleSide }), 0, 0.3, 0);
   for (let i = 0; i < 5; i++) { const a = Math.PI * (1.2 + i * 0.15), t = mesh(jaw, needle, bone, Math.cos(a) * 0.85, Math.sin(a) * 0.85 + 0.3, 0.62); t.lookAt(0, 0.6, 1.3); }
   const halo = createHalo('#9fe8c8', 2.2);
   halo.material.opacity = 0.35;
   halo.position.z = 0.9;
   head.add(halo);
-
   head.scale.setScalar(S);
-  for (const s of segments) s.scale.setScalar(S);
+
+  const P = new THREE.Vector3(), T = new THREE.Vector3(), Nn = new THREE.Vector3(0, 1, 0), B = new THREE.Vector3(), tmp = new THREE.Vector3();
+  const crom = (a, b, c, d, t) => 0.5 * (2 * b + (c - a) * t + (2 * a - 5 * b + 4 * c - d) * t * t + (3 * b - a - 3 * c + d) * t * t * t);
+  const spine = [new THREE.Vector3(), ...chain];
+  const at = (u, out) => {
+    const k = Math.min(N - 1, Math.floor(u)), f = u - k, a = spine[Math.max(0, k - 1)], b = spine[k], c = spine[k + 1], d = spine[Math.min(N, k + 2)];
+    return out.set(crom(a.x, b.x, c.x, d.x, f), crom(a.y, b.y, c.y, d.y, f), crom(a.z, b.z, c.z, d.z, f));
+  };
   return {
-    root, head, jaw, segments, spacing: SP * S,
-    /** La lueur descend le corps, tronçon après tronçon ; plus vite quand elle charge */
-    tick(t, charging) {
-      const sp = charging ? 9 : 2.2;
-      for (let i = 0; i < N; i++) {
-        const w = Math.max(0, Math.sin(t * sp - i * 0.7)) ** 6;
-        cores[i].material.color.setRGB(0.5 * w, 1.4 * w, 1.0 * w);
+    root, head, jaw, chain, spacing: SP,
+    /** Reconstruit le corps le long de l'échine (tête → queue). À appeler après avoir déplacé head et chain. */
+    updateBody(t, charging) {
+      // l'échine part de l'arrière du col
+      spine[0].set(0, 0, -0.45 * S).applyQuaternion(head.quaternion).add(head.position);
+      Nn.set(0, 1, 0);
+      for (let i = 0; i < ROWS; i++) {
+        const u = Math.min(N - 1e-4, (i / (ROWS - 1)) * N);
+        at(u, P);
+        at(Math.min(N - 1e-4, u + 0.05), T).sub(P);
+        if (T.lengthSq() < 1e-10) at(Math.max(0, u - 0.05), tmp), T.copy(P).sub(tmp);
+        T.normalize();
+        // repère transporté le long de la courbe : il ne vrille pas
+        Nn.addScaledVector(T, -Nn.dot(T));
+        if (Nn.lengthSq() < 1e-6) Nn.set(1, 0, 0).addScaledVector(T, -T.x);
+        Nn.normalize();
+        B.crossVectors(T, Nn);
+        const k = i / (ROWS - 1), R = 0.4 * S * (1 - Math.pow(k, 2) * 0.74) * (0.9 + 0.1 * Math.cos((i / 4) * TAU)) * (k > 0.97 ? (1 - k) / 0.03 + 0.05 : 1);
+        for (let j = 0; j < W; j++) {
+          const an = (j / (W - 1)) * TAU, cs = Math.cos(an), sn = Math.sin(an), o = (i * W + j) * 3;
+          const nx = Nn.x * cs + B.x * sn, ny = Nn.y * cs + B.y * sn, nz = Nn.z * cs + B.z * sn;
+          pos[o] = P.x + nx * R; pos[o + 1] = P.y + ny * R; pos[o + 2] = P.z + nz * R;
+          nor[o] = nx; nor[o + 1] = ny; nor[o + 2] = nz;
+        }
       }
+      geo.attributes.position.needsUpdate = true;
+      geo.attributes.normal.needsUpdate = true;
+      // la lueur descend le corps ; plus vite quand elle charge
+      cores.forEach((h, i) => {
+        const s = ((t * (charging ? 1.6 : 0.35) + i / 3) % 1) * (N - 1);
+        at(s, h.position);
+        h.material.opacity = 0.5 * Math.sin((s / (N - 1)) * Math.PI);
+      });
       const b = charging ? 1 : 0.5 + 0.3 * Math.sin(t * 2.2);
       for (const l of lamps) l.material.color.setRGB(0.6 * b, 1.3 * b, 1.0 * b);
     },

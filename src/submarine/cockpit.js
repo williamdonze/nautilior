@@ -78,8 +78,8 @@ const needleAngle = (v) => Math.PI * 0.75 - Math.max(0, Math.min(1, v)) * Math.P
 /** Écran à texte (CanvasTexture), mis à jour par draw(ctx, state) */
 function screen(group, x, y, z, w, h, draw, tilt = -0.5, tint = '#7fd0c0') {
   const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = Math.round(256 * (h / w));
+  canvas.width = 512;
+  canvas.height = Math.round(512 * (h / w));
   const ctx = canvas.getContext('2d');
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -88,8 +88,14 @@ function screen(group, x, y, z, w, h, draw, tilt = -0.5, tint = '#7fd0c0') {
   add(group, new THREE.BoxGeometry(w + 0.03, h + 0.03, 0.02), lambert('#14181b'), x, y, z + 0.012).rotation.set(-tilt, Math.PI, 0);
   return {
     update(state) {
-      ctx.fillStyle = '#04100e';
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = '#031210';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // liseré lumineux
+      ctx.strokeStyle = 'rgba(159,242,226,0.28)';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
       ctx.fillStyle = tint;
       ctx.strokeStyle = tint;
       draw(ctx, canvas.width, canvas.height, state);
@@ -217,67 +223,124 @@ function pod(slot, r, color) {
   m.rotation.x = 0.55;
 }
 
+/** Couleur d'une jauge selon son niveau : claire, puis ambre, puis rouge */
+const levelColor = (v) => (v > 0.5 ? '#9ff2e2' : v > 0.25 ? '#ffc861' : '#ff5a44');
+
 function makeCockpit(level) {
   const st = STYLES[Math.max(0, Math.min(STYLES.length - 1, level))];
   const g = cabin(st);
   const needles = {};
   const screens = [];
-  const gauge = (a, r, face = st.face) => {
-    const slot = mount(g, a, DESK_R, DESK_Y + r * 0.9 + 0.02);
-    pod(slot, r, st.trim);
-    return dial(slot, 0, 0, 0, r, face, st.trim);
-  };
+  const FONT = '"Barlow Condensed", "Segoe UI", sans-serif';
   const display = (a, w, h, draw) => {
-    const slot = mount(g, a, DESK_R + 0.02, DESK_Y + h * 0.5 + 0.03);
-    return screen(slot, 0, 0, 0, w, h, draw, -0.5, st.tint);
+    const slot = mount(g, a, DESK_R + 0.02, DESK_Y + h * 0.5 + 0.12);
+    return screen(slot, 0, 0, 0, w, h, draw, -0.5, '#9ff2e2');
   };
-  const depthScreen = (c, w, h, s) => {
-    c.font = '24px monospace';
-    c.fillText('PROFONDEUR', 12, 30);
-    c.font = '50px monospace';
-    c.fillText(`${String(Math.round(s.depth)).padStart(4, '0')} m`, 12, 88);
-    c.fillRect(12, 108, (w - 24) * Math.min(1, s.depth / s.crushDepth), 8);
-  };
-  const statusScreen = (c, w, h, s) => {
-    c.font = '24px monospace';
-    c.fillText(`O2    ${Math.round(s.oxygen * 100)} %`, 12, 36);
-    c.fillText(`COQUE ${Math.round(s.hull * 100)} %`, 12, 74);
-    c.fillText(`CAP   ${String(Math.round(s.heading)).padStart(3, '0')}°`, 12, 112);
-  };
-  const sonarScreen = (c, w, h, s) => {
-    const cx = w / 2, cy = h / 2, r = h / 2 - 10;
-    c.lineWidth = 2;
-    c.beginPath(); c.arc(cx, cy, r, 0, Math.PI * 2); c.stroke();
-    c.beginPath(); c.arc(cx, cy, r / 2, 0, Math.PI * 2); c.stroke();
-    const a = s.time * 2.4;
-    c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r); c.stroke();
-  };
+  const lit = (c, color, blur = 14) => { c.fillStyle = color; c.strokeStyle = color; c.shadowColor = color; c.shadowBlur = blur; };
+  const label = (c, text, x, y, size = 30) => { lit(c, 'rgba(159,242,226,0.6)', 6); c.font = `500 ${size}px ${FONT}`; c.fillText(text, x, y); };
 
-  // Instruments : cadrans à aiguille sur les vieux modèles, écrans sur les derniers
-  if (st.screens >= 3) {
-    screens.push(display(-0.42, 0.34, 0.19, depthScreen), display(0, 0.26, 0.19, sonarScreen), display(0.42, 0.34, 0.19, statusScreen));
-  } else {
-    needles.depth = gauge(-0.5, 0.1);
-    needles.oxygen = gauge(-0.22, 0.085);
-    needles.hull = gauge(0.02, 0.085);
-    if (st.screens >= 1) screens.push(display(st.screens >= 2 ? 0.34 : 0.4, 0.3, 0.17, depthScreen));
-    if (st.screens >= 2) screens.push(display(0.72, 0.28, 0.17, statusScreen));
-    if (st.screens === 0) needles.compass = gauge(0.28, 0.095, '#26292b');
-  }
-  // Manette des gaz à droite, manche à gauche, voyant d'alerte
-  const tSlot = mount(g, st.screens >= 2 ? 1.0 : 0.62, 0.62, DESK_Y - 0.05);
-  needles.throttle = lever(tSlot, 0, 0, 0, '#26292b', st.led ?? '#8a2a1a');
-  lever(mount(g, -0.85, 0.62, DESK_Y - 0.05), 0, 0, 0, '#26292b', '#26292b');
-  needles.warn = add(mount(g, -0.72, DESK_R + 0.12, DESK_Y + 0.07), new THREE.SphereGeometry(0.022, 10, 8), glow('#3a1a10'));
-  if (st.switches) {
-    for (let i = 0; i < 6; i++) {
-      const sl = mount(g, 0.5 + i * 0.07, 0.6, DESK_Y - 0.04);
-      add(sl, new THREE.BoxGeometry(0.02, 0.04, 0.02), lambert(i % 2 ? '#26292b' : '#a8b0b2'));
-      add(sl, new THREE.SphereGeometry(0.008, 6, 4), glow(i < 4 ? '#7fbf7a' : '#3a1a10'), 0, 0.01, 0.04);
+  /* Tous les sous-marins ont les mêmes instruments : trois écrans lumineux, lisibles dans le noir. */
+  // Profondeur : grands chiffres, barre jusqu'à la limite de la coque
+  const depthScreen = (c, w, h, s) => {
+    const k = Math.min(1, s.depth / Math.max(1, s.crushDepth)), col = k > 1 - 1e-3 ? '#ff5a44' : k > 0.85 ? '#ffc861' : '#9ff2e2';
+    label(c, 'PROFONDEUR', 28, 52);
+    lit(c, col, 22);
+    c.font = `300 150px ${FONT}`;
+    c.textAlign = 'right';
+    c.fillText(String(Math.round(s.depth)), w - 96, 198);
+    c.font = `400 56px ${FONT}`;
+    c.textAlign = 'left';
+    c.fillText('m', w - 84, 198);
+    // barre : où l'on en est par rapport à ce que la coque supporte
+    c.shadowBlur = 0;
+    c.fillStyle = 'rgba(159,242,226,0.16)';
+    c.fillRect(28, h - 62, w - 56, 14);
+    lit(c, col, 12);
+    c.fillRect(28, h - 62, (w - 56) * k, 14);
+    label(c, `LIMITE ${Math.round(s.crushDepth)} m`, 28, h - 14, 24);
+  };
+  // Air et coque : deux anneaux qui se vident, pourcentage au centre
+  const ring = (c, cx, cy, r, v, name, time) => {
+    const col = levelColor(v), blink = v < 0.25 && Math.sin(time * 9) < 0 ? 0.35 : 1;
+    c.lineCap = 'round';
+    c.shadowBlur = 0;
+    c.strokeStyle = 'rgba(159,242,226,0.16)';
+    c.lineWidth = 20;
+    c.beginPath(); c.arc(cx, cy, r, Math.PI * 0.75, Math.PI * 2.25); c.stroke();
+    c.globalAlpha = blink;
+    lit(c, col, 20);
+    c.lineWidth = 20;
+    c.beginPath(); c.arc(cx, cy, r, Math.PI * 0.75, Math.PI * (0.75 + 1.5 * Math.max(0.004, v))); c.stroke();
+    c.textAlign = 'center';
+    c.font = `400 78px ${FONT}`;
+    c.fillText(String(Math.round(v * 100)), cx, cy + 24);
+    c.globalAlpha = 1;
+    label(c, name, cx, cy + r + 26, 30);
+    c.textAlign = 'left';
+  };
+  const lifeScreen = (c, w, h, s) => {
+    ring(c, w * 0.26, h * 0.44, h * 0.3, s.oxygen, 'AIR', s.time);
+    ring(c, w * 0.74, h * 0.44, h * 0.3, s.hull, 'COQUE', s.time);
+  };
+  // Cap, soute, vitesse
+  const navScreen = (c, w, h, s) => {
+    label(c, 'CAP', 28, 52);
+    lit(c, '#9ff2e2', 16);
+    c.font = `300 96px ${FONT}`;
+    c.fillText(`${String(Math.round(s.heading)).padStart(3, '0')}°`, 28, 142);
+    // rose des vents réduite à une réglette
+    c.shadowBlur = 0;
+    for (let i = -6; i <= 6; i++) {
+      const deg = Math.round(s.heading / 15) * 15 + i * 15, x = w * 0.72 + (deg - s.heading) * 2.1;
+      if (x < w * 0.5 || x > w - 20) continue;
+      c.fillStyle = (((deg % 360) + 360) % 360) % 90 === 0 ? '#9ff2e2' : 'rgba(159,242,226,0.45)';
+      c.fillRect(x, 96, 3, (((deg % 360) + 360) % 360) % 90 === 0 ? 40 : 22);
     }
-  }
-  if (st.led) for (let i = 0; i < 9; i++) add(mount(g, -0.5 + i * 0.125, 0.56, DESK_Y - 0.055), new THREE.BoxGeometry(0.03, 0.01, 0.03), glow(i % 3 ? '#2f4a66' : st.led));
-  return { group: g, needles, screens };
+    lit(c, '#ffc861', 10);
+    c.fillRect(w * 0.72 - 2, 84, 5, 12);
+    const full = s.cargo && s.cargo.count >= s.cargo.max;
+    label(c, 'SOUTE', 28, h - 78);
+    lit(c, full ? '#ffc861' : '#9ff2e2', 14);
+    c.font = `400 70px ${FONT}`;
+    c.fillText(s.cargo ? `${s.cargo.count} / ${s.cargo.max}` : '—', 28, h - 18);
+    label(c, 'VITESSE', w * 0.56, h - 78);
+    lit(c, '#9ff2e2', 14);
+    c.font = `400 70px ${FONT}`;
+    c.fillText(`${(s.speed ?? 0).toFixed(1)}`, w * 0.56, h - 18);
+  };
+  screens.push(display(0.47, 0.36, 0.2, depthScreen), display(0, 0.36, 0.2, lifeScreen), display(-0.47, 0.36, 0.2, navScreen)); // profondeur à gauche du pilote
+
+  /* Boutons d'action : des touches rondes, éclairées, chacune sa couleur et son étiquette */
+  const buttons = {};
+  const button = (id, a, color, text) => {
+    const slot = mount(g, a, 0.64, DESK_Y + 0.055);
+    slot.rotation.x = -0.75; // inclinés vers le pilote
+    add(slot, new THREE.CylinderGeometry(0.036, 0.04, 0.014, 24), lambert('#14181b'));
+    const cap = add(slot, new THREE.CylinderGeometry(0.028, 0.03, 0.02, 24), new THREE.MeshBasicMaterial({ color }), 0, 0.012, 0);
+    // étiquette lumineuse, juste derrière la touche
+    const cv = document.createElement('canvas');
+    cv.width = 256; cv.height = 64;
+    const k = cv.getContext('2d');
+    k.fillStyle = '#04100e'; k.fillRect(0, 0, 256, 64);
+    k.fillStyle = color; k.shadowColor = color; k.shadowBlur = 8;
+    k.font = `600 38px ${FONT}`; k.textAlign = 'center'; k.fillText(text, 128, 45);
+    const tex = new THREE.CanvasTexture(cv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const plate = add(slot, new THREE.PlaneGeometry(0.1, 0.025), new THREE.MeshBasicMaterial({ map: tex }), 0, 0.006, -0.055);
+    plate.rotation.set(-Math.PI / 2, 0, Math.PI);
+    buttons[id] = { cap, base: new THREE.Color(color) };
+  };
+  button('claw', 0.27, '#ffd27a', 'BRAS · CLIC');
+  button('echo', 0.09, '#6fe0ff', 'ÉCHO · R');
+  button('pulse', -0.09, '#7dffb0', 'IMPULSION · F');
+  button('hold', -0.27, '#ff9a6a', 'SOUTE · I');
+
+  // Manette des gaz à droite, manche à gauche, voyant d'alerte
+  const tSlot = mount(g, 1.0, 0.62, DESK_Y - 0.05);
+  needles.throttle = lever(tSlot, 0, 0, 0, '#26292b', st.led ?? '#8a2a1a');
+  lever(mount(g, -0.95, 0.62, DESK_Y - 0.05), 0, 0, 0, '#26292b', '#26292b');
+  needles.warn = add(mount(g, -0.78, DESK_R + 0.12, DESK_Y + 0.07), new THREE.SphereGeometry(0.022, 10, 8), glow('#3a1a10'));
+  return { group: g, needles, screens, buttons };
 }
 
 /**
@@ -285,7 +348,7 @@ function makeCockpit(level) {
  * update(dt, state) anime les instruments ; state = { depth, crushDepth, oxygen, hull, heading, throttle, time }
  */
 export function createCockpit(level) {
-  const { group, needles, screens } = makeCockpit(level);
+  const { group, needles, screens, buttons } = makeCockpit(level);
   // L'œil est un peu en retrait et au-dessus du tableau de bord : on voit hublot ET instruments
   group.position.set(0, -0.04, 0.12);
   group.traverse((o) => {
@@ -297,16 +360,17 @@ export function createCockpit(level) {
     group,
     update(dt, s) {
       const k = Math.min(1, dt * 6);
-      const set = (n, v) => n && (n.rotation.z += (needleAngle(v) - n.rotation.z) * k);
-      set(needles.depth, s.depth / Math.max(1, s.crushDepth * 1.2));
-      set(needles.oxygen, s.oxygen);
-      set(needles.hull, s.hull);
-      if (needles.compass) needles.compass.rotation.z = -(s.heading * Math.PI) / 180;
+      // Touches : pleine lumière quand l'action est possible, veilleuse sinon
+      const glowOf = (id, k) => buttons[id].cap.material.color.copy(buttons[id].base).multiplyScalar(k);
+      glowOf('claw', s.clawBusy ? 0.25 : s.aim ? 1.5 + Math.sin(s.time * 9) * 0.5 : 0.8);
+      glowOf('echo', s.echo == null ? 0.12 : s.echo ? 1.3 : 0.3);
+      glowOf('pulse', (s.pulseReady ?? 1) >= 1 ? 1.2 + Math.sin(s.time * 3) * 0.15 : 0.15 + 0.3 * (s.pulseReady ?? 0));
+      glowOf('hold', s.cargo && s.cargo.count >= s.cargo.max ? 1.2 + Math.sin(s.time * 6) * 0.5 : 0.8);
       if (needles.throttle) needles.throttle.rotation.x += (s.throttle * 0.6 - needles.throttle.rotation.x) * k;
       if (needles.warn) needles.warn.material.color.copy(s.oxygen < 0.25 && Math.sin(s.time * 8) > 0 ? warnOn : warnOff);
       screenTimer -= dt;
       if (screenTimer <= 0) {
-        screenTimer = 0.15;
+        screenTimer = 0.12;
         for (const sc of screens) sc.update(s);
       }
     },

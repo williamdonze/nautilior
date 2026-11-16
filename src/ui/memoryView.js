@@ -1,7 +1,7 @@
-import { drawMemory } from './memoryArt.js';
+import { drawMemoryPhoto } from './memoryPhoto.js';
 
 /**
- * Écran de souvenir : image pixel, titre, puis le souvenir ligne par ligne.
+ * Écran de souvenir : une photo ancienne (vue 3D du jeu, vieillie), titre, puis le souvenir ligne par ligne.
  * E, Espace, Entrée ou clic pour continuer.
  */
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -15,12 +15,13 @@ export class MemoryView {
     this.lines = this.root.querySelector('.mem-lines');
     this.next = this.root.querySelector('.mem-next');
     this.isOpen = false;
+    this.context = null; // { port } : fourni par Game, pour les prises de vue dans le village
   }
 
   /** @param {object} fragment entrée de fragments.json ; @param {number} index numéro du souvenir */
   async show(fragment, index) {
     this.isOpen = true;
-    drawMemory(fragment.art, this.canvas);
+    drawMemoryPhoto(fragment.art, this.canvas, this.context);
     this.title.textContent = `Souvenir ${index} — ${fragment.title}`;
     this.lines.innerHTML = '';
     this.next.classList.remove('visible');

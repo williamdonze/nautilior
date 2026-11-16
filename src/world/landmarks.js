@@ -22,7 +22,7 @@ const WRECKS = [
 /** Positions des épaves (pour y semer plus d'objets) */
 export const WRECK_SPOTS = WRECKS.map(([x, z]) => [x, z]);
 /** La Marie-Morgane : le chalutier dont les filets ont pris le Nautiliar. Elle repose dans le Canyon ; on y entre. */
-export const MARIE = { z: -700, dx: -17, size: 2.6 };
+export const MARIE = { z: -700, dx: -10, size: 2.6 };
 // Épaves : métal rouillé ; aiguilles du canyon : roche (détail triplanaire)
 const vmat = applyDetail(new THREE.MeshLambertMaterial({ vertexColors: true }), 'metal', 1.4);
 const rockMat = applyDetail(new THREE.MeshLambertMaterial({ vertexColors: true }), 'rock', 1);
@@ -96,6 +96,7 @@ function wreck(x, z, size, colliders, opts = {}) {
   g.position.set(x, floor + D * (opts.lift ?? 0.45), z);
   g.rotation.set(rand.range(-0.15, 0.15), rand() * Math.PI * 2, rand.range(0.2, 0.5));
   if (opts.rot) g.rotation.set(...opts.rot);
+  if (opts.order) g.rotation.order = opts.order; // 'YZX' : cap, puis assiette (proue vers le bas), puis gîte
   const add = (geo, mat, px = 0, py = 0, pz = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(px, py, pz); g.add(m); return m; };
   const steel = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
   steel.userData.detail = 'metal';
@@ -192,6 +193,17 @@ function wreck(x, z, size, colliders, opts = {}) {
           p.set((t - 0.5) * L, sheer(t) - f * d, sd * Math.pow(ca, 0.6) * w).applyMatrix4(g.matrixWorld);
           colliders.push({ x: p.x, y: p.y, z: p.z, r });
         }
+      }
+    }
+    // le pont : un tapis de petites sphères, sauf au-dessus du panneau de cale (c'est par là qu'on descend)
+    const dr = 0.42 * size;
+    for (let t = 0.05; t < 0.96; t += (dr * 1.8) / L) {
+      const w = half(t) - dr * 0.6;
+      for (let zz = -w; zz <= w; zz += dr * 1.8) {
+        const cx = t - 0.5;
+        if (cx > 0.0 && cx < 0.22 && Math.abs(zz) < B * 0.26) continue;
+        p.set(cx * L, sheer(t) - dr * 0.7, zz).applyMatrix4(g.matrixWorld);
+        colliders.push({ x: p.x, y: p.y, z: p.z, r: dr });
       }
     }
     // la passerelle
@@ -308,7 +320,7 @@ function glowStalks(count, uniforms) {
   return g;
 }
 
-const MARIE_OPTS = { hollow: true, lift: 0.82, rot: [0.04, Math.PI / 2 - 0.22, 0.26], breach: [0.5, 0.7, 1, 6], name: 'MARIE-MORGANE' };
+const MARIE_OPTS = { hollow: true, lift: 1.7, rot: [0.22, 1.86, -1.0], order: 'YZX', breach: [0.5, 0.7, 1, 6], name: 'MARIE-MORGANE' };
 /** Aperçu (page de développement) */
 export function createMariePreview() {
   const g = wreck(0, MARIE.z, MARIE.size, [], { ...MARIE_OPTS, rot: [0, 0, 0] });

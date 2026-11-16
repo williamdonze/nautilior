@@ -48,6 +48,7 @@ export class DialogueBox {
       if (!node) break;
       applySet(node.set);
       if (node.action) action = node.action;
+      if (node.cue) this.onCue?.(node.cue); // mise en scène pendant la réplique (voir Game)
       await this.type(resolveText(node.text));
       if (node.choices?.length) {
         const choice = await this.choose(node.choices);

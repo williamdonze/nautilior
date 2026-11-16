@@ -69,6 +69,21 @@ export function getFloorHeight(x, z) {
   return base + (8 - base) * k + noise(x * 0.05, z * 0.05 + 40) * 6 * e * (1 - e);
 }
 
+/**
+ * Hauteur du fond TEL QU'IL EST DESSINÉ : le maillage a des mailles de SEABED.CELL mètres, et entre
+ * deux sommets il est plat. Un petit objet posé à la hauteur exacte du relief peut donc se retrouver
+ * enterré sous le maillage (ou flotter au-dessus). Tout ce qui doit se VOIR posé sur le fond utilise
+ * cette fonction ; les collisions gardent getFloorHeight.
+ */
+export function meshFloorHeight(x, z) {
+  const C = SEABED.CELL, ox = -SEABED.WIDTH / 2;
+  const i = Math.floor((x - ox) / C), j = Math.floor(z / C);
+  const x0 = ox + i * C, z0 = j * C, u = (x - x0) / C, v = (z - z0) / C;
+  const ha = getFloorHeight(x0, z0), hb = getFloorHeight(x0, z0 + C), hc = getFloorHeight(x0 + C, z0 + C), hd = getFloorHeight(x0 + C, z0);
+  // même découpe en deux triangles que THREE.PlaneGeometry (diagonale b–d)
+  return u + v <= 1 ? ha + u * (hd - ha) + v * (hb - ha) : hc + (1 - u) * (hb - hc) + (1 - v) * (hd - hc);
+}
+
 // Couleurs (sRGB, converties en linéaire par THREE.Color)
 const SAND = [new THREE.Color('#6f7a6e'), new THREE.Color('#5d6a60'), new THREE.Color('#7d8476')];
 const SILT = [new THREE.Color('#4a4f4a'), new THREE.Color('#545a52'), new THREE.Color('#40463f')];

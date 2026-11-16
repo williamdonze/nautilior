@@ -423,7 +423,8 @@
               "next": "b"
             },
             "b": {
-              "text": "Le Nautiliar. Je l'ai remis en état. Il t'attendait.",
+              "text": "Le Nautiliar. Là, au bout du quai, sous la lanterne. Je l'ai remis en état. Il t'attendait.",
+              "cue": "showSub",
               "choices": [
                 {
                   "text": "Pourquoi moi ?",

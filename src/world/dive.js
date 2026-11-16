@@ -307,6 +307,7 @@ export class Dive {
     for (const a of this.wildlife.animals) {
       if (near(a.pos.x, a.pos.z)) C.push({ id: a.object.id, kind: a.spec.damage > 0 ? 'creature' : 'fish', x: a.pos.x, y: a.pos.y, z: a.pos.z, size: a.size });
     }
+    if (near(this.whale.pos.x, this.whale.pos.z)) C.push({ id: 'whale', kind: 'fish', x: this.whale.pos.x, y: this.whale.pos.y, z: this.whale.pos.z, size: 5 });
     this.guardian.contacts(C);
     for (const b of this.airBells.spots) if (near(b.x, b.z)) C.push({ id: `bell${b.x}`, kind: 'wreck', x: b.x, y: b.y, z: b.z });
     for (const l of this.landmarkContacts) if (near(l.x, l.z)) C.push(l);
@@ -319,6 +320,9 @@ export class Dive {
     M.length = 0;
     for (const a of this.wildlife.animals) M.push({ object: a.object, hostile: a.spec.damage > 0 });
     for (const m of this.creatures.mutants) M.push({ object: m.object, hostile: true });
+    // la baleine (amie, très grosse : beaucoup de points) et les bancs de poissons (un point par poisson)
+    if (this.whale.object.visible && this.whale.pos.distanceTo(this.sub.position) < 220) M.push({ object: this.whale.object, hostile: false, dense: 5 });
+    for (const s of this.creatures.fish.schools) if (s.active) M.push({ school: s, hostile: false });
     if (this.guardian.group.visible) M.push({ object: this.guardian.head, hostile: true, chain: this.guardian.segs, radius: this.guardian.spacing * 0.8 });
     return M;
   }
@@ -494,6 +498,12 @@ export class Dive {
         hull: survival.hullRatio,
         heading: ((((-sub.yaw * 180) / Math.PI) % 360) + 360) % 360,
         throttle: sub.throttle,
+        speed: sub.speed,
+        cargo: { count: this.hold.items?.length ?? this.hold.count ?? 0, max: this.hold.capacity ?? this.hold.max ?? 0 },
+        pulseReady: 1 - this.pulseCooldown / DEFENSE.COOLDOWN,
+        echo: survival.stats.sonar3d ? this.echoAge == null : null,
+        aim: this.aim.inRange && !!this.aim.pickup && !this.hold.full,
+        clawBusy: this.claw.busy,
         time,
       });
     } else follow.update(dt, sub);
@@ -506,6 +516,7 @@ export class Dive {
     const canGrab = this.view === 'first';
     this.pickups.setHighlighted(canGrab && !this.claw.busy && this.aim.inRange ? this.aim.pickup : null);
     this.pickups.update(time, camera.position);
+    this.pickups.mark(dt, time, sub.position);
     hud.updateReticle(aimPointer, this.aim, this.claw.busy, this.hold.full, canGrab);
     this.captureFx.update(dt, camera);
 
@@ -548,7 +559,8 @@ export class Dive {
       const n = Math.sin(time * 31) * Math.sin(time * 7.3) + Math.sin(time * 2.1 + Math.sin(time * 0.37) * 4);
       lamp = n > (hr < 0.25 ? -0.35 : -1.25) ? 0.8 + 0.2 * Math.sin(time * 53) : 0.04;
     }
-    sub.spot.intensity = stats.lightIntensity * 1.8 * beamK * lamp;
+    // (le rendu de repli Three.js n'a pas la même réponse lumineuse : phare moitié moins fort, sinon le fond brûle)
+    sub.spot.intensity = stats.lightIntensity * 1.8 * beamK * lamp * (gpuMode.active ? 1 : 0.5);
     sub.spot.distance = stats.lightRange * 1.3;
     rp.spot = beamK * (stats.lightIntensity / 85) * lamp;
     this.pixel.setRays(rp);

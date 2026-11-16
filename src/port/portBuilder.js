@@ -21,7 +21,9 @@ import { buildSurroundings } from './surroundings.js';
  * Renvoie aussi les obstacles (boîtes au sol) et les points d'interaction des maisons.
  */
 const rand = createRandom(29);
-const lambert = (color, extra = {}) => textured(new THREE.MeshLambertMaterial({ color, ...extra }), 'stone', 1.6);
+const stoneMat = (color) => textured(new THREE.MeshLambertMaterial({ color }), 'stone', 1.6);
+// Bois, fer, caisses : matière unie (pas de pavés dessus)
+const lambert = (color, extra = {}) => new THREE.MeshLambertMaterial({ color, flatShading: true, ...extra });
 const patina = createNoise2D(4107);
 const vertexMat = textured(new THREE.MeshLambertMaterial({ vertexColors: true }), 'stone', 1.1);
 const GLOW = new THREE.MeshBasicMaterial({ color: '#cdb57c' });
@@ -110,7 +112,7 @@ export function buildPort() {
   group.add(ground);
   // Bordure du quai (gros blocs)
   for (let x = -54; x < 54; x += 2.2) {
-    box(2.1, 0.5, 1.2, lambert(rand() < 0.5 ? '#5f6564' : '#45484a'), x, 0.05, 5.7, group);
+    box(2.1, 0.5, 1.2, stoneMat(rand() < 0.5 ? '#5f6564' : '#45484a'), x, 0.05, 5.7, group);
   }
   // Bollards et anneaux d'amarrage
   for (const x of [-26, -8, 6, 18, 30]) {
@@ -126,9 +128,10 @@ export function buildPort() {
   const ctx = { group, colliders, lights, tagged };
   for (const b of layout.buildings) {
     const s0 = tagged.shutters.length, w0 = tagged.darkWindows.length;
+    const c0 = group.children.length;
     buildVillageBuilding(b, ctx);
     // ce qui appartient à cette maison (le village se rouvre maison par maison : voir Port.setMemories)
-    (tagged.houses ??= []).push({ id: b.id, kind: b.kind, yann: !!b.yann, shutters: tagged.shutters.slice(s0), windows: tagged.darkWindows.slice(w0) });
+    (tagged.houses ??= []).push({ id: b.id, kind: b.kind, yann: !!b.yann, shutters: tagged.shutters.slice(s0), windows: tagged.darkWindows.slice(w0), objects: group.children.slice(c0), box: b, fade: 1 });
     if (b.kind === 'house' || b.kind === 'cafe') {
       interactables.push({ id: b.id, kind: 'house', yann: !!b.yann, x: b.x, z: b.z + b.d / 2 + 1.0, label: b.kind === 'cafe' ? 'Pousser la porte du bar' : 'Frapper à la porte' });
     }
@@ -153,7 +156,17 @@ export function buildPort() {
 
   // Casiers et filets abandonnés sur le quai
   for (const [x, z] of [[-29, 2.5], [-27.6, 3.2], [-5, 3.4], [33, 3.2]]) {
-    box(1.1, 0.5, 0.75, lambert('#63321b'), x, 0.25, z, group).rotation.y = rand() * 3;
+    {
+      // caisse à poisson : planches, deux tasseaux, un cerclage
+      const crate = new THREE.Group();
+      crate.position.set(x, 0, z);
+      crate.rotation.y = rand() * 3;
+      group.add(crate);
+      const plank = textured(new THREE.MeshLambertMaterial({ color: '#6a4a2e' }), 'wood', 2.2);
+      box(1.1, 0.5, 0.75, plank, 0, 0.25, 0, crate);
+      for (const s of [-1, 1]) box(0.08, 0.54, 0.79, lambert('#3e2a1a'), s * 0.42, 0.25, 0, crate);
+      for (const y of [0.17, 0.34]) box(1.12, 0.012, 0.77, lambert('#2a1c12'), 0, y, 0, crate);
+    }
     colliders.push({ minX: x - 0.6, maxX: x + 0.6, minZ: z - 0.6, maxZ: z + 0.6 });
   }
 
