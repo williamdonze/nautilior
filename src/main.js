@@ -72,8 +72,17 @@ try {
 } catch {
   /* rien */
 }
-if (autostart) game.start();
-else game.showTitle();
+if (autostart) {
+  document.body.classList.remove('in-menu');
+  game.start();
+} else game.showTitle();
+
+// Fin du démarrage : on attend que la première image soit dessinée, puis l'écran de chargement s'efface
+// (sans cela, on apercevait le HUD de plongée et le sonar le temps que tout se mette en place)
+requestAnimationFrame(() => requestAnimationFrame(() => {
+  document.body.classList.remove('booting');
+  setTimeout(() => document.getElementById('boot')?.remove(), 1600);
+}));
 
 // --- Boucle, avec compteur d'images par seconde
 let frames = 0, fpsTime = 0;

@@ -176,3 +176,111 @@ body.mode-port #voice { display: none; }
   background: #16120e;
 }
 .mem-title { margin-top: 26px; }
+
+/* =========================================================================================
+ * Menus : même écriture que l'interface de plongée (Barlow Condensed fin, filets, verre dépoli).
+ * Écran titre : le quai dans la brume derrière, le titre à gauche, rien d'autre.
+ * ========================================================================================= */
+#menu { font-family: 'Barlow Condensed', system-ui, sans-serif; color: var(--hud-fg); }
+#menu.is-main {
+  justify-content: flex-start;
+  padding-left: clamp(28px, 9vw, 160px);
+  background:
+    linear-gradient(90deg, rgba(3, 8, 11, 0.86) 0%, rgba(3, 8, 11, 0.55) 34%, rgba(3, 8, 11, 0) 68%),
+    linear-gradient(0deg, rgba(3, 8, 11, 0.6), rgba(3, 8, 11, 0) 30%);
+}
+#menu.is-pause, #menu.is-settings, #menu.is-confirm { background: rgba(3, 8, 11, 0.62); backdrop-filter: blur(6px); }
+
+.title-frame { text-align: left; max-width: 520px; }
+.title-frame > * { opacity: 0; animation: menuIn 1.6s cubic-bezier(.2, .7, .2, 1) forwards; }
+.title-frame .t-kicker { animation-delay: 0.2s; }
+.title-frame .t-title { animation-delay: 0.45s; }
+.title-frame .t-rule { animation-delay: 0.9s; }
+.title-frame .menu-after { animation-delay: 1.2s; }
+.title-frame .menu-buttons { animation-delay: 1.3s; }
+.title-frame .menu-foot { animation-delay: 1.8s; }
+@keyframes menuIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+#menu i { display: inline-block; width: 4px; height: 4px; margin: 0 0.8em; border-radius: 50%; background: currentColor; opacity: 0.6; vertical-align: middle; }
+
+.t-kicker { font-size: 13px; font-weight: 400; letter-spacing: 0.42em; text-transform: uppercase; color: var(--hud-dim); }
+.t-title {
+  margin: 10px 0 0;
+  font-size: clamp(60px, 9vw, 132px);
+  font-weight: 300;
+  line-height: 0.9;
+  letter-spacing: 0.16em;
+  color: #e8f0ec;
+  text-shadow: 0 2px 30px rgba(0, 0, 0, 0.55);
+}
+/* le filet sous le titre : une lueur le parcourt lentement, comme le balayage d'un sonar */
+.t-rule { position: relative; height: 1px; width: min(420px, 70vw); margin: 22px 0 30px; background: linear-gradient(90deg, rgba(190, 220, 210, 0.5), rgba(190, 220, 210, 0.08)); overflow: visible; }
+.t-rule span { position: absolute; top: -2px; left: 0; width: 5px; height: 5px; border-radius: 50%; background: #bfe8d8; box-shadow: 0 0 10px 2px rgba(127, 208, 192, 0.6); animation: ruleSweep 7s ease-in-out infinite; }
+@keyframes ruleSweep { 0% { left: 0; opacity: 0; } 8% { opacity: 1; } 70% { opacity: 1; } 85%, 100% { left: 100%; opacity: 0; } }
+.menu-after { margin: -14px 0 26px; font-size: 16px; letter-spacing: 0.12em; font-style: italic; color: var(--hud-dim); }
+
+/* boutons : du texte, un numéro, un filet qui s'allonge au survol */
+#menu .menu-buttons, #menu:not(.is-main) .menu-buttons { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; margin: 0; }
+#menu .menu-buttons.inline, #menu:not(.is-main) .menu-buttons.inline { flex-direction: row; gap: 10px; justify-content: center; margin-top: 26px; }
+#menu .menu-buttons button {
+  position: relative;
+  min-width: 0;
+  padding: 8px 0 8px 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 26px;
+  font-weight: 300;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--hud-fg);
+  transition: color 0.25s, transform 0.35s cubic-bezier(.2, .7, .2, 1);
+}
+#menu .menu-buttons button::before { content: none; }
+#menu .menu-buttons button::after { content: ''; position: absolute; left: 44px; right: 0; bottom: 4px; height: 1px; background: var(--hud-warm); transform: scaleX(0); transform-origin: left; transition: transform 0.4s cubic-bezier(.2, .7, .2, 1); }
+#menu .menu-buttons button .n { display: inline-block; width: 44px; font-size: 13px; letter-spacing: 0.2em; color: var(--hud-dim); vertical-align: 0.5em; transition: color 0.25s; }
+#menu .menu-buttons button:hover, #menu .menu-buttons button:focus-visible { color: #fff4dc; background: none; transform: translateX(6px); outline: none; }
+#menu .menu-buttons button:hover::after, #menu .menu-buttons button:focus-visible::after { transform: scaleX(1); }
+#menu .menu-buttons button:hover .n { color: var(--hud-warm); }
+/* boutons en ligne (confirmation, retour) : petits cadres fins */
+#menu .menu-buttons.inline button { padding: 8px 22px; font-size: 18px; letter-spacing: 0.2em; border: 1px solid var(--line); border-radius: 2px; }
+#menu .menu-buttons.inline button::after { content: none; }
+#menu .menu-buttons.inline button:hover { transform: none; border-color: var(--hud-warm); color: var(--hud-warm); }
+
+.menu-foot { margin-top: 34px; font-size: 13px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(127, 163, 156, 0.75); }
+.t-corner { position: absolute; right: 30px; bottom: 24px; font-size: 12px; letter-spacing: 0.3em; color: rgba(127, 163, 156, 0.6); opacity: 0; animation: menuIn 2s 2s forwards; }
+
+/* Pause, réglages, confirmation : un panneau de verre dépoli */
+.panel-frame {
+  min-width: 300px;
+  padding: 30px 40px 28px;
+  text-align: left;
+  background: var(--glass);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  animation: menuIn 0.5s cubic-bezier(.2, .7, .2, 1);
+}
+.panel-frame.wide { width: min(620px, 90vw); }
+.p-title { margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--line); font-size: 15px; letter-spacing: 0.42em; text-transform: uppercase; color: var(--hud-dim); }
+.p-text { margin: 0; font-size: 20px; font-weight: 300; }
+.panel-frame .menu-foot { margin-top: 22px; }
+
+/* Réglages : curseurs fins, comme les jauges */
+#menu .settings { gap: 16px; margin-top: 4px; min-width: 0; }
+#menu .setting { grid-template-columns: 180px 1fr 110px; gap: 18px; font-size: 18px; font-weight: 300; letter-spacing: 0.06em; }
+#menu .setting em { font-size: 15px; letter-spacing: 0.1em; color: var(--hud-warm); text-align: right; }
+#menu .setting input[type=range] { height: 2px; background: rgba(190, 220, 210, 0.25); border: none; border-radius: 1px; cursor: pointer; }
+#menu .setting input[type=range]::-webkit-slider-thumb { width: 12px; height: 12px; border-radius: 50%; background: #e8f0ec; box-shadow: 0 0 8px rgba(127, 208, 192, 0.6); cursor: pointer; }
+#menu .setting input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: #e8f0ec; border: none; cursor: pointer; }
+#menu .setting.toggle input { justify-self: end; width: 16px; height: 16px; accent-color: #7fd0c0; cursor: pointer; }
+#menu .setting-note { margin: -4px 0 4px; font-size: 14px; letter-spacing: 0.04em; line-height: 1.35; color: var(--hud-dim); }
+#menu .setting-note button { padding: 1px 10px; font: inherit; letter-spacing: 0.15em; text-transform: uppercase; color: var(--hud-warm); background: none; border: 1px solid var(--hud-warm); border-radius: 2px; cursor: pointer; }
+#menu, #menu * { cursor: default; }
+#menu button, #menu input { cursor: pointer; }
+
+@media (max-width: 640px) {
+  #menu.is-main { padding-left: 24px; background: linear-gradient(90deg, rgba(3, 8, 11, 0.9), rgba(3, 8, 11, 0.5)); }
+  .t-corner { display: none; }
+  #menu .setting { grid-template-columns: 1fr; gap: 6px; }
+}
