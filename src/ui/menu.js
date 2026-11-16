@@ -46,7 +46,7 @@ export class Menu {
 
   show(screen) {
     this.screen = screen;
-    this.root.className = `open ${screen}`;
+    this.root.className = `open is-${screen}`; // préfixe : « settings » est aussi le nom de la liste des réglages
     this.root.innerHTML = this[`render_${screen}`]();
     this.updateLabels();
   }
@@ -80,37 +80,39 @@ export class Menu {
     const last = getEndings().at(-1);
     document.body.dataset.ending = last ?? '';
     const after = { close: 'Il n\'y a plus personne à réveiller.', cross: 'Il manque quelqu\'un.', depart: 'La montre s\'est remise à tourner.' }[last];
-    return `<div class="menu-frame">
-      <div class="menu-title">NAUTILIAR</div>
-      <div class="menu-sub">Port-Kermor, 1984</div>
+    const items = [save && ['continue', 'Continuer'], ['new', 'Nouvelle partie'], ['settings', 'Réglages']].filter(Boolean);
+    return `<div class="menu-frame title-frame">
+      <div class="t-kicker">Port-Kermor <i></i> 1984</div>
+      <h1 class="t-title">NAUTILIAR</h1>
+      <div class="t-rule"><span></span></div>
       ${after ? `<div class="menu-after">${after}</div>` : ''}
-      <div class="menu-buttons">
-        ${save ? '<button data-menu="continue">CONTINUER</button>' : ''}
-        <button data-menu="new">NOUVELLE PARTIE</button>
-        <button data-menu="settings">RÉGLAGES</button>
-      </div>
-      <div class="menu-foot">Casque conseillé. Le son démarre au premier clic.</div>
-    </div>`;
+      <nav class="menu-buttons">
+        ${items.map(([id, label], i) => `<button data-menu="${id}" style="--i:${i}"><span class="n">0${i + 1}</span>${label}</button>`).join('')}
+      </nav>
+      <div class="menu-foot">Casque conseillé <i></i> le son démarre au premier clic</div>
+    </div>
+    <div class="t-corner">48° 05′ N <i></i> 4° 20′ O</div>`;
   }
 
   render_confirm() {
-    return `<div class="menu-frame">
-      <div class="menu-sub">Effacer la partie en cours et recommencer ?</div>
-      <div class="menu-buttons">
-        <button data-menu="confirmNew">OUI, RECOMMENCER</button>
-        <button data-menu="back">NON</button>
-      </div>
+    return `<div class="menu-frame panel-frame">
+      <div class="p-title">Recommencer</div>
+      <p class="p-text">La partie en cours sera effacée.</p>
+      <nav class="menu-buttons inline">
+        <button data-menu="confirmNew">Oui, recommencer</button>
+        <button data-menu="back">Non</button>
+      </nav>
     </div>`;
   }
 
   render_pause() {
-    return `<div class="menu-frame">
-      <div class="menu-title small">PAUSE</div>
-      <div class="menu-buttons">
-        <button data-menu="resume">REPRENDRE</button>
-        <button data-menu="settings">RÉGLAGES</button>
-        <button data-menu="title">ÉCRAN TITRE</button>
-      </div>
+    return `<div class="menu-frame panel-frame">
+      <div class="p-title">Pause</div>
+      <nav class="menu-buttons">
+        <button data-menu="resume"><span class="n">01</span>Reprendre</button>
+        <button data-menu="settings"><span class="n">02</span>Réglages</button>
+        <button data-menu="title"><span class="n">03</span>Écran titre</button>
+      </nav>
       <div class="menu-foot">La partie est sauvegardée automatiquement.</div>
     </div>`;
   }
@@ -120,8 +122,8 @@ export class Menu {
       `<label class="setting"><span>${label}</span>
         <input type="range" min="0" max="${max}" value="${Math.round(preferences[pref] * 100)}" data-pref="${pref}">
         <em data-label="${pref}"></em></label>`;
-    return `<div class="menu-frame">
-      <div class="menu-title small">RÉGLAGES</div>
+    return `<div class="menu-frame panel-frame wide">
+      <div class="p-title">Réglages</div>
       <div class="settings">
         ${slider('master', 'Volume général')}
         ${slider('music', 'Musique')}
@@ -129,13 +131,13 @@ export class Menu {
         <label class="setting"><span>Niveau de détail</span>
           <input type="range" min="0" max="${QUALITY_LEVELS.length - 1}" value="${preferences.qualityLevel}" data-pref="qualityLevel">
           <em data-label="qualityLevel"></em></label>
-        <p class="setting-note" id="quality-note">${this.qualityAtStart !== undefined && this.qualityAtStart !== preferences.qualityLevel ? 'Appliqué au prochain lancement : <button data-menu="reload">RELANCER</button>' : 'Règle la densité des algues, les ombres, les rayons de lumière et la finesse de l\'image.'}</p>
+        <p class="setting-note" id="quality-note">${this.qualityAtStart !== undefined && this.qualityAtStart !== preferences.qualityLevel ? 'Appliqué au prochain lancement : <button data-menu="reload">Relancer</button>' : 'Règle la densité des algues, les ombres, les rayons de lumière et la finesse de l\'image.'}</p>
         <label class="setting toggle"><span>Résolution auto (60 i/s)</span>
           <input type="checkbox" data-toggle="autoRes" ${preferences.autoRes ? 'checked' : ''}><em></em></label>
         <label class="setting toggle"><span>Afficher les images/s</span>
           <input type="checkbox" data-toggle="showFps" ${preferences.showFps ? 'checked' : ''}><em></em></label>
       </div>
-      <div class="menu-buttons"><button data-menu="back">RETOUR</button></div>
+      <nav class="menu-buttons inline"><button data-menu="back">Retour</button></nav>
     </div>`;
   }
 
@@ -147,7 +149,7 @@ export class Menu {
         el.textContent = lvl.label;
         const note = this.root.querySelector('#quality-note');
         if (note && preferences.qualityLevel !== this.qualityAtStart) {
-          note.innerHTML = 'Appliqué au prochain lancement : <button data-menu="reload">RELANCER</button>';
+          note.innerHTML = 'Appliqué au prochain lancement : <button data-menu="reload">Relancer</button>';
         }
       } else el.textContent = `${Math.round(preferences[k] * 100)} %`;
     }

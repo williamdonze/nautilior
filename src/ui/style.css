@@ -712,11 +712,11 @@ body.in-menu, body.in-menu canvas { cursor: default; }
   z-index: 22;
 }
 #menu.open { display: flex; }
-#menu.pause, #menu.settings, #menu.confirm { background: rgba(2, 4, 7, 0.72); }
-#menu.main { background: linear-gradient(90deg, rgba(2, 4, 7, 0.75), rgba(2, 4, 7, 0.1) 70%); justify-content: flex-start; padding-left: 8vw; }
+#menu.is-pause, #menu.is-settings, #menu.is-confirm { background: rgba(2, 4, 7, 0.72); }
+#menu.is-main { background: linear-gradient(90deg, rgba(2, 4, 7, 0.75), rgba(2, 4, 7, 0.1) 70%); justify-content: flex-start; padding-left: 8vw; }
 #menu, #menu * { cursor: default; }
 .menu-frame { text-align: center; }
-#menu.main .menu-frame { text-align: left; }
+#menu.is-main .menu-frame { text-align: left; }
 .menu-title {
   font-size: clamp(56px, 10vw, 110px);
   letter-spacing: 12px;
@@ -727,8 +727,8 @@ body.in-menu, body.in-menu canvas { cursor: default; }
 .menu-title.small { font-size: 56px; letter-spacing: 10px; }
 .menu-sub { font-size: 28px; letter-spacing: 6px; color: var(--hud-dim); margin: 6px 0 30px; }
 .menu-buttons { display: flex; flex-direction: column; gap: 10px; align-items: inherit; }
-#menu.main .menu-buttons { align-items: flex-start; }
-#menu:not(.main) .menu-buttons { align-items: center; margin-top: 20px; }
+#menu.is-main .menu-buttons { align-items: flex-start; }
+#menu:not(.is-main) .menu-buttons { align-items: center; margin-top: 20px; }
 .menu-buttons button {
   min-width: 280px;
   font-family: inherit;
