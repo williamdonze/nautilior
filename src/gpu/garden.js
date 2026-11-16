@@ -260,7 +260,7 @@ export function buildGarden(density = 1) {
     const abyss = z < LAYOUT.BASINS[3].z0 + 40, u = rnd(), R = getRoof(x, z);
     if (R && R.c - y < 2) continue;
     const field = smoothstep(0.46, 0.62, fbm(x + 120, z - 60, 0.018)), lil = smoothstep(0.5, 0.66, fbm(x - 300, z + 200, 0.022));
-    if (R && R.c - y > 14 && u < 0.5) { hang(x, R.c, z, (3 + rnd() * 5) | 0, 14, 3, 6 + (R.c - y) * 0.4, 0.14, 0.28); continue; } // voûtes, la Salle
+    if (R && R.c - y > 14 && u < 0.5) { if (u < 0.1) hang(x, R.c, z, (3 + rnd() * 5) | 0, 14, 3, 6 + (R.c - y) * 0.4, 0.14, 0.28); continue; } // voûtes, la Salle
     if (u < (abyss ? 0.6 : 0.22) * (0.15 + field)) tuft(x, y, z, (6 + rnd() * 9) | 0, 12, 1.0, 3.2, 0.14, 0.3, 0.05, 0.45, 1.6);
     else if (u < (abyss ? 0.55 : 0.25) * (0.1 + lil)) lily(x, y, z, rnd() < 0.08 ? rr(5, 9) : rr(1.4, 3.6), abyss ? 12 : 3);
     else if (abyss && u < 0.09) tuft(x, y, z, (5 + rnd() * 7) | 0, 11, 1, 4, 0.14, 0.3, 0.02, 0.45, 0.2);

@@ -78,7 +78,9 @@ export function surfaceHeight(x, z) {
   const r = 1 - Math.abs(noise(x * 0.018 + 57, z * 0.018 - 31));
   const ridges = r * r * r * SEABED.RIDGE_AMPLITUDE * roughness;
   const detail = noise(x * 0.08, z * 0.08) * 0.8;
-  const base = -depth + relief + ridges + detail;
+  // la cuvette du lac, au cœur de la Salle
+  const SL = LAYOUT.SALLE, bowl = z < SL.z + 60 && z > SL.z - 60 ? 6.5 * (1 - smoothstep(14, 34, Math.hypot(x - SL.x, z - SL.z))) : 0;
+  const base = -depth + relief + ridges + detail - bowl;
   // Les bords du monde et les barres entre bassins sont de vraies falaises qui montent au-dessus de la surface.
   const wx = noise(z * 0.016, 7.7) * 12 + noise(z * 0.06, 2.2) * 5;
   const wz = noise(x * 0.02, 3.3) * 10 + noise(x * 0.07, 9.1) * 4;
@@ -113,6 +115,18 @@ export function getFloorHeight(x, z) {
   if (z > TUNNELS[0].z0 + 70) return s;
   const f = tunnelFloor(x, z);
   return f !== null && f < s ? f : s;
+}
+
+/**
+ * Garde un point dans l'eau : sous une barre rocheuse, il n'y a d'eau que dans le tunnel.
+ * (Les bêtes s'en servent pour ne pas nager dans la roche.)
+ */
+export function confine(p) {
+  const t = tunnelAt(p.z);
+  if (!t || surfaceHeight(p.x, p.z) < -6) return;
+  const c = tunnelSection(t, p.z), lim = c.r * 0.8, dx = p.x - c.x;
+  if (Math.abs(dx) > lim) p.x = c.x + Math.sign(dx) * lim;
+  p.y = Math.max(c.y + 2.5, Math.min(c.y + c.r * 1.05, p.y));
 }
 
 /**
