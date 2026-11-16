@@ -16,12 +16,13 @@ const rand = createRandom(WORLD.SEED + 404);
 
 /** Épaves : [x, z, taille] */
 const WRECKS = [
-  [55, -407, 0.5], [-40, -1079, 1], [70, -1230, 1.3], [-90, -1360, 0.9], [10, -1490, 1.5], [-50, -1598, 1.1], [110, -1663, 1], [-120, -1187, 0.8], [-95, -1130, 1.2], [95, -1420, 1.4], [-70, -1560, 1.0], [60, -1660, 1.6], [-110, -1010, 0.9], [120, -1210, 1.1],
+  [55, -120, 0.5], [-40, -230, 1], [70, -300, 1.3], [-90, -360, 0.9],
+  [10, -420, 1.5], [-50, -470, 1.1], [110, -500, 1], [-120, -280, 0.8],
 ];
 /** Positions des épaves (pour y semer plus d'objets) */
 export const WRECK_SPOTS = WRECKS.map(([x, z]) => [x, z]);
 /** La Marie-Morgane : le chalutier dont les filets ont pris le Nautiliar. Elle repose dans le Canyon ; on y entre. */
-export const MARIE = { z: -2604, dx: -10, size: 2.6 };
+export const MARIE = { z: -700, dx: -10, size: 2.6 };
 // Épaves : métal rouillé ; aiguilles du canyon : roche (détail triplanaire)
 const vmat = applyDetail(new THREE.MeshLambertMaterial({ vertexColors: true }), 'metal', 1.4);
 const rockMat = applyDetail(new THREE.MeshLambertMaterial({ vertexColors: true }), 'rock', 1);
@@ -304,7 +305,7 @@ function glowStalks(count, uniforms) {
   const palette = ['#7fbf7a', '#83a39a', '#ccd8cc', '#5b8fc0'];
   for (let i = 0; i < count; i++) {
     const x = rand.range(-150, 150);
-    const z = rand.range(-4130, -3480);
+    const z = rand.range(-1110, -880);
     p.set(x, getFloorHeight(x, z) - 0.2, z);
     const h = rand.range(2, 7);
     s.set(1, h, 1);
@@ -319,7 +320,7 @@ function glowStalks(count, uniforms) {
   return g;
 }
 
-const MARIE_OPTS = { hollow: true, lift: 0.95, rot: [0.2, 1.86, -0.24], order: 'YZX', breach: [0.5, 0.7, 1, 6], name: 'MARIE-MORGANE' };
+const MARIE_OPTS = { hollow: true, lift: 1.7, rot: [0.22, 1.86, -1.0], order: 'YZX', breach: [0.5, 0.7, 1, 6], name: 'MARIE-MORGANE' };
 /** Aperçu (page de développement) */
 export function createMariePreview() {
   const g = wreck(0, MARIE.z, MARIE.size, [], { ...MARIE_OPTS, rot: [0, 0, 0] });
@@ -334,19 +335,19 @@ export function createLandmarks(colliders, uniforms) {
   for (const [x, z, size] of WRECKS) group.add(wreck(x, z, size, colliders));
 
   // Canyon : aiguilles le long des parois et quelques-unes dans le lit
-  for (let i = 0; i < 70; i++) {
-    const z = rand.range(-2980, -2240);
+  for (let i = 0; i < 34; i++) {
+    const z = rand.range(-850, -560);
     const side = rand() < 0.5 ? -1 : 1;
     const x = canyonCenter(z) + side * rand.range(20, 70);
     group.add(spire(x, z, rand.range(15, 45)));
   }
-  group.add(whale(canyonCenter(-2756) + 8, -2756, colliders));
+  group.add(whale(canyonCenter(-760) + 8, -760, colliders));
   const mm = wreck(canyonCenter(MARIE.z) + MARIE.dx, MARIE.z, MARIE.size, colliders, MARIE_OPTS);
   group.add(mm);
   group.userData.marie = mm;
 
   // Abysses
-  group.add(glowStalks(420, uniforms));
+  group.add(glowStalks(160, uniforms));
   return group;
 }
 

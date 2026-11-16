@@ -1,9 +1,9 @@
 import { gameState } from '../save/gameState.js';
 import { storyState } from '../story/state.js';
 import { UPGRADES } from '../submarine/stats.js';
-import { getFloorHeight, canyonCenter, tunnelSection } from '../world/seabed.js';
+import { getFloorHeight, canyonCenter } from '../world/seabed.js';
 import fragmentsData from '../story/fragments.json';
-import { RADIATION, SUBMARINE, ROOFS, LAYOUT } from '../config/settings.js';
+import { RADIATION, SUBMARINE, AIR_BELLS, ROOFS } from '../config/settings.js';
 import { MARIE } from '../world/landmarks.js';
 
 /**
@@ -13,35 +13,22 @@ import { MARIE } from '../world/landmarks.js';
 const S = RADIATION.SOURCE;
 const cc = canyonCenter;
 /** Lieux : [x, hauteur au-dessus du fond (ou y absolu si négatif), z, cap, description] */
-const T = LAYOUT.TUNNELS, mid = (t, k) => { const z = t.z0 + (t.z1 - t.z0) * k, c = tunnelSection(t, z); return [c.x, z, c.r]; };
-const tun = (i, k, label) => { const [x, z] = mid(T[i], k); return [x, 7, z, Math.PI, label]; };
 const PLACES = {
   depart: [SUBMARINE.SPAWN.x, SUBMARINE.SPAWN.y, SUBMARINE.SPAWN.z, Math.PI, 'Le point de départ, sous le port'],
-  arche: [-72, 5, -262, 0.97, "Récif : l'arche de roche"],
-  puits: [LAYOUT.POCKETS[0].x + 20, 30, LAYOUT.POCKETS[0].z + 30, -2.5, 'Épaves : le puits (grande poche d\'air, treuil)'],
-  poche: [LAYOUT.POCKETS[1].x + 14, 30, LAYOUT.POCKETS[1].z + 20, -2.5, 'Épaves : une petite poche d\'air'],
-  veines: [T[0].x0, 9, T[0].z0 + 45, Math.PI, 'Les Veines : la bouche du tunnel (fin du Récif)'],
-  veines2: tun(0, 0.5, 'Les Veines : la salle du milieu'),
-  epaves: [0, 12, -1000, Math.PI, 'Les Épaves : sortie du tunnel'],
-  massif: [-37, 6, -1276, 1.97, 'Épaves : le massif percé'],
-  trachee: [T[1].x0, 9, T[1].z0 + 45, Math.PI, 'La Trachée : la bouche'],
-  trachee2: tun(1, 0.5, 'La Trachée : au milieu, entre les arceaux'),
-  canyon: [cc(-2260), 14, -2260, Math.PI, 'Le Canyon : la gorge'],
-  porche: [cc(-2300), 14, -2300, Math.PI, 'Canyon : le Porche (première voûte)'],
-  filets: [cc(MARIE.z + 110) + 2, 8, MARIE.z + 110, Math.PI, 'Canyon : la forêt de filets'],
+  arche: [-72, 5, -79, 0.97, "Récif : l'arche de roche et son tunnel"],
+  cloche: [AIR_BELLS.SPOTS[0][0] + 9, 7, AIR_BELLS.SPOTS[0][1] + 9, -2.36, 'Une cloche à air'],
+  epaves: [-40, 9, -212, Math.PI, 'Les Épaves : un chalutier'],
+  massif: [-37, 6, -313, 1.97, 'Épaves : le massif percé'],
+  porche: [cc(-580), 14, -580, Math.PI, 'Canyon : le Porche (première voûte)'],
+  filets: [cc(-652) + 2, 8, -652, Math.PI, 'Canyon : la forêt de filets'],
   marie: [cc(MARIE.z) + 16, 16, MARIE.z + 6, -1.75, 'Canyon : la Marie-Morgane'],
   sousmarin: [cc(MARIE.z - 10) + 12, 5, MARIE.z - 4, -2.3, 'Canyon : le petit sous-marin pris dans les mailles (et le couteau)'],
-  nef: [cc(-2700), 12, -2700, Math.PI, 'Canyon : la Nef (grande voûte, squelette de baleine)'],
-  jardin: [T[2].x0, 9, T[2].z0 + 45, Math.PI, 'Le Jardin de verre : la bouche'],
-  jardin2: tun(2, 0.68, 'Le Jardin de verre : la grande salle'),
-  abysses: [20, 14, -3500, Math.PI, 'Les Abysses : sortie du tunnel'],
-  salle: [LAYOUT.SALLE.x, 14, LAYOUT.SALLE.z, 0.5, 'Abysses : la Salle (caverne)'],
-  verger: [LAYOUT.VERGER.x - 30, 10, LAYOUT.VERGER.z + 30, 2.4, 'Abysses : le verger'],
-  chambre: [-18, 20, S.z + 98, -2.4, 'Abysses : la Chambre engloutie (le lit, la potence, la porte 112)'],
+  nef: [cc(-738), 12, -738, Math.PI, 'Canyon : la Nef (grande voûte, squelette de baleine)'],
+  tunnel: [-43, 7, -947, 0.47, 'Abysses : le massif percé'],
+  chambre: [-18, 20, -962, -2.4, 'Abysses : la Chambre engloutie (le lit, la potence, la porte 112)'],
   porte: [2, 14, S.z + 110, Math.PI, 'Abysses : la porte 112, sur le chemin de la faille'],
   faille: [0, 12, S.z + 27, Math.PI, 'La faille'],
 };
-
 
 export function installDevCommands(n) {
   const game = () => n.game, dive = () => n.dive;
@@ -119,7 +106,7 @@ Carte 3D du monde : ouvrir carte.html`, 'color:#e2c98c');
     },
 
     async baleine() {
-      await dev.aller('canyon');
+      await dev.aller('porche');
       const d = dive(), w = d.whale.pos;
       d.sub.teleport(w.x + 22, w.y - 4, w.z + 14, Math.atan2(-22, -14));
       d.follow.snap(d.sub);

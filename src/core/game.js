@@ -70,7 +70,6 @@ export class Game {
       },
       onDeath: (cause) => this.death(cause),
       onReturn: () => this.goPort('quay', true),
-      onReach: (i) => { if (i > (gameState.reached ?? 0)) { gameState.reached = i; this.persist(); } },
       onPortal: () => this.facePortal(),
       canFacePortal: () => storyState.abyssalHull,
     });
@@ -342,25 +341,10 @@ export class Game {
     this.busy = false;
   }
 
-  /**
-   * Le monde est long, et sous la roche. Chaque caverne a un puits qui remonte au village, avec un treuil :
-   * une fois le puits trouvé, on peut y redescendre le Nautiliar directement. On choisit sur le quai.
-   */
-  async chooseDive() {
-    const reached = Math.min(3, gameState.reached ?? 0);
-    if (!reached) return this.goDive(0);
-    if (this.busy || this.dialogue.isOpen) return;
-    const names = ['Depuis le quai', 'Par le puits des Épaves', 'Par le puits du Canyon', 'Par le puits des Abysses'];
-    const choices = names.slice(0, reached + 1).map((text, i) => ({ text, action: `dive${i}`, end: true }));
-    choices.push({ text: 'Pas maintenant', action: 'stay', end: true });
-    const action = await this.dialogue.play('sub', { start: 'a', nodes: { a: { text: 'Les treuils des puits tournent encore. Où descendre le Nautiliar ?', choices } } });
-    if (action?.startsWith('dive')) this.goDive(Number(action.slice(4)));
-  }
-
-  goDive(start = 0) {
+  goDive() {
     this.transition(() => {
       this.setMode('dive');
-      this.dive.enter(gameState.tide, storyState.fragments, gameState.taken, start);
+      this.dive.enter(gameState.tide, storyState.fragments, gameState.taken);
       this.persist();
     }, 'Le Nautiliar s\'enfonce sous la surface.');
   }
@@ -420,7 +404,7 @@ export class Game {
     if (it.action === 'openCollection') return this.panels.open('collection');
     if (it.action === 'dive') {
       if (!storyState.flags.subGiven) return this.talk('sub');
-      return this.chooseDive();
+      this.goDive();
     }
   }
 

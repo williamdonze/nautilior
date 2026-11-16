@@ -1,6 +1,4 @@
 import { headroom, getRoof } from '../world/roof.js';
-import { tunnelSection } from './seabed.js';
-import { LAYOUT } from '../config/settings.js';
 import * as THREE from 'three';
 import { PICKUPS, SUBMARINE, WORLD } from '../config/settings.js';
 import { createRandom } from '../core/utils.js';
@@ -88,11 +86,6 @@ export class Pickups {
     // Les épaves attirent les trouvailles
     for (const [wx, wz] of WRECK_SPOTS) {
       for (let i = 0; i < 4; i++) this.spawnRandom(wx + this.rand.range(-14, 14), wz + this.rand.range(-14, 14));
-    }
-    // Dans les tunnels : le long de l'axe, de quoi récompenser la traversée
-    for (const t of LAYOUT.TUNNELS) for (let i = 0; i < PICKUPS.PER_TUNNEL; i++) {
-      const z = this.rand.range(t.z1 + 20, t.z0 - 20), c = tunnelSection(t, z), cx = c.x, r = c.r;
-      this.spawnRandom(cx + this.rand.range(-0.7, 0.7) * r, z);
     }
   }
 

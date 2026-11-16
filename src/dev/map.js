@@ -15,10 +15,8 @@ const { createLandmarks, WRECK_SPOTS, MARIE } = await import('../world/landmarks
 const { createFormations } = await import('../world/formations.js');
 const { NetForest } = await import('../world/nets.js');
 const { createSunkenRoom } = await import('../world/sunkenRoom.js');
-const { AirPockets } = await import('../world/airPockets.js');
-const { getPockets } = await import('../world/roof.js');
-const { RADIATION, SUBMARINE, ROOFS, WHALE, SEABED, LAYOUT } = await import('../config/settings.js');
-const { tunnelSection } = await import('../world/seabed.js');
+const { AirBells } = await import('../world/airBells.js');
+const { RADIATION, SUBMARINE, AIR_BELLS, ROOFS, WHALE, SEABED } = await import('../config/settings.js');
 const fragments = (await import('../story/fragments.json')).default.fragments;
 const zones = (await import('../config/zones.json')).default.zones;
 
@@ -36,7 +34,7 @@ scene.add(new THREE.HemisphereLight('#dfeee8', '#1a2a30', 1.7));
 const sun = new THREE.DirectionalLight('#fff4dc', 2.2);
 sun.position.set(-300, 500, 200);
 scene.add(sun);
-const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 1, 12000);
+const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 1, 6000);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.maxPolarAngle = Math.PI * 0.495;
@@ -46,8 +44,7 @@ const layers = {};
 const layer = (id, label, on = true) => { const g = new THREE.Group(); g.visible = on; scene.add(g); layers[id] = { g, label }; return g; };
 
 /* ---- Relief : une maille de 3 m, colorée par zone de profondeur, assombrie dans les pentes */
-// ?pas=6 dans l'adresse : relief plus grossier (machines lentes)
-const X0 = -200, X1 = 200, Z0 = SEABED.Z_END + 5, Z1 = 215, STEP = Number(new URLSearchParams(location.search).get('pas')) || 3;
+const X0 = -200, X1 = 200, Z0 = -1175, Z1 = 215, STEP = 3;
 const ZONE_COL = [[0, '#4f9a90'], [150, '#3f7f96'], [500, '#5a5f9a'], [1000, '#3d6a52'], [1250, '#2c4a3a']].map(([d, c]) => [d, new THREE.Color(c)]);
 const colorAt = (depth, out) => { let k = 0; while (k < ZONE_COL.length - 2 && ZONE_COL[k + 1][0] < depth) k++; const a = ZONE_COL[k], b = ZONE_COL[k + 1]; return out.copy(a[1]).lerp(b[1], Math.max(0, Math.min(1, (depth - a[0]) / (b[0] - a[0])))); };
 {
@@ -84,7 +81,7 @@ const colorAt = (depth, out) => { let k = 0; while (k < ZONE_COL.length - 2 && Z
   g.add(createFormations([]));
   new NetForest(g);
   createSunkenRoom(g, []);
-  new AirPockets(g);
+  new AirBells(g, []);
   // la faille
   const S = RADIATION.SOURCE, fy = getFloorHeight(S.x, S.z);
   const rift = new THREE.Mesh(new THREE.PlaneGeometry(5, 46), new THREE.MeshBasicMaterial({ color: '#7dffb0', side: THREE.DoubleSide }));
@@ -123,18 +120,10 @@ function mark(x, y, z, text, color = '#e2c98c', zone = false) {
 const F = getFloorHeight;
 mark(SUBMARINE.SPAWN.x, SUBMARINE.SPAWN.y, SUBMARINE.SPAWN.z, 'Départ (sous le port)', '#ffffff');
 fragments.forEach((f, i) => { const x = f.inCanyon ? canyonCenter(f.z) + f.x : f.x; mark(x, F(x, f.z), f.z, `Souvenir ${i + 1} · ${f.name}`, '#bfe8d0'); });
-getPockets().forEach((p) => mark(p.x, p.y - 18, p.z, p.camp ? 'PUITS (treuil)' : 'Poche d\'air', p.camp ? '#ffd98a' : '#cfeee6'));
+AIR_BELLS.SPOTS.forEach(([x, z]) => mark(x, F(x, z) + 6, z, 'Cloche à air', '#f2e6b8'));
 WRECK_SPOTS.forEach(([x, z]) => mark(x, F(x, z), z, 'Épave', '#c08850'));
 mark(canyonCenter(MARIE.z) + MARIE.dx, F(canyonCenter(MARIE.z) + MARIE.dx, MARIE.z) + 14, MARIE.z, 'La Marie-Morgane', '#ff9a6a');
-ROOFS.MASSIFS.forEach((m) => mark(m.x, F(m.x, m.z) + m.H, m.z, m.h ? 'La Salle (caverne)' : 'Massif percé', '#c79a5a'));
-// les tunnels : une étiquette à chaque bouche, et le tracé de l'axe
-for (const t of LAYOUT.TUNNELS) {
-  const pts = [];
-  for (let z = t.z0; z >= t.z1; z -= 5) { const c = tunnelSection(t, z); pts.push(new THREE.Vector3(c.x, c.y + c.r * 0.7, z)); }
-  marks.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: '#ff9a6a' })));
-  mark(pts[0].x, pts[0].y + 20, t.z0, `${t.name} · entrée`, '#ff9a6a');
-  mark(pts.at(-1).x, pts.at(-1).y + 20, t.z1, `${t.name} · sortie`, '#ff9a6a');
-}
+ROOFS.MASSIFS.forEach((m) => mark(m.x, F(m.x, m.z) + m.H, m.z, 'Massif percé (tunnel)', '#c79a5a'));
 ROOFS.VAULTS.forEach((v, i) => { const z = (v.z0 + v.z1) / 2, x = canyonCenter(z); mark(x, F(x, z) + v.h + v.thick, z, ['Voûte : le Porche', 'Voûte : la Nef', 'Voûte'][i] ?? 'Voûte', '#c79a5a'); });
 {
   const S = RADIATION.SOURCE;
@@ -149,26 +138,20 @@ ROOFS.VAULTS.forEach((v, i) => { const z = (v.z0 + v.z1) / 2, x = canyonCenter(z
   const mid = pts[Math.floor(pts.length / 2)];
   mark(mid.x, mid.y - 19, mid.z, 'Trajet de la baleine', '#f2d9a0', true);
 }
-mark(LAYOUT.VERGER.x, F(LAYOUT.VERGER.x, LAYOUT.VERGER.z) + 8, LAYOUT.VERGER.z, 'Le verger', '#ffe9ee');
 // zones : un nom au bord, à la bonne profondeur
 for (const zn of zones) { const z = ((zn.zMin ?? 0) + (zn.zMax ?? 0)) / 2; mark(X0 - 26, F(0, z) + 10, z, `${zn.name.toUpperCase()} · ${zn.maxDepth > 5000 ? `plus de ${zn.minDepth}` : `${zn.minDepth}–${zn.maxDepth}`} m`, '#ffffff', true); }
 
 /* ---- Interface */
-const S0 = RADIATION.SOURCE;
 const VIEWS = {
-  'Tout': [[2900, 1500, -2000], [0, -600, -2000]],
-  'Récif': [[330, 140, -150], [0, -80, -200]],
-  'Les Veines': [[300, 60, -760], [0, -180, -760]],
-  'Épaves': [[360, -50, -1360], [0, -320, -1360]],
-  'La Trachée': [[320, -250, -1985], [0, -520, -1985]],
-  'Canyon': [[380, -480, -2610], [0, -780, -2610]],
-  'Jardin de verre': [[330, -760, -3235], [0, -960, -3235]],
-  'Abysses': [[400, -880, -3780], [0, -1110, -3780]],
-  'La Salle': [[90, -1010, -3600], [-78, -1100, -3720]],
-  'Faille': [[90, -1070, S0.z + 110], [0, -1140, S0.z]],
-  'Dessus': [[0, 3600, -2001], [0, -500, -2000]],
+  'Tout': [[900, 420, -300], [0, -560, -500]],
+  'Récif': [[150, 90, 150], [0, -60, -20]],
+  'Épaves': [[190, -120, -200], [0, -330, -340]],
+  'Canyon': [[300, -330, -520], [0, -760, -720]],
+  'Marie-Morgane': [[70, -730, -660], [-10, -785, -702]],
+  'Abysses': [[280, -820, -860], [0, -1130, -1040]],
+  'Faille': [[60, -1090, -960], [0, -1150, -1058]],
+  'Dessus': [[0, 1500, -479], [0, -500, -480]],
 };
-
 const go = ([pos, look]) => { camera.position.set(...pos); controls.target.set(...look); controls.update(); };
 for (const [name, v] of Object.entries(VIEWS)) { const b = document.createElement('button'); b.textContent = name; b.onclick = () => go(v); document.getElementById('views').appendChild(b); }
 for (const [id, l] of Object.entries(layers)) {

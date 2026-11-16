@@ -3,7 +3,7 @@ import creaturesData from '../config/creatures.json';
 import { WORLD } from '../config/settings.js';
 import { damp } from '../core/utils.js';
 import { applySkin } from './detail.js';
-import { getFloorHeight, confine } from './seabed.js';
+import { getFloorHeight } from './seabed.js';
 import { createFishGeometry, FISH_SPECIES } from './creatureModels.js';
 import { createSonde, createOeil, createSoufflet } from './dreamModels.js';
 
@@ -36,15 +36,12 @@ function spawnPoint(sub, out, minY = -1e9, maxY = -3) {
     const x = THREE.MathUtils.clamp(sub.position.x + Math.cos(a) * d, WORLD.BOUNDS.minX, WORLD.BOUNDS.maxX);
     const z = THREE.MathUtils.clamp(sub.position.z + Math.sin(a) * d, WORLD.BOUNDS.minZ, WORLD.BOUNDS.maxZ);
     const floor = getFloorHeight(x, z);
-    if (floor > sub.position.y + 30 && tries < 7) continue; // une barre rocheuse : pas d'eau à cet endroit
     const y = THREE.MathUtils.clamp(sub.position.y + (Math.random() - 0.5) * 16, Math.max(floor + 3, minY), maxY);
     const gap = Math.abs(y - sub.position.y);
     if (!best || gap < best.gap) best = { x, y, z, gap };
     if (gap < 12) break;
   }
-  out.set(best.x, best.y, best.z);
-  confine(out);
-  return out;
+  return out.set(best.x, best.y, best.z);
 }
 
 /* ================================================================ Bancs de poissons */
@@ -265,7 +262,6 @@ class Mutant {
     desired.multiplyScalar(desiredSpeed);
     this.vel.lerp(desired, damp(this.state === 'charge' ? 4.5 : 1.6, dt));
     this.pos.addScaledVector(this.vel, dt);
-    confine(this.pos); // sous une barre, l'eau n'est que dans le tunnel
     const floor = getFloorHeight(this.pos.x, this.pos.z);
     this.pos.y = THREE.MathUtils.clamp(this.pos.y, floor + 1.5, -3);
 

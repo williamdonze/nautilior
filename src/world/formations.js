@@ -200,7 +200,7 @@ function createRockFormations(group, colliders) {
 
   // --- Arches : par où passer. [zMin, zMax, nombre]
   const arches = [[], []];
-  for (const [z0, z1, count] of [[-520, 130, 12], [-1720, -1000, 9], [-2980, -2250, 12]]) {
+  for (const [z0, z1, count] of [[-150, 130, 7], [-520, -180, 4], [-860, -560, 6]]) {
     let made = 0;
     for (let t = 0; t < 3000 && made < count; t++) {
       const x = rand.range(-140, 140), z = rand.range(z0, z1), R = rand.range(8, 16);
@@ -225,7 +225,7 @@ function createRockFormations(group, colliders) {
 
   // --- Aiguilles et piliers : de plus en plus hauts vers le Canyon
   const pillars = [[], [], []];
-  for (const [z0, z1, count, hMin, hMax] of [[-540, 140, 50, 6, 16], [-1740, -980, 70, 10, 30], [-2990, -2230, 120, 16, 55], [-4140, -3480, 40, 8, 26]]) {
+  for (const [z0, z1, count, hMin, hMax] of [[-170, 140, 26, 6, 16], [-540, -170, 34, 10, 30], [-880, -540, 60, 16, 55], [-1120, -880, 16, 8, 26]]) {
     let made = 0;
     for (let t = 0; t < 2000 && made < count; t++) {
       const x = rand.range(-165, 165), z = rand.range(z0, z1), y = getFloorHeight(x, z);
@@ -243,12 +243,12 @@ function createRockFormations(group, colliders) {
   const ledges = [[], []];
   let made = 0;
   for (let t = 0; t < 30000 && made < 170; t++) {
-    const x = rand.range(-175, 175), z = rand.range(-3000, 100);
+    const x = rand.range(-175, 175), z = rand.range(-900, 100);
     if (slopeY(x, z) > 0.62 || !clear(x, z, 6)) continue;
     const y = getFloorHeight(x, z);
     if (y > -14) continue;
     const dx = getFloorHeight(x + 1, z) - getFloorHeight(x - 1, z), dz = getFloorHeight(x, z + 1) - getFloorHeight(x, z - 1), l = Math.hypot(dx, dz) || 1;
-    const size = rand.range(4, 11) * (z < -2200 ? 1.3 : 1);
+    const size = rand.range(4, 11) * (z < -540 ? 1.3 : 1);
     // la dalle déborde de la paroi, du côté de la pente
     const px = x - (dx / l) * size * 0.45, pz = z - (dz / l) * size * 0.45;
     const q = new THREE.Quaternion().setFromEuler(E.set(rand.range(-0.2, 0.2), Math.atan2(-dx, -dz) + Math.PI / 2 + rand.range(-0.4, 0.4), rand.range(-0.25, 0.25)));
@@ -279,7 +279,7 @@ function createCoralGardens(group) {
   const gardens = Math.round(260 * density);
   for (let g = 0; g < gardens; g++) {
     const deep = rand() < 0.22;
-    const gx = rand.range(-175, 175), gz = deep ? rand.range(-2600, -980) : rand.range(-540, 205), gr = rand.range(4, 11);
+    const gx = rand.range(-175, 175), gz = deep ? rand.range(-700, -170) : rand.range(-170, 205), gr = rand.range(4, 11);
     if (Math.hypot(gx - S.x, gz - S.z) < 8) continue;
     const hue = rand();
     const n = Math.round((deep ? 9 : 26) * rand.range(0.6, 1.4));

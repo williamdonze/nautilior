@@ -52,7 +52,6 @@ if (device) {
 }
 
 const game = new Game({ pixel, input, pointer, sound, hud, gpuDive });
-game.dive.organs = gpuDive?.organs ?? null; // buissons d'orgues plantés par le moteur (ils sonnent au passage)
 
 // --- Réglages du joueur
 const fpsEl = document.getElementById('fps');

@@ -189,12 +189,12 @@ export function createProps(colliders) {
   scatterInstanced(group, GEOS.mussels(), floorPoints(1200, 0, 140).map((p) => ({ ...p, y: p.y + 0.02, s: rand.range(1, 2.6) })), vmat, 45);
 
   // --- Deux 2CV englouties
-  group.add(deuxChevaux(-24, -490, 0.7), deuxChevaux(84, -1295, 2.2));
+  group.add(deuxChevaux(-24, -150, 0.7), deuxChevaux(84, -330, 2.2));
 
   // --- Éboulis : blocs de roche détachés des parois du canyon et dans la plaine des abysses
   const rubbleSites = [
-    [canyonCenter(-2400) + 6, -2400], [canyonCenter(-2616) + -10, -2616], [canyonCenter(-2832) + 8, -2832], [canyonCenter(-2500) - 8, -2500], [canyonCenter(-2880) + 6, -2880],
-    [-60, -3645], [70, -3784], [-30, -3992], [90, -3620], [-100, -3840],
+    [canyonCenter(-620) + 6, -620], [canyonCenter(-705) - 10, -705], [canyonCenter(-790) + 8, -790],
+    [-60, -940], [70, -1000], [-30, -1090],
   ];
   const blocks = [];
   for (const [sx, sz] of rubbleSites) {

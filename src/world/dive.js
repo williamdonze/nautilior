@@ -1,4 +1,3 @@
-import { gameState } from '../save/gameState.js';
 import * as THREE from 'three';
 import { createSeabed } from './seabed.js';
 import { createDecor } from './decor.js';
@@ -16,8 +15,8 @@ import { Claw } from '../claw/claw.js';
 import { Aim } from '../claw/aim.js';
 import { CaptureFx } from '../loot/captureFx.js';
 import { Inventory } from '../ui/inventory.js';
-import { SURVIVAL, SUBMARINE, RADIATION, DEFENSE, ECHO, PULSE, NETS, WHALE, LAYOUT, TRACHEE } from '../config/settings.js';
-import { AirPockets } from './airPockets.js';
+import { SURVIVAL, SUBMARINE, RADIATION, DEFENSE, ECHO, PULSE, NETS, WHALE } from '../config/settings.js';
+import { AirBells } from './airBells.js';
 import { Creatures } from './creatures.js';
 import { Wildlife } from './wildlife.js';
 import { gpuMode } from '../gpu/mode.js';
@@ -25,9 +24,6 @@ import { Guardian } from './guardian.js';
 import { PortalFx } from './portalFx.js';
 import { PaleDiver } from './paleDiver.js';
 import { createSunkenRoom } from './sunkenRoom.js';
-import { tunnelAt, tunnelSection } from './seabed.js';
-import { getRoof } from './roof.js';
-import { createBrineLake } from './brineLake.js';
 import { NetForest, holdPocket } from './nets.js';
 import { Whale } from './whale.js';
 import voicesData from '../story/voices.json';
@@ -46,8 +42,7 @@ import { updateTileCulling } from './tiles.js';
  * Événements vers le jeu : onCapture(pickup) → true si nouvel objet, onDeath(cause), onReturn().
  */
 export class Dive {
-  constructor({ pixel, input, pointer, sound, hud, hold, thumbnails, onCapture, onDeath, onReturn, onPortal, canFacePortal, onReach }) {
-    this.onReach = onReach;
+  constructor({ pixel, input, pointer, sound, hud, hold, thumbnails, onCapture, onDeath, onReturn, onPortal, canFacePortal }) {
     Object.assign(this, { pixel, input, pointer, sound, hud, hold, onCapture, onDeath, onReturn, onPortal, canFacePortal });
 
     const scene = (this.scene = new THREE.Scene());
@@ -164,15 +159,14 @@ export class Dive {
       },
     });
     // Cloches à air : des étapes dans les grandes descentes
-    this.airBells = new AirPockets(scene); // poches d'air sous les voûtes (elles ont remplacé les cloches)
+    this.airBells = new AirBells(scene, this.decor.colliders);
     // Le plongeur pâle, qui montre où chercher
     this._refuge = new THREE.Vector3();
     this.paleDiver = new PaleDiver(scene);
     this.nets = new NetForest(scene, this.decor.colliders);
     this.whale = new Whale(scene);
-    this.lake = createBrineLake(scene); // le lac de la Salle
     // dans la cale de la Marie-Morgane, une poche d'air
-    if (this.decor.group.userData.marie) holdPocket(scene, this.decor.group.userData.marie.userData.hold); // (une lampe de cale restée allumée : simple décor)
+    if (this.decor.group.userData.marie) this.airBells.spots.push(holdPocket(scene, this.decor.group.userData.marie.userData.hold));
     this.voiceTimer = 12;
     this.zoneId = null;
     this.whisperTimer = 0;
@@ -241,8 +235,7 @@ export class Dive {
   }
 
   /** Début d'une plongée : on part du quai, juste sous la surface */
-  /** @param {number} start bassin de départ (0 = sous le port ; 1 à 3 = à la bouée d'un bassin déjà atteint) */
-  enter(seed, foundFragments = [], taken = [], start = 0) {
+  enter(seed, foundFragments = [], taken = []) {
     this.pickups.reset(seed, foundFragments, this.hold.toIds(), taken);
     this.creatures.clear();
     this.wildlife.clear();
@@ -250,19 +243,13 @@ export class Dive {
     this.paleDiver.reset();
     this.nets.reset();
     this.whale.reset();
-    this.reached = gameState.reached ?? 0;
-    this.tunnelId = null;
     this.foundCount = foundFragments.length;
     this.zoneId = null;
     this.claw.reset();
     this.sub.applyLight(stats);
     this.survival.reset(); // la coque a été réparée au port
     const S = SUBMARINE.SPAWN;
-    if (start > 0) {
-      // par le puits : le treuil dépose le Nautiliar dans la grande poche d'air de cette caverne
-      const pk = this.airBells.spots.find((b) => b.camp === start);
-      this.sub.teleport(pk.x, pk.y - 2.2, pk.z, Math.PI);
-    } else this.sub.teleport(S.x, -2.5, S.z, S.yaw);
+    this.sub.teleport(S.x, -2.5, S.z, S.yaw);
     this.follow.snap(this.sub);
     this.setView(this.view);
     this.hud.updateCargo(this.hold);
@@ -349,7 +336,7 @@ export class Dive {
     this.refugeTimer = (this.refugeTimer ?? 0) - dt;
     if (this.refugeTimer <= 0) {
       this.refugeTimer = 0.4;
-      const spots = this.airBells.spots.filter((b) => b.r).map((b) => [b.x, b.y - 8, b.z, DEFENSE.BELL_REFUGE + b.r]);
+      const spots = this.airBells.spots.map((b) => [b.x, b.y, b.z, DEFENSE.BELL_REFUGE]);
       if (this.whale.pos.distanceTo(P) < 260) spots.push([this.whale.pos.x, this.whale.pos.y, this.whale.pos.z, DEFENSE.WHALE_REFUGE]);
       for (const [x, y, z, r] of spots) {
         if (Math.hypot(x - P.x, z - P.z) > 160) continue;
@@ -411,7 +398,7 @@ export class Dive {
     else if (code === 'KeyF') this.pulse();
     else if (code === 'KeyR') this.echo();
     else if (code === 'KeyV') this.setView(this.view === 'first' ? 'third' : 'first');
-    else if (code === 'KeyE' && this.canReturn && !this.claw.busy) this.onReturn();
+    else if (code === 'KeyE' && this.survival.atSurface && !this.claw.busy) this.onReturn();
     else if (code === 'KeyE' && this.nearPortal && !this.claw.busy) this.onPortal();
   }
 
@@ -584,17 +571,8 @@ export class Dive {
     this.radiationSource.update(time, camera.position);
     // Sous une cloche à air, on refait le plein
     const wasAtBell = this.atBell;
-    this.pocketNow = survival.dead ? null : this.airBells.update(dt, time, sub);
-    this.atBell = !!this.pocketNow;
-    if (this.atBell && !wasAtBell) {
-      sound.clank?.(0.3);
-      if (this.pocketNow.camp) {
-        hud.notice('Un treuil pend de la voûte : par ce puits, on remonte au village');
-        if (this.pocketNow.camp > (this.reached ?? 0)) { this.reached = this.pocketNow.camp; this.onReach?.(this.reached); }
-      } else hud.notice('Une poche d\'air');
-    }
-    // On peut rentrer au port depuis la mer libre (le Récif) ou depuis un puits
-    this.canReturn = !survival.dead && ((sub.depth < SURVIVAL.SURFACE_DEPTH && !sub.pocket) || !!this.pocketNow?.camp);
+    this.atBell = !survival.dead && this.airBells.update(dt, time, sub, survival);
+    if (this.atBell && !wasAtBell) { hud.notice('Cloche à air : tu respires mieux'); sound.clank?.(0.4); }
     this.survivalEffects(dt);
     hud.updateSurvival(survival, sub.depth);
     sub.setBeamVisibility(this.ambience.state.beam);
@@ -642,25 +620,13 @@ export class Dive {
     // Effets de la déchirure : de plus en plus forts à l'approche (0 à 300 m … 1 à 25 m)
     this.riftNear = Math.max(0, Math.min(1, (300 - portalDist) / 275));
     if (this.riftNear > 0) this.sunkenRoom.update(time);
-    this.lake.update(time, sub.position);
-    // Les orgues : une note grave quand la coque les frôle
-    this.organTimer = (this.organTimer ?? 0) - dt;
-    if (this.organs && this.organTimer <= 0 && sub.speed > 0.6) {
-      const O = this.organs, p = sub.position;
-      for (let i = 0; i < O.length; i += 3) {
-        if (Math.abs(O[i + 2] - p.z) > 7 || Math.abs(O[i] - p.x) > 7 || Math.abs(O[i + 1] - p.y) > 14) continue;
-        sound.organ?.(i);
-        this.organTimer = 1.4;
-        break;
-      }
-    }
     if (this.portalFx.update(dt, time, this.riftNear) && this.riftNear > 0.15) sound.crackle?.(this.riftNear);
     sound.setRift?.(this.riftNear * this.portal.open, this.bpm ?? 56);
     this.portal.update(time, this.camera.position, pointScale.value);
     sound.setDrone(Math.max(0, 1 - portalDist / 160) * this.portal.open);
     this.nearPortal = portalDist < 32 && this.portal.open > 0.5 && !survival.dead && !this.autopilot && this.canFacePortal();
     hud.setPrompt(
-      survival.dead || this.autopilot ? '' : this.canReturn ? (this.pocketNow?.camp ? 'Remonter par le puits' : 'Rentrer au port') : this.nearPortal ? 'Faire face à la lumière' : ''
+      survival.dead || this.autopilot ? '' : survival.atSurface ? 'Rentrer au port' : this.nearPortal ? 'Faire face à la lumière' : ''
     );
 
     // --- Zones et faune
@@ -668,21 +634,6 @@ export class Dive {
     if (zone.id !== this.zoneId) {
       this.zoneId = zone.id;
       hud.showZone(zone);
-    }
-    // Bassin le plus lointain atteint (bouées de mouillage) et nom du tunnel où l'on entre
-    const tn = tunnelAt(sub.position.z), roofT = tn && getRoof(sub.position.x, sub.position.z) ? tn : null;
-    if ((roofT?.id ?? null) !== (this.tunnelId ?? null)) {
-      this.tunnelId = roofT?.id ?? null;
-      if (roofT) hud.showZone({ name: roofT.name, minDepth: Math.round(roofT.d0), maxDepth: Math.round(roofT.d1) });
-    }
-    // La Trachée respire : un courant qui aspire vers le fond, puis repousse, toutes les quatorze secondes
-    if (roofT?.id === 'trachee' && !this.autopilot && !survival.dead) {
-      const ph = (time % TRACHEE.PERIOD) / TRACHEE.PERIOD, flow = Math.sin(ph * Math.PI * 2);
-      const a = tunnelSection(roofT, sub.position.z + 6).x, b = tunnelSection(roofT, sub.position.z - 6).x;
-      const dx = b - a, l = Math.hypot(dx, 12);
-      sub.velocity.x += (dx / l) * flow * TRACHEE.FORCE * dt;
-      sub.velocity.z += (-12 / l) * flow * TRACHEE.FORCE * dt;
-      if (ph < 0.03 && !this.breathed) { this.breathed = true; sound.whoosh?.(TRACHEE.PERIOD * 0.45); } else if (ph > 0.5) this.breathed = false;
     }
     if (!survival.dead) {
       this.tameBeasts(dt);

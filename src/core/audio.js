@@ -498,25 +498,6 @@ export class Sound {
     setTimeout(() => { fb.gain.value = 0; }, (t - t0 + 6) * 1000);
   }
 
-  /** Un tuyau d'orgue de verre : une note grave et longue, avec sa quinte ; chaque buisson a la sienne */
-  organ(seed = 0) {
-    if (!this.ready) return;
-    const ctx = this.ctx, t = ctx.currentTime, base = [55, 61.7, 65.4, 73.4, 82.4][Math.abs(seed) % 5];
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.16, t + 0.5);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 4.5);
-    g.connect(this.muffle);
-    for (const [k, v] of [[1, 1], [1.5, 0.5], [2, 0.35], [3.01, 0.12]]) {
-      const o = ctx.createOscillator(), og = ctx.createGain();
-      o.type = k === 1 ? 'triangle' : 'sine';
-      o.frequency.value = base * k;
-      og.gain.value = v;
-      o.connect(og).connect(g);
-      o.start(t); o.stop(t + 4.6);
-    }
-  }
-
   /** Hurlement strident qui accompagne la charge : il glace, puis s'effondre dans le grave */
   shriek(volume = 1) {
     if (!this.ready) return;
