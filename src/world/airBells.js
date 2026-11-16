@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { AIR_BELLS } from '../config/settings.js';
-import { getFloorHeight } from './seabed.js';
+import { AIR_BELLS, LAYOUT } from '../config/settings.js';
+import { getFloorHeight, tunnelSection } from './seabed.js';
 import { createHalo } from '../loot/glow.js';
 
 /**
@@ -17,7 +17,9 @@ export class AirBells {
     const prof = [[1.5, 0], [1.55, 0.25], [1.45, 0.9], [1.25, 1.9], [0.85, 2.7], [0.3, 3.05], [0.02, 3.1]].map(([r, y]) => new THREE.Vector2(r, y));
     const dome = new THREE.LatheGeometry(prof, 36);
     this.spots = [];
-    for (const [x, z] of AIR_BELLS.SPOTS) {
+    // une cloche à mi-parcours de chaque tunnel, dans l'axe
+    const inTunnels = LAYOUT.TUNNELS.map((t) => { const z = (t.z0 + t.z1) / 2; return [tunnelSection(t, z).x, z]; });
+    for (const [x, z] of [...AIR_BELLS.SPOTS, ...inTunnels]) {
       const floor = getFloorHeight(x, z), y = floor + 6;
       const g = new THREE.Group();
       g.position.set(x, y, z);

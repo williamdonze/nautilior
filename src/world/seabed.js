@@ -1,72 +1,118 @@
 import * as THREE from 'three';
-import { SEABED, WORLD } from '../config/settings.js';
+import { SEABED, WORLD, LAYOUT } from '../config/settings.js';
 import { createNoise2D } from './noise.js';
 import { smoothstep, clamp } from '../core/utils.js';
 import { applyDetail } from './detail.js';
 
 const noise = createNoise2D(WORLD.SEED);
 
-/** Interpolation douce d'une liste de points [z, profondeur] (z décroissant) */
-function sampleProfile(points, z) {
-  if (z >= points[0][0]) return points[0][1];
-  for (let i = 0; i < points.length - 1; i++) {
-    const [z0, d0] = points[i];
-    const [z1, d1] = points[i + 1];
-    if (z <= z0 && z >= z1) {
-      const t = (z0 - z) / (z0 - z1);
-      return d0 + (d1 - d0) * (t * t * (3 - 2 * t));
-    }
-  }
-  return points[points.length - 1][1];
-}
+const { BASINS, TUNNELS } = LAYOUT;
+const lerp = (a, b, t) => a + (b - a) * t;
 
 /** Centre du lit du canyon (il serpente) */
 export function canyonCenter(z) {
   return Math.sin(z * 0.009) * SEABED.CANYON.meander;
 }
 
-/** Masque du canyon : 1 au fond du lit, 0 sur les plateaux */
+/** Masque du canyon : 1 au fond du lit, 0 sur le plateau */
 function canyonMask(x, z) {
   const C = SEABED.CANYON;
   if (z > C.zStart + 40 || z < C.zEnd - 40) return 0;
-  // La largeur s'ouvre en entrant et en sortant du canyon
-  const along = smoothstep(C.zStart + 40, C.zStart - 30, z) * smoothstep(C.zEnd - 40, C.zEnd + 20, z);
+  const along = smoothstep(C.zStart + 40, C.zStart - 30, z) * smoothstep(C.zEnd - 40, C.zEnd + 30, z);
   const w = C.halfWidth * (0.8 + 0.4 * (noise(z * 0.01, 3.3) * 0.5 + 0.5));
   const d = Math.abs(x - canyonCenter(z)) + noise(x * 0.05, z * 0.05) * 6;
   return (1 - smoothstep(w * 0.45, w, d)) * along;
 }
 
-/**
- * Hauteur du fond marin en (x, z). Source unique de vérité :
- * géométrie, collisions et placement du décor.
- */
-export function getFloorHeight(x, z) {
-  const floor = sampleProfile(SEABED.PROFILE, z);
-  const rim = z <= SEABED.RIM[0][0] ? sampleProfile(SEABED.RIM, z) : floor;
-  const mask = canyonMask(x, z);
-  const depth = rim + (floor - rim) * mask;
+/** Profondeur du plateau en z : pente douce dans chaque bassin ; entre deux bassins, on raccorde (la barre couvre) */
+function plateauDepth(z) {
+  if (z >= BASINS[0].z0) return BASINS[0].d0;
+  for (let i = 0; i < BASINS.length; i++) {
+    const b = BASINS[i];
+    if (z >= b.z1) {
+      if (z <= b.z0) return lerp(b.d0, b.d1, (b.z0 - z) / (b.z0 - b.z1));
+      const p = BASINS[i - 1];
+      return lerp(p.d1, b.d0, smoothstep(p.z1, b.z0, z));
+    }
+  }
+  return BASINS[BASINS.length - 1].d1;
+}
 
-  // Relief : plus marqué dans le canyon (parois déchiquetées), plus lisse dans les abysses
-  const roughness = z < -880 ? 0.6 : z < -545 ? 1.8 : 1;
+/** Le tunnel qui passe en z (ou null) */
+export function tunnelAt(z) {
+  for (const t of TUNNELS) if (z < t.z0 + 70 && z > t.z1 - 70) return t;
+  return null;
+}
+
+/**
+ * Coupe d'un tunnel en z : son axe (x), son rayon, la hauteur de son sol.
+ * Le tunnel descend régulièrement d'un bassin à l'autre, serpente, s'élargit en salles,
+ * et (La Trachée) se resserre à intervalles réguliers en arceaux.
+ */
+const _sec = { x: 0, r: 0, y: 0, s: 0 };
+export function tunnelSection(t, z) {
+  const s = (t.z0 - z) / (t.z0 - t.z1), sc = Math.max(0, Math.min(1, s));
+  let r = t.r * (1 + 0.12 * noise(z * 0.021, t.r));
+  for (const [at, rr] of t.rooms) r += (rr - t.r) * Math.exp(-Math.pow(((s - at) * (t.z0 - t.z1)) / (rr * 1.3), 2));
+  if (t.ribs) r *= 1 - 0.16 * Math.pow(Math.max(0, Math.cos((z / t.ribs) * Math.PI * 2)), 8);
+  // les bouches s'évasent
+  r *= 1 + 0.35 * (Math.exp(-Math.pow((sc * (t.z0 - t.z1)) / 40, 2)) + Math.exp(-Math.pow(((1 - sc) * (t.z0 - t.z1)) / 40, 2)));
+  _sec.x = lerp(t.x0, t.x1, sc) + Math.sin(sc * Math.PI * t.waves) * t.sway * Math.pow(Math.sin(sc * Math.PI), 0.5);
+  _sec.r = r;
+  _sec.y = -lerp(t.d0, t.d1, sc * sc * (3 - 2 * sc));
+  _sec.s = s;
+  return _sec;
+}
+// profondeur des bouches = celle des bassins qu'elles relient (au fond de la gorge pour le Canyon)
+TUNNELS.forEach((t, i) => { t.d0 = BASINS[i].d1 + (i === 2 ? SEABED.CANYON.depth * 0.8 : 0); t.d1 = BASINS[i + 1].d0; });
+
+/**
+ * Hauteur du terrain SANS les tunnels : bassins, gorge du Canyon, barres rocheuses, falaises du bord du monde.
+ * C'est aussi le dessus de la roche au-dessus d'un tunnel (voir world/roof.js).
+ */
+export function surfaceHeight(x, z) {
+  const depth = plateauDepth(z) + SEABED.CANYON.depth * canyonMask(x, z);
+  // Relief : plus marqué dans le canyon, plus lisse dans les abysses
+  const roughness = z < BASINS[3].z0 + 40 ? 0.6 : z < BASINS[2].z0 + 20 && z > BASINS[2].z1 - 20 ? 1.5 : 1;
   const relief = noise.fbm(x * 0.011, z * 0.011, 4) * SEABED.AMPLITUDE * roughness;
   const r = 1 - Math.abs(noise(x * 0.018 + 57, z * 0.018 - 31));
   const ridges = r * r * r * SEABED.RIDGE_AMPLITUDE * roughness;
   const detail = noise(x * 0.08, z * 0.08) * 0.8;
   const base = -depth + relief + ridges + detail;
-  // Les bords du monde sont de vraies falaises qui montent jusqu'au-dessus de la surface :
-  // barrière naturelle, pas de mur invisible. Leur tracé ondule, avec des replats.
+  // Les bords du monde et les barres entre bassins sont de vraies falaises qui montent au-dessus de la surface.
   const wx = noise(z * 0.016, 7.7) * 12 + noise(z * 0.06, 2.2) * 5;
-  const wz = noise(x * 0.02, 3.3) * 10;
-  const e = Math.max(
+  const wz = noise(x * 0.02, 3.3) * 10 + noise(x * 0.07, 9.1) * 4;
+  let e = Math.max(
     smoothstep(152 + wx, 180 + wx, Math.abs(x)),
-    smoothstep(-1122 + wz, -1152 + wz, z),
+    smoothstep(SEABED.Z_END + 68 + wz, SEABED.Z_END + 38 + wz, z),
     smoothstep(170 + wz, 198 + wz, z)
   );
+  for (const t of TUNNELS) if (z < t.z0 + 30 && z > t.z1 - 30) e = Math.max(e, smoothstep(t.z0 + wz, t.z0 - 34 + wz, z) * smoothstep(t.z1 - wz, t.z1 + 34 - wz, z));
   if (e <= 0) return base;
   const step = Math.floor(e * 5) / 5, f = e * 5 - Math.floor(e * 5);
   const terr = step + smoothstep(0.55, 1, f) / 5; // gradins : replats puis ressauts
   const k = e * 0.45 + terr * 0.55;
   return base + (8 - base) * k + noise(x * 0.05, z * 0.05 + 40) * 6 * e * (1 - e);
+}
+
+/** Sol d'un tunnel en (x, z), ou null hors du tunnel : une cuvette douce, un peu de relief */
+function tunnelFloor(x, z) {
+  const t = tunnelAt(z);
+  if (!t) return null;
+  const c = tunnelSection(t, z), q = (x - c.x) / (c.r * 1.2);
+  if (q <= -1 || q >= 1 || c.s < -0.14 || c.s > 1.14) return null;
+  return c.y + c.r * 0.34 * q * q + noise(x * 0.07, z * 0.07) * 1.1 + noise.fbm(x * 0.02, z * 0.02, 3) * 2.2;
+}
+
+/**
+ * Hauteur du fond marin en (x, z). Source unique de vérité : géométrie, collisions et placement du décor.
+ * Dans un tunnel, c'est le sol du tunnel (la roche qui le couvre est décrite par world/roof.js).
+ */
+export function getFloorHeight(x, z) {
+  const s = surfaceHeight(x, z);
+  if (z > TUNNELS[0].z0 + 70) return s;
+  const f = tunnelFloor(x, z);
+  return f !== null && f < s ? f : s;
 }
 
 /**
@@ -115,7 +161,7 @@ function floorColor(center, normal, out) {
   else {
     out.copy(ABYSS[pick]);
     // Vase maladive près du portail
-    out.lerp(SICK, smoothstep(-860, -1060, center.z) * 0.6 * (n > 0.6 ? 1 : 0.4));
+    out.lerp(SICK, smoothstep(-3650, -3930, center.z) * 0.6 * (n > 0.6 ? 1 : 0.4));
   }
   // Le fond s'assombrit avec la profondeur
   out.multiplyScalar(1 - clamp(depth / 1400, 0, 0.55));

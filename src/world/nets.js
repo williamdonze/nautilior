@@ -100,8 +100,8 @@ export class NetForest {
     const cx = (z) => canyonCenter(z);
     // Des murs en travers du Canyon, en quinconce : on peut se faufiler, ou couper
     for (let i = 0; i < NETS.COUNT; i++) {
-      const z = -648 - i * (130 / NETS.COUNT) + rand.range(-3, 3);
-      if (Math.abs(z - MARIE.z) < 26 && i % 2 === 0) continue; // on laisse l'épave lisible
+      const z = MARIE.z + 130 - i * (330 / NETS.COUNT) + rand.range(-4, 4);
+      if (Math.abs(z - MARIE.z) < 34 && i % 2 === 0) continue; // on laisse l'épave lisible
       // le lit du Canyon fait une cinquantaine de mètres : les nappes le barrent à moitié, en quinconce
       const near = Math.abs(z - MARIE.z) < 30, side = near ? 1 : i % 2 ? 1 : -1, c = cx(z) + side * rand.range(near ? 10 : 3, near ? 14 : 12);
       const half = rand.range(near ? 7 : 9, near ? 10 : 14), skew = rand.range(-7, 7);
@@ -159,7 +159,7 @@ export class NetForest {
   update(dt, time, sub) {
     let hit = null;
     const p = sub.position;
-    if (p.z < -620 && p.z > -800) {
+    if (Math.abs(p.z - MARIE.z) < 260) {
       for (const g of this.curtains) {
         const u = g.userData;
         if (u.torn > 0) {

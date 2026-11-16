@@ -63,7 +63,7 @@ function scatter(group, geo, material, count0, colors, maxDepth, sizeRange, rand
   while (placed < count && tries < count * 30) {
     tries++;
     const x = rand.range(-SEABED.WIDTH / 2 + 15, SEABED.WIDTH / 2 - 15);
-    const z = rand.range(-560, SEABED.Z_START - 15);
+    const z = rand.range(-1760, SEABED.Z_START - 15);
     const y = getFloorHeight(x, z);
     if (-y > maxDepth) continue;
     p.set(x, y + 0.02, z);
