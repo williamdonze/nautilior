@@ -12,6 +12,7 @@
 import { buildShaders } from './shaders.js';
 import { Bridge, VERTEX_LAYOUT, INSTANCE_LAYOUT, MAX_PTS } from './bridge.js';
 import { buildGarden, buildGroundMap, GRID } from './garden.js';
+import { getRoof } from '../world/roof.js';
 import { RADIATION, ECHO } from '../config/settings.js';
 import { KelpSim } from './kelpSim.js';
 
@@ -350,7 +351,10 @@ export class GpuDiveRenderer {
     m[67] = 1 - (dive.survival?.hullRatio ?? 1); // dégâts de coque (rayures, suie)
     const pd = Math.hypot(c.x - S.x, c.z - S.z), pk = Math.min(1, Math.max(0, (300 - pd) / 240));
     m[68] = (pk * pk * 0.7 * (dive.portal?.open ?? 1) + (dive.survival?.radiation ?? 0) * 0.5) * (0.75 + 0.6 * beat);
-    m[69] = 0.8 + 0.2 * shallow;
+    // Sous la roche (tunnel, voûte, caverne), la lumière du jour n'arrive plus : il ne reste que le phare et ce qui luit
+    const roof = getRoof(c.x, c.z), under = roof && c.y < roof.c ? 1 : 0;
+    this.cover = (this.cover ?? 0) + (under - (this.cover ?? 0)) * 0.04;
+    m[69] = (0.8 + 0.2 * shallow) * (1 - 0.93 * this.cover);
     m[70] = bridge.writeLights(UB, 72, LIGHT_K);
     m[71] = bridge.spot ? 0.006 + 0.02 * dark : 0; // faisceau visible surtout dans le noir
 
