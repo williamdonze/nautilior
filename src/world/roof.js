@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { WORLD, ROOFS } from '../config/settings.js';
+import { WORLD, ROOFS, LAYOUT, SEABED } from '../config/settings.js';
 import { createNoise2D } from './noise.js';
-import { getFloorHeight, canyonCenter } from './seabed.js';
+import { getFloorHeight, canyonCenter, surfaceHeight, tunnelAt, tunnelSection } from './seabed.js';
 import { applyDetail } from './detail.js';
 
 /**
@@ -48,9 +48,28 @@ function massif(m, x, z) {
   // le tunnel s'évase aux deux bouts
   const wt = m.wt * (1 + 0.6 * (u / m.a) ** 2), q = v / wt;
   let c = floor;
-  if (Math.abs(q) < 1) c = floor + m.ht * Math.sqrt(1 - q * q) * (0.85 + 0.3 * (noise(x * 0.11 + 3, z * 0.11) * 0.5 + 0.5));
+  // la Salle : le dôme est creux (une caverne), on y entre par les deux bouts du tunnel
+  if (m.h) { const ei = e / 0.62; if (ei < 1) c = floor + m.h * Math.pow(1 - ei, 0.5) * (0.88 + 0.24 * (noise(x * 0.05 + 7, z * 0.05) * 0.5 + 0.5)) - Math.max(0, noise(x * 0.23, z * 0.23)) * 3; }
+  if (Math.abs(q) < 1) c = Math.max(c, floor + m.ht * Math.sqrt(1 - q * q) * (0.85 + 0.3 * (noise(x * 0.11 + 3, z * 0.11) * 0.5 + 0.5)));
   if (c > top - 1.2) return false; // la voûte serait trop mince : c'est une ouverture
   out.c = c; out.t = top;
+  return true;
+}
+
+/**
+ * Tunnel sous une barre rocheuse : une voûte en plein cintre qui retombe jusqu'au sol de chaque côté
+ * (ce sont ses retombées qui font les parois), avec des pendants. Au-dessus : toute la roche de la barre.
+ */
+function tunnel(x, z) {
+  const t = tunnelAt(z);
+  if (!t) return false;
+  const c = tunnelSection(t, z), q = (x - c.x) / (c.r * 1.2);
+  if (q <= -1 || q >= 1 || c.s < -0.14 || c.s > 1.14) return false;
+  const top = surfaceHeight(x, z);
+  const H = c.r * 1.5;
+  const ceil = c.y - 2 + (H + 2) * Math.pow(1 - q * q, 0.55) * (0.92 + 0.16 * (noise(x * 0.045 + 3, z * 0.045) * 0.5 + 0.5)) - Math.max(0, noise(x * 0.21, z * 0.21)) * 2.6;
+  if (ceil > top - 1.5) return false; // plus de roche au-dessus : c'est la bouche
+  out.c = ceil; out.t = top;
   return true;
 }
 
@@ -67,7 +86,8 @@ function prepare() {
  */
 export function getRoof(x, z) {
   if (!ready) prepare();
-  if (z < -560 && z > -900) { for (const v of ROOFS.VAULTS) if (z < v.z0 + 6 && z > v.z1 - 6 && vault(v, x, z)) return out; }
+  if (tunnel(x, z)) return out;
+  if (z < SEABED.CANYON.zStart && z > SEABED.CANYON.zEnd) { for (const v of ROOFS.VAULTS) if (z < v.z0 + 6 && z > v.z1 - 6 && vault(v, x, z)) return out; }
   for (const m of ROOFS.MASSIFS) if (massif(m, x, z)) return out;
   return null;
 }
@@ -103,6 +123,7 @@ function build(x0, x1, z0, z1, step) {
     // chants : là où la cellule voisine n'existe pas, on ferme entre dessous et dessus
     const side = (i0, j0, i1, j1) => {
       const p = j0 * (nx + 1) + i0, q = j1 * (nx + 1) + i1, xa = x0 + i0 * step, za = z0 + j0 * step, xb = x0 + i1 * step, zb = z0 + j1 * step;
+      if (T[p] - C[p] > 45 && T[q] - C[q] > 45) return; // au cœur d'une barre : la paroi du terrain fait déjà le travail
       const s0 = vert(xa, C[p], za), s1 = vert(xb, C[q], zb), s2 = vert(xa, T[p], za), s3 = vert(xb, T[q], zb);
       idx.push(s0, s2, s1, s1, s2, s3);
     };
@@ -131,6 +152,8 @@ export function createRoofs() {
     for (let z = v.z1 - 6; z <= v.z0 + 6; z += 4) { xa = Math.min(xa, canyonCenter(z) - W); xb = Math.max(xb, canyonCenter(z) + W); }
     add(build(xa, xb, v.z1 - 8, v.z0 + 8, ROOFS.STEP));
   }
+  // les trois tunnels (toute la largeur du monde : ils serpentent)
+  for (const t of LAYOUT.TUNNELS) add(build(-150, 150, t.z1 - 72, t.z0 + 72, ROOFS.STEP));
   for (const m of ROOFS.MASSIFS) add(build(m.x - m.a - 2, m.x + m.a + 2, m.z - m.a - 2, m.z + m.a + 2, ROOFS.STEP * 0.75));
   return group;
 }

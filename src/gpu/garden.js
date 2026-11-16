@@ -13,11 +13,13 @@ import { headroom } from '../world/roof.js';
 import { getFloorHeight } from '../world/seabed.js';
 import { createNoise2D } from '../world/noise.js';
 import { createRandom, smoothstep } from '../core/utils.js';
-import { RADIATION, SUBMARINE, WORLD } from '../config/settings.js';
+import { RADIATION, SUBMARINE, WORLD, SEABED } from '../config/settings.js';
 import { WRECK_SPOTS } from '../world/landmarks.js';
 
 // Grille de culling (plan XZ)
-export const GRID = { OX: -216, OZ: -1190, CELLW: 24, CX: 18, CZ: 59 };
+export const GRID = { OX: -216, OZ: SEABED.Z_END - 10, CELLW: 24, CX: 18, CZ: Math.ceil((SEABED.Z_START - SEABED.Z_END + 30) / 24) };
+/** Emprise de la carte du fond (texture) : x0, largeur, z0, longueur */
+export const MAP = { X0: -210, W: 420, Z0: SEABED.Z_END, L: SEABED.Z_START - SEABED.Z_END };
 const NCELLS = GRID.CX * GRID.CZ;
 const TAU = Math.PI * 2;
 
@@ -26,7 +28,7 @@ const fbm = (x, z, s) => noise.fbm(x * s, z * s, 3) * 0.5 + 0.5;
 
 /** Tapis colorés du Récif (0..1) : même fonction pour les plantes et pour la teinte du fond */
 export function coverAt(x, z) {
-  const reef = smoothstep(-190, -120, z);
+  const reef = smoothstep(-590, -500, z);
   return smoothstep(0.56, 0.74, fbm(x + 300, z - 80, 0.035)) * reef;
 }
 /** Proximité du portail (0..1) : la vie y devient verte et lumineuse */
@@ -36,10 +38,10 @@ export function portalAt(x, z) {
 }
 
 /** Carte du fond pour le shader : r tapis colorés, g verdissement du portail, a sable */
-export function buildGroundMap(w = 128, h = 512) {
+export function buildGroundMap(w = 128, h = 1536) {
   const map = new Uint8Array(w * h * 4);
   for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
-    const x = ((i + 0.5) / w) * 420 - 210, z = ((j + 0.5) / h) * 1400 - 1180, o = (i + w * j) * 4;
+    const x = ((i + 0.5) / w) * MAP.W + MAP.X0, z = ((j + 0.5) / h) * MAP.L + MAP.Z0, o = (i + w * j) * 4;
     map[o] = Math.max(coverAt(x, z), portalAt(x, z) * smoothstep(0.45, 0.65, fbm(x, z, 0.06))) * 255;
     map[o + 1] = portalAt(x, z) * 255;
     map[o + 3] = smoothstep(0.42, 0.6, fbm(x - 70, z + 40, 0.04)) * 255;
@@ -149,8 +151,9 @@ export function buildGarden(density = 1) {
     return (smoothstep(0.56, 0.7, fbm(x + 500, z, 0.02)) * 0.3 + (nearWreck(x, z, 26) ? 0.35 : 0)) * smoothstep(520, 400, depth);
   };
   const occ = new Set();
-  for (let i = 0; i < 9000; i++) {
-    const x = rr(-196, 196), z = rr(-540, 208), y = getFloorHeight(x, z), depth = -y;
+  for (let i = 0; i < 15000; i++) {
+    // le Récif surtout ; quelques bosquets sombres dans le bassin des Épaves
+    const x = rr(-196, 196), z = i % 5 < 3 ? rr(-570, 208) : rr(-1760, -950), y = getFloorHeight(x, z), depth = -y;
     if (depth < 9 || rnd() > kelpDens(x, z, depth)) continue;
     const key = Math.floor(x / 2.3) * 4096 + Math.floor(z / 2.3);
     if (occ.has(key) || slopeY(x, z) < 0.55) continue;
@@ -172,8 +175,8 @@ export function buildGarden(density = 1) {
       leaf(big, x + Math.cos(a) * r, y - 0.15, z + Math.sin(a) * r, L, a, rr(0.05, tmax), rr(wmin, wmax), sway, type, rnd(), rnd(), rr(0.3, 0.8));
     }
   };
-  for (let i = Math.floor(52000 * density); i > 0; i--) {
-    const x = rr(-200, 200), z = rr(-1160, 210), y = getFloorHeight(x, z), depth = -y;
+  for (let i = Math.floor(120000 * density); i > 0; i--) {
+    const x = rr(-200, 200), z = rr(SEABED.Z_END + 50, 210), y = getFloorHeight(x, z), depth = -y;
     if (depth < 6 || Math.hypot(x - S.x, z - S.z) < 6) continue;
     const ny = slopeY(x, z), u = rnd(), pz = portalAt(x, z);
     const h = depth < 150 ? 0.45 + 0.55 * smoothstep(0.45, 0.65, fbm(x - 90, z + 30, 0.03)) : depth < 500 ? 0.3 : depth < 950 ? 0.1 : 0.04;
@@ -191,14 +194,16 @@ export function buildGarden(density = 1) {
     }
   }
 
+  const S0 = RADIATION.SOURCE;
   /* ---- Tapis de petites touffes */
   for (let i = Math.floor(520000 * density); i > 0; i--) {
-    const x = rr(-200, 200), z = rr(-1160, 210), u = rnd();
+    // les tapis ne poussent que dans le Récif et autour de la faille : on ne tire que là
+    const x = rr(-200, 200), z = i % 8 ? rr(-600, 210) : rr(S0.z - 200, S0.z + 200), u = rnd();
     const m = coverAt(x, z), pz = portalAt(x, z);
     let kind = 0;
     if (pz > 0.05 && u < pz * 0.6 * smoothstep(0.4, 0.62, fbm(x, z, 0.06))) kind = 8;
     else if (m > 0.3 && u < m * 0.9) kind = 5;
-    else if (z > -560 && u < 0.3 * smoothstep(0.42, 0.6, fbm(x, z, 0.09)) * (z > -160 ? 1 : 0.4)) kind = 7;
+    else if (z > -560 && u < 0.3 * smoothstep(0.42, 0.6, fbm(x, z, 0.09)) * (z > -400 ? 1 : 0.4)) kind = 7;
     if (!kind) continue;
     const y = getFloorHeight(x, z);
     if (y > -5 || slopeY(x, z) < 0.72) continue;

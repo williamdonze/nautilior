@@ -1,3 +1,4 @@
+import { MAP } from './garden.js';
 /**
  * Shaders WGSL du rendu de plongée (WebGPU).
  *
@@ -214,7 +215,7 @@ fn caus2(p: vec3f, d: f32) -> f32 {
 }
 fn sunE(y: f32, z: f32) -> vec3f { return SUNC * exp(kd(z) * DK * (min(y, 0.) / g.sun.y)) * (.5 + .5 * sat(-y / 30.)) * g.fx.y; }
 fn vol(p: vec3f) -> vec4f { return vec4f(1.); }
-fn muv(p: vec3f) -> vec2f { return vec2f((p.x + 210.) / 420., (p.z + 1180.) / 1400.); }
+fn muv(p: vec3f) -> vec2f { return vec2f((p.x - (${MAP.X0}.)) / ${MAP.W}., (p.z - (${MAP.Z0}.)) / ${MAP.L}.); }
 fn amb(p: vec3f, n: vec3f, sky: f32, z: f32) -> vec3f {
   let up = n.y * .5 + .5;
   return mix(vec3f(.22, .60, .80), vec3f(.34, .56, .82), z) * exp(kd(z) * DK * min(p.y, 0.) * 1.2) * (.3 + .7 * sky) * (.24 + .76 * up * up) * 1.3 * (.55 + .45 * sat(-p.y / 30.)) + vec3f(.003, .010, .016);
