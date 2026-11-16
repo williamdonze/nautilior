@@ -162,7 +162,7 @@ class Animal {
       speed = S.speed * (dist > 40 ? 2.6 : 1.8); agility = 1.6;
       targetY = sub.position.y + Math.sin(this.wander * 0.6) * 5;
       // elle ne charge qu'un cœur qui s'emballe ; sinon elle continue de tourner, de plus en plus près
-      if (this.timer <= 0 && dist < 48 && this.bold) { this.state = 'charge'; this.timer = 5; events.charge?.(this); }
+      if (this.timer <= 0 && dist < 48 && this.bold && (this.slots?.free ?? 1) > 0) { if (this.slots) this.slots.free--; this.state = 'charge'; this.timer = 5; events.charge?.(this); }
     } else this.state = 'roam';
 
     this.turn += (THREE.MathUtils.clamp(want, -1, 1) * agility - this.turn) * Math.min(1, dt * 3);
@@ -222,6 +222,11 @@ export class Wildlife {
     for (const a of this.animals) if (a.pos.distanceTo(position) < radius) a.scare(time);
   }
 
+  /** Refuge (cloche à air, baleine) : seules les bêtes hostiles s'écartent */
+  scareHostile(position, radius, time) {
+    for (const a of this.animals) if (a.spec.damage > 0 && a.state !== 'scared' && a.pos.distanceTo(position) < radius) a.scare(time);
+  }
+
   /** Nombre de bêtes en train de charger (pour la musique et les alarmes) */
   get threat() {
     let n = 0;
@@ -250,6 +255,7 @@ export class Wildlife {
     let damage = 0;
     for (const a of this.animals) {
       a.bold = this.bold !== false;
+      a.slots = this.slots;
       const d = a.update(dt, time, sub, this.calm, this.events);
       if (d > 0) {
         damage += d;

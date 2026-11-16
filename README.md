@@ -169,3 +169,11 @@ instanciées, rayons de lumière, halo. Le port et les menus restent en Three.js
 - Navigateur sans WebGPU (ou `?webgl` dans l'adresse) : la plongée repasse sur le rendu Three.js.
 - `?gpuoffscreen` : rendu hors écran recopié dans un canvas 2D (tests automatiques sans écran).
 - `?gpuskip=leaf,rays,shadow…` : saute des passes de rendu (diagnostic).
+
+
+## Outils de test
+
+- **Panneau de test** : ajouter `?dev` à l'adresse du jeu (ou appuyer sur **F9**). Boutons pour obtenir les souvenirs et l'équipement, se téléporter à chaque lieu, rejouer un souvenir.
+- **Console** (F12) : `nautiliar.dev.aide()` liste les commandes (`souvenirs()`, `aller('marie')`, `fin()`, `baleine()`, `position()`…).
+- **Carte 3D du monde** : `carte.html` (relief, plafonds, épaves, repères ; double-clic pour poser un repère et lire ses coordonnées).
+- **Planches de modèles** : `bestiary.html?set=abyss | dream | whale | marie | guardian | people`.

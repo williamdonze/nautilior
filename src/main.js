@@ -98,4 +98,5 @@ startLoop(
 );
 
 // Accès console pour le débogage (ex. : nautiliar.game.newGame())
+import('./dev/commands.js').then((m) => m.installDevCommands(window.nautiliar));
 window.nautiliar = { game, pixel, gpuDive, getFloorHeight, get dive() { return game.dive; }, get port() { return game.port; } };
